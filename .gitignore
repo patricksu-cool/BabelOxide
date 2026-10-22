@@ -174,3 +174,18 @@ uv.lock
 *.pdf
 *.docx
 CLAUDE.md
+
+# Local application settings and secrets
+/config/
+.env.*
+*.pem
+*.p12
+*.pfx
+*.key
+credentials.json
+secrets.json
+
+# Local development and code intelligence state
+.ruff_cache/
+.serena/
+.codebase-memory/
