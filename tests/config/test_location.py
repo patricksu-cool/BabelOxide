@@ -18,7 +18,9 @@ def test_source_config_directory_ignores_working_directory(
     assert const.application_directory() == project_root
     assert const.DEFAULT_CONFIG_FILE.parent == const.DEFAULT_CONFIG_DIR
     assert const.WRITE_TEMP_CONFIG_FILE.parent == const.DEFAULT_CONFIG_DIR
-    assert const.VERSION_DEFAULT_CONFIG_FILE.parent == const.DEFAULT_CONFIG_DIR / "default"
+    assert (
+        const.VERSION_DEFAULT_CONFIG_FILE.parent == const.DEFAULT_CONFIG_DIR / "default"
+    )
 
 
 def test_executable_config_directory_ignores_working_directory(
@@ -67,7 +69,9 @@ def test_legacy_config_migrates_once_and_round_trips(
 
     monkeypatch.setattr(config_main, "DEFAULT_CONFIG_DIR", new_config_dir)
     monkeypatch.setattr(config_main, "DEFAULT_CONFIG_FILE", new_config_file)
-    monkeypatch.setattr(config_main, "WRITE_TEMP_CONFIG_FILE", new_config_dir / "config.v3.temp.toml")
+    monkeypatch.setattr(
+        config_main, "WRITE_TEMP_CONFIG_FILE", new_config_dir / "config.v3.temp.toml"
+    )
     monkeypatch.setattr(config_main, "VERSION_DEFAULT_CONFIG_DIR", version_dir)
     monkeypatch.setattr(config_main, "VERSION_DEFAULT_CONFIG_FILE", version_file)
     monkeypatch.setattr(config_main, "LEGACY_CONFIG_FILE", old_config_file)

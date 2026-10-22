@@ -346,6 +346,20 @@ class TestConfigManager:
             loaded_content = tomlkit.load(f)
             assert dict(loaded_content) == test_content
 
+    def test_write_toml_file_nested_null_bytes(self, temp_config_dir: Path):
+        """Keep the existing nested TOML and None serialization format."""
+        cm = ConfigManager()
+        test_file = temp_config_dir / "nested.toml"
+
+        cm._write_toml_file(
+            test_file,
+            {"enabled": True, "service": {"api_key": None, "qps": 2}},
+        )
+
+        assert test_file.read_text(encoding="utf-8") == (
+            'enabled = true\n\n[service]\napi_key = "null"\nqps = 2\n'
+        )
+
     def test_is_file_content_identical(self, sample_toml_content: str):
         """Test comparing file content with given content"""
         cm = ConfigManager()

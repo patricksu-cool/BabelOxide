@@ -173,7 +173,9 @@ class ConfigManager:
         except OSError as exc:
             if created:
                 DEFAULT_CONFIG_FILE.unlink(missing_ok=True)
-            log.warning("Could not migrate legacy configuration %s: %s", LEGACY_CONFIG_FILE, exc)
+            log.warning(
+                "Could not migrate legacy configuration %s: %s", LEGACY_CONFIG_FILE, exc
+            )
             return
 
         log.info("Copied legacy configuration to %s", DEFAULT_CONFIG_FILE)
@@ -242,18 +244,6 @@ class ConfigManager:
                 return result
 
             content = convert_none_to_null(content)
-
-            toml_content = tomlkit.document()
-
-            # Handle nested structure directly
-            for key, value in content.items():
-                if isinstance(value, dict):
-                    section = tomlkit.table()
-                    for k, v in value.items():
-                        section.add(k, v)
-                    toml_content.add(key, section)
-                else:
-                    toml_content.add(key, value)
             with self._config_file_lock:
                 with file_path.open("w", encoding="utf-8") as f:
                     tomlkit.dump(content, f)
