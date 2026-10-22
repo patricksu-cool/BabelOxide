@@ -122,7 +122,7 @@ class CLITranslatorTranslator(BaseTranslator):
         cmd = [self.command] + self.args
 
         try:
-            logger.debug(f"Executing CLI command: {' '.join(cmd)}")
+            logger.debug("Executing configured CLI translator with %d arguments", len(self.args))
 
             # Pass text via stdin
             process = subprocess.Popen(
@@ -138,7 +138,9 @@ class CLITranslatorTranslator(BaseTranslator):
 
             if process.returncode != 0:
                 logger.error(
-                    "CLI command failed (exit %s): %s", process.returncode, stderr
+                    "CLI command failed (exit %s; stderr characters: %d)",
+                    process.returncode,
+                    len(stderr),
                 )
                 raise subprocess.CalledProcessError(
                     process.returncode,
@@ -177,9 +179,9 @@ class CLITranslatorTranslator(BaseTranslator):
             stdout, stderr = process.communicate(input=output, timeout=self.timeout)
             if process.returncode != 0:
                 logger.error(
-                    "Postprocess command failed (exit %s): %s",
+                    "Postprocess command failed (exit %s; stderr characters: %d)",
                     process.returncode,
-                    stderr,
+                    len(stderr),
                 )
                 raise subprocess.CalledProcessError(
                     process.returncode,

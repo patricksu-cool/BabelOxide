@@ -27,6 +27,9 @@ from pdf2zh_next.const import LEGACY_CONFIG_FILE
 from pdf2zh_next.const import VERSION_DEFAULT_CONFIG_DIR
 from pdf2zh_next.const import VERSION_DEFAULT_CONFIG_FILE
 from pdf2zh_next.const import WRITE_TEMP_CONFIG_FILE
+from pdf2zh_next.security_logging import install_redacting_filters
+from pdf2zh_next.security_logging import redact_for_log
+from pdf2zh_next.security_logging import register_secret_values
 
 # The following is magic code,
 # if you need to modify it,
@@ -194,12 +197,14 @@ class ConfigManager:
                 with file_path.open(encoding="utf-8") as f:
                     content = tomlkit.load(f)
             # Convert "null" strings back to None
-            return self._process_toml_content(dict(content))
+            parsed = self._process_toml_content(dict(content))
+            register_secret_values(parsed)
+            return parsed
         except FileNotFoundError:
             log.debug(f"Config file not found: {file_path}")
             return {}
         except Exception as e:
-            log.warning(f"Error reading config file {file_path}: {e}")
+            log.warning("Error reading config file %s: %s", file_path, type(e).__name__)
             return {}
 
     def _process_toml_content(self, content: dict) -> dict:
@@ -308,11 +313,11 @@ class ConfigManager:
         cli_parsed_args = self.parse_dict_vars(
             dict_vars=cli_args,
         )
-        log.debug(f"CLI args: {cli_parsed_args}")
+        log.debug("CLI args: %s", redact_for_log(cli_parsed_args))
         self._settings = self._build_model_from_args(
             CLIEnvSettingsModel, cli_parsed_args
         ).to_settings_model()
-        log.debug(f"Settings from CLI: {self._settings.model_dump_json()}")
+        log.debug("Settings from CLI: %s", redact_for_log(self._settings))
 
     def parse_env_vars(
         self,
@@ -376,6 +381,7 @@ class ConfigManager:
                 if env_name in dict_vars:
                     # Get the value from environment
                     env_value = dict_vars[env_name]
+                    register_secret_values({field_name: env_value})
 
                     # Get type information for proper conversion
                     origin_type = get_origin(type_hint)
@@ -390,13 +396,15 @@ class ConfigManager:
                         env_settings[field_name] = converted_value
                     except (ValueError, TypeError) as e:
                         log.warning(
-                            f"Could not convert environment variable {env_name}: {e}"
+                            "Could not convert environment variable %s: %s",
+                            env_name,
+                            type(e).__name__,
                         )
                     else:
                         log.debug(f"Field {field_name} not found in type hints")
 
         if recursion_depth == 0:
-            log.debug(f"Environment settings: {env_settings}")
+            log.debug("Environment settings: %s", redact_for_log(env_settings))
         return env_settings
 
     def _convert_env_value(
@@ -555,8 +563,10 @@ class ConfigManager:
     def initialize_config(self) -> SettingsModel:
         """Initialize configuration from all sources"""
         # Parse CLI arguments (highest priority)
+        install_redacting_filters()
         self._settings = self.initialize_cli_config().to_settings_model()
-        log.debug(f"Initialized settings: {self._settings.model_dump_json()}")
+        register_secret_values(self._settings)
+        log.debug("Initialized settings: %s", redact_for_log(self._settings))
 
         return self._settings
 
@@ -565,7 +575,7 @@ class ConfigManager:
             self._build_model_from_args(CLIEnvSettingsModel, args)
             return True
         except Exception as e:
-            log.exception("Error in test_config:")
+            log.warning("Configuration validation failed: %s", type(e).__name__)
             return False
 
     def initialize_cli_config(self) -> CLIEnvSettingsModel:

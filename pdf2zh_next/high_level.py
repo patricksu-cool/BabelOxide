@@ -22,6 +22,8 @@ from babeldoc.main import create_progress_handler
 from rich.logging import RichHandler
 
 from pdf2zh_next.config.model import SettingsModel
+from pdf2zh_next.security_logging import install_redacting_filters
+from pdf2zh_next.security_logging import register_secret_values
 from pdf2zh_next.translator import get_term_translator
 from pdf2zh_next.translator import get_translator
 from pdf2zh_next.utils import asynchronize
@@ -127,6 +129,8 @@ def _translate_wrapper(
 
         queue_handler = QueueHandler(logger_queue)
         logging.basicConfig(level=logging.INFO, handlers=[queue_handler])
+        register_secret_values(settings)
+        install_redacting_filters()
 
         # Workaround for loky spawning powershell.exe on Windows.
         # loky queries physical CPU cores via powershell.exe without
@@ -328,6 +332,7 @@ def _translate_wrapper(
         try:
             logging.getLogger().removeHandler(queue_handler)
             logging.getLogger().addHandler(RichHandler())
+            install_redacting_filters()
             logger_queue.put(None)
             logger_queue.close()
         except Exception as e:

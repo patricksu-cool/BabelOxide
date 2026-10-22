@@ -15,6 +15,8 @@ import babeldoc.assets.assets
 
 from pdf2zh_next.config import ConfigManager
 from pdf2zh_next.high_level import do_translate_file_async
+from pdf2zh_next.security_logging import install_redacting_filters
+from pdf2zh_next.security_logging import redact_for_log
 
 __version__ = "2.9.0"
 
@@ -50,6 +52,7 @@ async def main() -> int:
     from rich.logging import RichHandler
 
     logging.basicConfig(level=logging.INFO, handlers=[RichHandler()])
+    install_redacting_filters()
 
     settings = ConfigManager().initialize_config()
     if settings.basic.debug:
@@ -79,7 +82,7 @@ async def main() -> int:
             v.disabled = True
             v.propagate = False
 
-    logger.debug(f"settings: {settings}")
+    logger.debug("settings: %s", redact_for_log(settings))
 
     if settings.basic.version:
         print(f"pdf2zh-next version: {__version__}")
@@ -104,7 +107,14 @@ async def main() -> int:
 
 
 def cli():
-    sys.exit(asyncio.run(main()))
+    try:
+        exit_code = asyncio.run(main())
+    except Exception:
+        logging.basicConfig(level=logging.ERROR)
+        install_redacting_filters()
+        logger.exception("Fatal CLI error")
+        exit_code = 1
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":

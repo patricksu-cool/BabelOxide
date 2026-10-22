@@ -77,7 +77,7 @@ class ClaudeCodeTranslator(BaseTranslator):
         env.pop("ANTHROPIC_API_KEY", None)
 
         try:
-            logger.info(f"Running Claude Code: {cmd}\n{input_data}")
+            logger.info("Running Claude Code; input characters: %d", len(input_data))
             process = subprocess.Popen(
                 cmd,
                 stdin=subprocess.PIPE,
@@ -88,10 +88,10 @@ class ClaudeCodeTranslator(BaseTranslator):
             )
 
             stdout, stderr = process.communicate(input=input_data, timeout=120)
-            logger.debug(f"CC: {stdout}")
+            logger.debug("Claude Code response characters: %d", len(stdout))
 
             if process.returncode != 0:
-                logger.error(f"Claude Code failed: {stderr}")
+                logger.error("Claude Code failed (exit %s; stderr characters: %d)", process.returncode, len(stderr))
                 raise subprocess.CalledProcessError(process.returncode, cmd, stderr)
 
             translation = self._parse_output(stdout)

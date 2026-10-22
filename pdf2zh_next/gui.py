@@ -39,6 +39,7 @@ from pdf2zh_next.high_level import do_translate_async_stream
 from pdf2zh_next.i18n import LANGUAGES
 from pdf2zh_next.i18n import gettext as _
 from pdf2zh_next.i18n import update_current_languages
+from pdf2zh_next.security_logging import install_redacting_filters
 
 logger = logging.getLogger(__name__)
 
@@ -4373,6 +4374,7 @@ def setup_gui(
         - None
     """
 
+    install_redacting_filters()
     user_list = None
     html = None
 
@@ -4468,4 +4470,5 @@ if __name__ == "__main__":
     logging.getLogger("http11").setLevel("CRITICAL")
     logging.getLogger("http11").propagate = False
     logging.basicConfig(level=logging.INFO, handlers=[RichHandler()])
+    install_redacting_filters()
     setup_gui(inbrowser=False)
