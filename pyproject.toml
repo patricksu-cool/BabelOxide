@@ -17,8 +17,8 @@ classifiers = [
 ]
 dependencies = [
     "requests",
-    # for arm64 linux whells
-    "pymupdf<1.25.3",
+    # Minimum compatible PyMuPDF for the BabelDOC 0.6.3 security fix.
+    "pymupdf==1.26.7",
     "tqdm",
     "tenacity",
     "numpy",
@@ -34,8 +34,8 @@ dependencies = [
     "gradio-pdf>=0.0.21",
     "peewee>=3.17.8",
     "fontTools",
-    "babeldoc>=0.6.2,<0.7.0",
-    # BabelDOC 0.6.2 imports BitStream, which bitstring 5 removed.
+    "babeldoc==0.6.3",
+    # BabelDOC imports BitStream, which bitstring 5 removed.
     "bitstring==4.4.0",
     "rich",
     "pydantic-settings>=2.8.1",

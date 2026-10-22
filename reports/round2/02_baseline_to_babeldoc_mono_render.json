@@ -1,0 +1,22 @@
+[
+  {
+    "page": 1,
+    "changed_pixel_fraction": 0.007315508021390374,
+    "mean_channel_difference": 0.22035793226381462
+  },
+  {
+    "page": 2,
+    "changed_pixel_fraction": 0.01971336898395722,
+    "mean_channel_difference": 1.1770538324420676
+  },
+  {
+    "page": 3,
+    "changed_pixel_fraction": 0.00796577540106952,
+    "mean_channel_difference": 0.23359001782531194
+  },
+  {
+    "page": 4,
+    "changed_pixel_fraction": 0.0037475935828877004,
+    "mean_channel_difference": 0.035579322638146164
+  }
+]
