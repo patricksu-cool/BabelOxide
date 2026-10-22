@@ -1,0 +1,845 @@
+{
+  "audit_date": "2026-10-23",
+  "audited_packages": 218,
+  "raw_records": 101,
+  "distinct_advisories": [
+    {
+      "dependency": {
+        "name": "babeldoc",
+        "version": "0.6.2"
+      },
+      "display_id": "PYSEC-2026-2389",
+      "summary": "BabelDOC: Arbitrary Code Execution via CMap Pickle Deserialization in babeldoc/pdfminer/cmapdb.py",
+      "fix_versions": [
+        "0.6.3"
+      ],
+      "link": "https://github.com/funstory-ai/BabelDOC/security/advisories/GHSA-m8gf-v64p-gfmg"
+    },
+    {
+      "dependency": {
+        "name": "gitpython",
+        "version": "3.1.62"
+      },
+      "display_id": "GHSA-83vg-56qc-22m7",
+      "summary": "GitPython validates a submodule's \".git\" path only after cloning into it (RCE)",
+      "fix_versions": [
+        "3.2.1"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-114145"
+    },
+    {
+      "dependency": {
+        "name": "gradio",
+        "version": "5.35.0"
+      },
+      "display_id": "PYSEC-2026-211",
+      "summary": null,
+      "fix_versions": [],
+      "link": "https://vuldb.com/cve/CVE-2026-10783"
+    },
+    {
+      "dependency": {
+        "name": "gradio",
+        "version": "5.35.0"
+      },
+      "display_id": "PYSEC-2026-2178",
+      "summary": null,
+      "fix_versions": [
+        "6.15.0"
+      ],
+      "link": "https://github.com/gradio-app/gradio/releases/tag/gradio%406.15.0"
+    },
+    {
+      "dependency": {
+        "name": "gradio",
+        "version": "5.35.0"
+      },
+      "display_id": "PYSEC-2026-2179",
+      "summary": null,
+      "fix_versions": [
+        "6.16.0"
+      ],
+      "link": "https://github.com/gradio-app/gradio/releases/tag/gradio%406.16.0"
+    },
+    {
+      "dependency": {
+        "name": "gradio",
+        "version": "5.35.0"
+      },
+      "display_id": "PYSEC-2026-63",
+      "summary": null,
+      "fix_versions": [
+        "6.6.0"
+      ],
+      "link": "https://osv.dev/vulnerability/PYSEC-2026-63"
+    },
+    {
+      "dependency": {
+        "name": "gradio",
+        "version": "5.35.0"
+      },
+      "display_id": "PYSEC-2026-64",
+      "summary": "Gradio is Vulnerable to Absolute Path Traversal on Windows with Python 3.13+",
+      "fix_versions": [
+        "6.7.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-28414"
+    },
+    {
+      "dependency": {
+        "name": "gradio",
+        "version": "5.35.0"
+      },
+      "display_id": "PYSEC-2026-65",
+      "summary": "Gradio has an Open Redirect in its OAuth Flow",
+      "fix_versions": [
+        "6.6.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-28415"
+    },
+    {
+      "dependency": {
+        "name": "gradio",
+        "version": "5.35.0"
+      },
+      "display_id": "PYSEC-2026-66",
+      "summary": null,
+      "fix_versions": [
+        "6.6.0"
+      ],
+      "link": "https://github.com/gradio-app/gradio/security/advisories/GHSA-jmh7-g254-2cq9"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-22hg-r758-rrw9",
+      "summary": "Pillow: Infinite loop in MIC n_frames when the embedded TIFF",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112390"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-24rc-8hj2-v98c",
+      "summary": "Pillow: BMP RLE decoder memory-amplification DoS via unbounded delta escape / absolute mode",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-96638"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-254f-3936-288h",
+      "summary": "Pillow: PdfParser can recurse without limit in get_value() and linearize_page_tree()",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112391"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-27h8-gf7j-v5hc",
+      "summary": "Pillow: NULL dereference in ImagingExpand via rank filters on zero-size images",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112392"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-332p-7hrc-92wf",
+      "summary": "Pillow: Heap buffer overflow in _tiffWriteProc when saving TIFF to BytesIO",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112393"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-3j72-p6qg-6xp7",
+      "summary": "Pillow: TarIO negative size field causes infinite CPU-spin loop",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-96642"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-4558-3h8r-v8xp",
+      "summary": "Pillow: P;2L and P;4L decoders may read 1 to 3 bytes past the passed buffer size",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112394"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-462x-pgg6-55fp",
+      "summary": "Pillow tiled-TIFF decoder reads past tile buffer in copy4 (Unpack.c:1290)",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112395"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-4rm8-3hmm-39fg",
+      "summary": "Pillow: Reachable undefined behavior in native integer operations, potentially leading to denial of service or logic integrity compromise",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-96641"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-4rr5-89j8-mwwm",
+      "summary": "Pillow: Heap use-after-free when encoding TIFF to an in-memory buffer",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112396"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-58r4-6rv3-gfh8",
+      "summary": "Pillow: Out-of-bounds access in _imagingmorph on a zero-width image",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112397"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-5xm2-6676-qcp9",
+      "summary": "Pillow: APNG background disposal allocates full canvas before decompression bomb check",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112399"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-65qm-jvmh-6pqg",
+      "summary": "Pillow: GIF seek keeps rejected size after DecompressionBombError, allowing DoS",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112400"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-74r2-7ff9-mjj2",
+      "summary": "Pillow: Quadratic GIF comment concatenation allows DoS in Image.open()",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112401"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-78g4-xqwv-q3g8",
+      "summary": "Pillow: Bundled libopenjp2 2.5.4 in all wheels since 11.1.0 carries OSV-2025-219 heap-buffer-overflow write reachable from Image.open().load()",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://github.com/python-pillow/Pillow/security/advisories/GHSA-78g4-xqwv-q3g8"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-7mwm-ghpf-9vrm",
+      "summary": "Pillow: Double free in ImagingScaleAffine on calloc failure via Image.transform",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112402"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-8g5g-8vmr-9782",
+      "summary": "Pillow: Heap buffer overflow in ImagingJpegDecode",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112403"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-9v9v-9qvf-h2hj",
+      "summary": "Pillow: Heap over-read in WMF/EMF rendering via 16-bit dimension truncation (Windows builds)",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-96644"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-c6hw-5grf-ff96",
+      "summary": "Pillow: OOB read in TiffDecode.c tile and RGBA paths leaks heap memory into pixels",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112404"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-f2g6-542v-9j58",
+      "summary": "Pillow: Infinite loop in PdfParser.rewrite_pages on page tree Parent cycle",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112406"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-fc9g-5qg7-mf45",
+      "summary": "Pillow: Quadratic GIF comment copying during save",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112891"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-g4qv-2jxx-769h",
+      "summary": "Pillow: PNG eXIf chunk makes EXIF parsing run in quadratic time",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-96643"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-g7cr-3p24-7wf7",
+      "summary": "Pillow: Heap buffer overflow writing JPEG comment after ICC profile fills buffer",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-96778"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-g842-9rc4-69pw",
+      "summary": "Pillow: Decompression bomb check bypass in SpiderImagePlugin.seek() leads to unbounded allocation DoS",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-96637"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-gg2r-wvfm-q9rx",
+      "summary": "Pillow: MSP RLE decoder expands a tiny file into unbounded memory",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112892"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-j4m9-6w36-pw47",
+      "summary": "Pillow: Invalid free in FreeType glyph rendering when a stroker is active",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112893"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-jg86-v3jv-hrpm",
+      "summary": "Pillow: Quadratic-time DoS in PDF save_all (PdfParser.next_object_id)",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112894"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-mrfp-p49p-3hf2",
+      "summary": "Pillow PDF append accepts malformed shared page-tree DAG causing resource exhaustion",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-96640"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-p4wg-p73j-c528",
+      "summary": "Pillow: Unbounded recursion parsing a PDF page tree or trailer chain (incomplete fix for CVE-2026-42310)",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112895"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-p8hx-v2p6-rp84",
+      "summary": "Pillow: Decompression-bomb protection bypass via multi-frame seek() in MPO and DCX (MpoImageFile.seek / DcxImageFile.seek)",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-96636"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-pchr-8j38-3x4p",
+      "summary": "Pillow: TIFF encoder ColorMap plane-size mismatch causes a heap out-of-bounds read",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112896"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-q45j-58j2-45rg",
+      "summary": "Pillow: TiffDecode returns uninitialized memory as pixels for short JPEG strips",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112897"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-rfgq-q3w2-pmv2",
+      "summary": "Pillow: Image.quantize() with empty palette leaks uninitialized stack memory",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112898"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-v9pv-5gc8-w2m6",
+      "summary": "Pillow multi-frame loaders can reuse stale native image storage after mode transitions",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-96639"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-vx6w-vv9f-6gvg",
+      "summary": "Pillow: EPS load(scale) lets Ghostscript render past the decompression bomb limit",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://github.com/python-pillow/Pillow/security/advisories/GHSA-vx6w-vv9f-6gvg"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-w889-685w-c8fh",
+      "summary": "Pillow: Argument Injection in Ghostscript call, potentially leading into RCE",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112900"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-xgh8-jp6q-p5x8",
+      "summary": "Pillow: ReDoS in XbmImagePlugin: 512-byte file stalls Image.open() for minutes",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112901"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "GHSA-xvh5-g6gv-559v",
+      "summary": "Pillow: Memory disclosure and segfault in libtiff encoder via crafted TIFF tags",
+      "fix_versions": [
+        "13.0.0"
+      ],
+      "link": "https://github.com/python-pillow/Pillow/security/advisories/GHSA-xvh5-g6gv-559v"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "PYSEC-2026-165",
+      "summary": "Pillow has an integer overflow when processing fonts",
+      "fix_versions": [
+        "12.2.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-42308"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "PYSEC-2026-2249",
+      "summary": null,
+      "fix_versions": [
+        "12.1.1"
+      ],
+      "link": "https://access.redhat.com/errata/RHSA-2026:10184"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "PYSEC-2026-2250",
+      "summary": "FITS GZIP decompression bomb in Pillow",
+      "fix_versions": [
+        "12.2.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-40192"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "PYSEC-2026-2251",
+      "summary": null,
+      "fix_versions": [
+        "12.2.0"
+      ],
+      "link": "https://github.com/python-pillow/Pillow/releases/tag/12.2.0"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "PYSEC-2026-2252",
+      "summary": null,
+      "fix_versions": [
+        "12.2.0"
+      ],
+      "link": "https://github.com/python-pillow/Pillow/releases/tag/12.2.0"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "PYSEC-2026-2253",
+      "summary": "Pillow `PcfFontFile._load_bitmaps()`: `Image.frombytes()` called without `_decompression_bomb_check()` — bomb protection bypass via PCF font loading",
+      "fix_versions": [
+        "12.3.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-54059"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "PYSEC-2026-2254",
+      "summary": null,
+      "fix_versions": [
+        "12.3.0"
+      ],
+      "link": "https://github.com/python-pillow/Pillow/blob/main/docs/releasenotes/12.3.0.rst"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "PYSEC-2026-2255",
+      "summary": null,
+      "fix_versions": [
+        "12.3.0"
+      ],
+      "link": "https://github.com/python-pillow/Pillow/blob/main/docs/releasenotes/12.3.0.rst"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "PYSEC-2026-2256",
+      "summary": "Pillow `GdImageFile._open()`: image dimensions accepted without `_decompression_bomb_check()`",
+      "fix_versions": [
+        "12.3.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-55380"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "PYSEC-2026-2257",
+      "summary": "Pillow: WindowsViewer.get_command() OS command injection via unescaped shell path",
+      "fix_versions": [
+        "12.3.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-55798"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "PYSEC-2026-2874",
+      "summary": "Pillow has a PDF Parsing Trailer Infinite Loop (DoS)",
+      "fix_versions": [
+        "12.2.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-42310"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "PYSEC-2026-3451",
+      "summary": "Pillow: Heap out-of-bounds write `Image.paste()` / `Image.crop()` via signed coordinate overflow",
+      "fix_versions": [
+        "12.3.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-59199"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "PYSEC-2026-3453",
+      "summary": "Pillow: Controlled heap out-of-bounds write in Pillow `ImageCmsTransform.apply()` via output mode mismatch",
+      "fix_versions": [
+        "12.3.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-59205"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "PYSEC-2026-3454",
+      "summary": "Pillow: Heap out-of-bounds write in `ImageFilter.RankFilter` via integer overflow in `ImagingExpand`",
+      "fix_versions": [
+        "12.3.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-59197"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "PYSEC-2026-3493",
+      "summary": "Pillow: Out-of-bounds read via attacker-controlled row stride on Pillow's mmap path (McIdas AREA files)",
+      "fix_versions": [
+        "12.3.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-54058"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "PYSEC-2026-3494",
+      "summary": "Pillow TGA RLE encoder can serialize up to ~57 KB of adjacent heap data into generated images",
+      "fix_versions": [
+        "12.3.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-59198"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "PYSEC-2026-3495",
+      "summary": "Pillow: Decompression Bomb DoS via PdfParser.PdfStream.decode()",
+      "fix_versions": [
+        "12.3.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-59200"
+    },
+    {
+      "dependency": {
+        "name": "pillow",
+        "version": "11.3.0"
+      },
+      "display_id": "PYSEC-2026-3496",
+      "summary": "Pillow JPEG2000 tiled decode retains a growing scratch buffer and can be used for denial of service",
+      "fix_versions": [
+        "12.3.0"
+      ],
+      "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-59204"
+    },
+    {
+      "dependency": {
+        "name": "starlette",
+        "version": "0.52.1"
+      },
+      "display_id": "PYSEC-2026-161",
+      "summary": "BadHost: Missing Host header validation poisons request.url.path, bypassing path-based security checks",
+      "fix_versions": [
+        "1.0.1"
+      ],
+      "link": "https://github.com/Kludex/starlette/security/advisories/GHSA-86qp-5c8j-p5mr"
+    },
+    {
+      "dependency": {
+        "name": "starlette",
+        "version": "0.52.1"
+      },
+      "display_id": "PYSEC-2026-2280",
+      "summary": null,
+      "fix_versions": [
+        "1.1.0"
+      ],
+      "link": "https://github.com/Kludex/starlette/releases/tag/1.1.0"
+    },
+    {
+      "dependency": {
+        "name": "starlette",
+        "version": "0.52.1"
+      },
+      "display_id": "PYSEC-2026-2281",
+      "summary": null,
+      "fix_versions": [
+        "1.1.0"
+      ],
+      "link": "https://access.redhat.com/errata/RHSA-2026:30087"
+    },
+    {
+      "dependency": {
+        "name": "starlette",
+        "version": "0.52.1"
+      },
+      "display_id": "PYSEC-2026-248",
+      "summary": null,
+      "fix_versions": [
+        "1.3.0"
+      ],
+      "link": "https://github.com/Kludex/starlette/security/advisories/GHSA-jp82-jpqv-5vv3"
+    },
+    {
+      "dependency": {
+        "name": "starlette",
+        "version": "0.52.1"
+      },
+      "display_id": "PYSEC-2026-249",
+      "summary": "Starlette: request.form() limits silently ignored for application/x-www-form-urlencoded enable DoS",
+      "fix_versions": [
+        "1.3.1"
+      ],
+      "link": "https://github.com/Kludex/starlette/security/advisories/GHSA-82w8-qh3p-5jfq"
+    }
+  ]
+}
