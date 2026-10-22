@@ -288,12 +288,12 @@ Se você não tiver certeza sobre o formato do arquivo de configuração, consul
 
 - **Arquivo de Configuração Padrão**
 
-O arquivo de configuração padrão está localizado em `~/.config/pdf2zh`.  
+O arquivo de configuração padrão está localizado no diretório `config/` ao lado do programa.
 Por favor, não modifique os arquivos de configuração no diretório `default`.  
 É altamente recomendado consultar o conteúdo deste arquivo de configuração e usar **Configuração personalizada** para implementar seu próprio arquivo de configuração.
 
 > [!TIP]
-> - Por padrão, o pdf2zh 2.0 salva automaticamente a configuração atual em `~/.config/pdf2zh/config.v3.toml` cada vez que você clica no botão de traduzir na GUI. Este arquivo de configuração será carregado por padrão na próxima inicialização.
+> - Por padrão, o pdf2zh 2.0 salva automaticamente a configuração atual em `config/config.v3.toml` cada vez que você clica no botão de traduzir na GUI. Este arquivo de configuração será carregado por padrão na próxima inicialização.
 > - Os arquivos de configuração no diretório `default` são gerados automaticamente pelo programa. Você pode copiá-los para modificação, mas por favor não os modifique diretamente.
 > - Os arquivos de configuração podem incluir números de versão como "v2", "v3", etc. Estes são **números de versão do arquivo de configuração**, **não** o número de versão do pdf2zh em si.
 

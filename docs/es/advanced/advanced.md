@@ -288,12 +288,12 @@ Si no está seguro sobre el formato del archivo de configuración, consulte el a
 
 - **Archivo de configuración predeterminado**
 
-El archivo de configuración predeterminado se encuentra en `~/.config/pdf2zh`.
+El archivo de configuración predeterminado se encuentra en `config/`, junto al programa.
 Por favor, no modifiques los archivos de configuración en el directorio `default`.
 Se recomienda encarecidamente consultar el contenido de este archivo de configuración y usar **Configuración personalizada** para implementar tu propio archivo de configuración.
 
 > [!TIP]
-> - Por defecto, pdf2zh 2.0 guarda automáticamente la configuración actual en `~/.config/pdf2zh/config.v3.toml` cada vez que haces clic en el botón de traducir en la GUI. Este archivo de configuración se cargará por defecto en el próximo inicio.
+> - Por defecto, pdf2zh 2.0 guarda automáticamente la configuración actual en `config/config.v3.toml` cada vez que haces clic en el botón de traducir en la GUI. Este archivo de configuración se cargará por defecto en el próximo inicio.
 > - Los archivos de configuración en el directorio `default` son generados automáticamente por el programa. Puedes copiarlos para modificarlos, pero por favor no los modifiques directamente.
 > - Los archivos de configuración pueden incluir números de versión como "v2", "v3", etc. Estos son **números de versión del archivo de configuración**, **no** el número de versión de pdf2zh en sí.
 

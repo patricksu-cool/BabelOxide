@@ -288,12 +288,12 @@ Si vous n'êtes pas sûr du format du fichier de configuration, veuillez vous r�
 
 - **Fichier de configuration par défaut**
 
-Le fichier de configuration par défaut se trouve dans `~/.config/pdf2zh`. 
+Le fichier de configuration par défaut se trouve dans `config/`, à côté du programme.
 Veuillez ne pas modifier les fichiers de configuration dans le répertoire `default`. 
 Il est fortement recommandé de se référer au contenu de ce fichier de configuration et d'utiliser **Configuration personnalisée** pour implémenter votre propre fichier de configuration.
 
 > [!TIP]
-> - Par défaut, pdf2zh 2.0 enregistre automatiquement la configuration actuelle dans `~/.config/pdf2zh/config.v3.toml` chaque fois que vous cliquez sur le bouton de traduction dans l'interface graphique. Ce fichier de configuration sera chargé par défaut au prochain démarrage.
+> - Par défaut, pdf2zh 2.0 enregistre automatiquement la configuration actuelle dans `config/config.v3.toml` chaque fois que vous cliquez sur le bouton de traduction dans l'interface graphique. Ce fichier de configuration sera chargé par défaut au prochain démarrage.
 > - Les fichiers de configuration dans le répertoire `default` sont générés automatiquement par le programme. Vous pouvez les copier pour les modifier, mais veuillez ne pas les modifier directement.
 > - Les fichiers de configuration peuvent inclure des numéros de version tels que "v2", "v3", etc. Ce sont des **numéros de version du fichier de configuration**, **et non** le numéro de version de pdf2zh lui-même.
 

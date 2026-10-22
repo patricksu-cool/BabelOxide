@@ -288,12 +288,12 @@ Wenn Sie sich über das Format der Konfigurationsdatei unsicher sind, lesen Sie 
 
 - **Standardkonfigurationsdatei**
 
-Die Standardkonfigurationsdatei befindet sich unter `~/.config/pdf2zh`.  
+Die Standardkonfigurationsdatei befindet sich im Verzeichnis `config/` neben dem Programm.
 Bitte ändern Sie die Konfigurationsdateien im `default`-Verzeichnis nicht.  
 Es wird dringend empfohlen, auf den Inhalt dieser Konfigurationsdatei zu verweisen und **Benutzerdefinierte Konfiguration** zu verwenden, um Ihre eigene Konfigurationsdatei zu implementieren.
 
 > [!TIP]
-> - Standardmäßig speichert pdf2zh 2.0 die aktuelle Konfiguration bei jedem Klick auf die Übersetzen-Schaltfläche in der GUI automatisch in `~/.config/pdf2zh/config.v3.toml`. Diese Konfigurationsdatei wird beim nächsten Start standardmäßig geladen.
+> - Standardmäßig speichert pdf2zh 2.0 die aktuelle Konfiguration bei jedem Klick auf die Übersetzen-Schaltfläche in der GUI automatisch in `config/config.v3.toml`. Diese Konfigurationsdatei wird beim nächsten Start standardmäßig geladen.
 > - Die Konfigurationsdateien im `default`-Verzeichnis werden automatisch vom Programm generiert. Sie können sie zur Modifikation kopieren, bitte modifizieren Sie sie jedoch nicht direkt.
 > - Konfigurationsdateien können Versionsnummern wie "v2", "v3" usw. enthalten. Dies sind **Konfigurationsdatei-Versionsnummern**, **nicht** die Versionsnummer von pdf2zh selbst.
 
