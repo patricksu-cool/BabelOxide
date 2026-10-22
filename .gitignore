@@ -189,3 +189,6 @@ secrets.json
 .ruff_cache/
 .serena/
 .codebase-memory/
+.uv-cache/
+.baseline-home/
+.test-output/
