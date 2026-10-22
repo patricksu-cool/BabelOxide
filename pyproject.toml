@@ -29,11 +29,14 @@ dependencies = [
     "azure-ai-translation-text<=1.0.1",
     # 5.36 has a bug, webui starts with a white screen
     "gradio<5.36",
-    "tencentcloud-sdk-python-tmt",
+    # Newer TMT SDK releases removed TextTranslateRequest/TextTranslateResponse.
+    "tencentcloud-sdk-python-tmt==3.1.121",
     "gradio-pdf>=0.0.21",
     "peewee>=3.17.8",
     "fontTools",
     "babeldoc>=0.6.2,<0.7.0",
+    # BabelDOC 0.6.2 imports BitStream, which bitstring 5 removed.
+    "bitstring==4.4.0",
     "rich",
     "pydantic-settings>=2.8.1",
     "pydantic>=2.10.6",

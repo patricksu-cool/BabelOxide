@@ -6,7 +6,6 @@ including behavior that a future change might improve.
 
 from __future__ import annotations
 
-import ast
 import asyncio
 import importlib
 import subprocess
@@ -211,40 +210,6 @@ def _state(exception):
 def test_all_service_retry_policies(
     module, class_name, method_name, depth, max_attempts, waits, family
 ):
-    if module == "tencentmechinetranslation":
-        # The currently resolved Tencent SDK lacks TextTranslateRequest, so the
-        # module cannot import. Freeze its source policy and expose the failure.
-        source = (
-            Path(__file__).parents[1]
-            / "pdf2zh_next"
-            / "translator"
-            / "translator_impl"
-            / f"{module}.py"
-        )
-        tree = ast.parse(source.read_text(encoding="utf-8"))
-        cls = next(
-            node
-            for node in tree.body
-            if isinstance(node, ast.ClassDef) and node.name == class_name
-        )
-        method = next(
-            node
-            for node in cls.body
-            if isinstance(node, ast.FunctionDef) and node.name == method_name
-        )
-        decorator = next(
-            node
-            for node in method.decorator_list
-            if isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Name)
-            and node.func.id == "retry"
-        )
-        options = {kw.arg: ast.unparse(kw.value) for kw in decorator.keywords}
-        assert options["retry"] == "retry_if_exception(Exception)"
-        assert options["stop"] == "stop_after_attempt(5)"
-        assert options["wait"] == "wait_exponential(multiplier=1, min=1, max=15)"
-        return
-
     policy = _wrapper(module, class_name, method_name, depth).retry
     assert not policy.stop(SimpleNamespace(attempt_number=max_attempts - 1))
     assert policy.stop(SimpleNamespace(attempt_number=max_attempts))
@@ -261,13 +226,18 @@ def test_all_service_retry_policies(
         assert not policy.retry(_state(ValueError("not selected")))
 
 
-@pytest.mark.xfail(
-    strict=True, reason="Resolved Tencent SDK lacks TextTranslateRequest"
-)
-def test_tencent_translator_can_import_with_locked_dependencies():
-    importlib.import_module(
+def test_tencent_translator_works_with_compatible_sdk_without_api_call():
+    module = importlib.import_module(
         "pdf2zh_next.translator.translator_impl.tencentmechinetranslation"
     )
+    translator = object.__new__(module.TencentMechineTranslationTranslator)
+    translator.req = SimpleNamespace(SourceText=None)
+    translator.client = SimpleNamespace(
+        TextTranslate=Mock(return_value=SimpleNamespace(TargetText="translated"))
+    )
+    assert translator.do_translate("source") == "translated"
+    assert translator.req.SourceText == "source"
+    assert translator.client.TextTranslate.call_count == 1
 
 
 def _google(response_or_error):
