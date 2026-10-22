@@ -23,6 +23,8 @@ from pdf2zh_next.config.model import SettingsModel
 from pdf2zh_next.config.translate_engine_model import TRANSLATION_ENGINE_METADATA
 from pdf2zh_next.const import DEFAULT_CONFIG_DIR
 from pdf2zh_next.const import DEFAULT_CONFIG_FILE
+from pdf2zh_next.const import LEGACY_CONFIG_FILE
+from pdf2zh_next.const import VERSION_DEFAULT_CONFIG_DIR
 from pdf2zh_next.const import VERSION_DEFAULT_CONFIG_FILE
 from pdf2zh_next.const import WRITE_TEMP_CONFIG_FILE
 
@@ -153,6 +155,28 @@ class ConfigManager:
     def _ensure_config_dir(self) -> None:
         """Ensure the configuration directory exists"""
         DEFAULT_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        VERSION_DEFAULT_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+
+    def _migrate_legacy_user_config(self) -> None:
+        """Copy the legacy TOML once without overwriting local settings."""
+        if DEFAULT_CONFIG_FILE.exists() or not LEGACY_CONFIG_FILE.is_file():
+            return
+
+        created = False
+        try:
+            original_bytes = LEGACY_CONFIG_FILE.read_bytes()
+            with DEFAULT_CONFIG_FILE.open("xb") as destination:
+                created = True
+                destination.write(original_bytes)
+        except FileExistsError:
+            return
+        except OSError as exc:
+            if created:
+                DEFAULT_CONFIG_FILE.unlink(missing_ok=True)
+            log.warning("Could not migrate legacy configuration %s: %s", LEGACY_CONFIG_FILE, exc)
+            return
+
+        log.info("Copied legacy configuration to %s", DEFAULT_CONFIG_FILE)
 
     def _read_toml_file(self, file_path: Path) -> dict:
         """Read and parse a TOML file
@@ -568,6 +592,8 @@ class ConfigManager:
         # Parse environment variables (middle priority)
         env_vars = self.parse_env_vars()
         # Read default configuration file (lower priority)
+        self._ensure_config_dir()
+        self._migrate_legacy_user_config()
         default_config_file = self._read_toml_file(self._default_config_file_path)
 
         if not self.test_config(default_config_file):
@@ -613,6 +639,7 @@ class ConfigManager:
         return cli_settings
 
     def write_user_default_config_file(self, settings: CLIEnvSettingsModel):
+        self._ensure_config_dir()
         # clear input file
         settings.basic.input_files = set()
 

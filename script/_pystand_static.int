@@ -1,10 +1,15 @@
 import sys
-import pdf2zh_next.main
 import os
-import babeldoc.assets.assets
 import pathlib
 import asyncio
 import multiprocessing
+
+# PyStand loads this file from the EXE directory. Set the path before importing
+# pdf2zh_next so config constants also resolve correctly in child processes.
+os.environ["PDF2ZH_APP_DIR"] = str(pathlib.Path(__file__).resolve().parent)
+
+import pdf2zh_next.main
+import babeldoc.assets.assets
 
 WAIT_FOR_INPUT = False
 if len(sys.argv) == 1:

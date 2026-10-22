@@ -1,0 +1,74 @@
+{
+  "High_speed_buffer_latch_ISCAS03.debug.no_watermark.zh.mono.pdf": {
+    "file": "High_speed_buffer_latch_ISCAS03.debug.no_watermark.zh.mono.pdf",
+    "bytes": 4118696,
+    "sha256": "018b33502a47bc401eb0fb025757e1c82a5023c6ef367fa02351b44ec018fb6a",
+    "page_count": 4,
+    "pages": [
+      {
+        "text_characters": 133799,
+        "words": 1213,
+        "text_sha256": "b797079b8ffa19fe65555a2422cdc5db7e6fc0a896a0f42f34f710e4012aefd7",
+        "formula_symbols": 10,
+        "embedded_images": 0
+      },
+      {
+        "text_characters": 126520,
+        "words": 1382,
+        "text_sha256": "4a5f06b038b964b7866092e019239ee6f552173d56b42399fa1405d8cb076dc1",
+        "formula_symbols": 26,
+        "embedded_images": 0
+      },
+      {
+        "text_characters": 201105,
+        "words": 1309,
+        "text_sha256": "1df0089280fac9f9cbf12ba339102bad6ffcbb0066e84650bba8fd9cdc2b6e48",
+        "formula_symbols": 11,
+        "embedded_images": 0
+      },
+      {
+        "text_characters": 43801,
+        "words": 873,
+        "text_sha256": "336745c6a694d28872415c9331b2958c4a462a8208ccc95557f0fe1dc0611a8f",
+        "formula_symbols": 1,
+        "embedded_images": 23998
+      }
+    ]
+  },
+  "High_speed_buffer_latch_ISCAS03.debug.no_watermark.zh.dual.pdf": {
+    "file": "High_speed_buffer_latch_ISCAS03.debug.no_watermark.zh.dual.pdf",
+    "bytes": 8119946,
+    "sha256": "e9328d787139be44b4321f10abfe718d7cfdd0329209adb17d4fb764889a20f3",
+    "page_count": 4,
+    "pages": [
+      {
+        "text_characters": 557114,
+        "words": 2449,
+        "text_sha256": "d774005494c809ec472a7e5dba234b9c5ffe622827542e76b3f979e5cbb39922",
+        "formula_symbols": 22,
+        "embedded_images": 0
+      },
+      {
+        "text_characters": 494677,
+        "words": 2783,
+        "text_sha256": "a00e54ec2a712e7e489123e2a759816be3bba021a929e57af4ed807b598170af",
+        "formula_symbols": 52,
+        "embedded_images": 0
+      },
+      {
+        "text_characters": 778113,
+        "words": 2631,
+        "text_sha256": "c2c2cd6a455ce496ee02bcf4a262b05e48d394a959692b3d84d978217c6885bd",
+        "formula_symbols": 22,
+        "embedded_images": 0
+      },
+      {
+        "text_characters": 229403,
+        "words": 1750,
+        "text_sha256": "01e790c84bbce532300ff6b101eaa03fe5e847bb4a09542483dbbc92fec575bf",
+        "formula_symbols": 2,
+        "embedded_images": 47996
+      }
+    ]
+  }
+}
