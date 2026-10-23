@@ -10,6 +10,19 @@ os.environ["PDF2ZH_APP_DIR"] = str(pathlib.Path(__file__).resolve().parent)
 
 import pdf2zh_next.main
 import babeldoc.assets.assets
+from pdf2zh_next.security_logging import is_sensitive_field
+from pdf2zh_next.security_logging import redact_text
+from pdf2zh_next.security_logging import register_secret_values
+
+# Register command-line credentials before startup so even an early launcher
+# exception cannot echo an API key in the unhandled traceback.
+for index, argument in enumerate(sys.argv[1:], start=1):
+    option, has_value, inline_value = argument.partition("=")
+    if is_sensitive_field(option.lstrip("-")):
+        value = inline_value if has_value else (
+            sys.argv[index + 1] if index + 1 < len(sys.argv) else ""
+        )
+        register_secret_values({option: value})
 
 WAIT_FOR_INPUT = False
 if len(sys.argv) == 1:
@@ -30,9 +43,12 @@ try:
     if WAIT_FOR_INPUT:
         input("Press Enter to continue...")
     sys.exit(code)
-except Exception:
+except Exception as exc:
     import traceback
-    traceback.print_exc()
+    print(
+        redact_text("".join(traceback.format_exception(exc))),
+        file=sys.stderr,
+    )
     if WAIT_FOR_INPUT:
         input("Press Enter to continue...")
     sys.exit(1)
