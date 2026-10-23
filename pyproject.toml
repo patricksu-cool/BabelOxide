@@ -27,11 +27,9 @@ dependencies = [
     "deepl",
     "openai>=1.0.0",
     "azure-ai-translation-text<=1.0.1",
-    # 5.36 has a bug, webui starts with a white screen
-    "gradio<5.36",
+    "gradio==6.30.0",
     # Newer TMT SDK releases removed TextTranslateRequest/TextTranslateResponse.
     "tencentcloud-sdk-python-tmt==3.1.121",
-    "gradio-pdf>=0.0.21",
     "peewee>=3.17.8",
     "fontTools",
     "babeldoc==0.6.3",
@@ -42,7 +40,10 @@ dependencies = [
     "pydantic>=2.10.6",
     "httpx>=0.28.1",
     "sse-starlette>=2.3.3",
-    "fastapi>=0.115.12",
+    "fastapi>=0.161.1,<1",
+    # Highest compatible Pillow line; Gradio 6.30 requires Pillow <13.
+    "pillow>=12.3.0,<13",
+    "starlette>=1.6.0,<2",
     "uvicorn>=0.34.2",
     "legacy-cgi; python_version >= '3.13'",
     "chardet>=5.2.0",

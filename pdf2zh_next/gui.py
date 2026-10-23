@@ -16,7 +16,6 @@ import requests
 import yaml
 from babeldoc import __version__ as babeldoc_version
 from gradio_i18n import Translate
-from gradio_pdf import PDF
 
 from pdf2zh_next import __version__
 from pdf2zh_next.config import ConfigManager
@@ -58,7 +57,7 @@ from pdf2zh_next.ui.rate_options import (
     _validate_rate_limit_inputs as _validate_rate_limit_inputs,
 )
 from pdf2zh_next.ui.resources import custom_css
-from pdf2zh_next.ui.resources import pdf_preview_js
+from pdf2zh_next.ui.preview import create_pdf_preview
 from pdf2zh_next.ui.resources import translation_file_path as translation_file_path
 from pdf2zh_next.ui.session import new_session_state
 from pdf2zh_next.ui.settings import SaveMode
@@ -853,10 +852,6 @@ update_current_languages(settings.gui_settings.ui_lang)
 # The following code creates the GUI
 with gr.Blocks(
     title="PDFMathTranslate - PDF Translation with preserved formats",
-    theme=gr.themes.Default(
-        primary_hue=custom_blue, spacing_size="md", radius_size="lg"
-    ),
-    css=custom_css,
 ) as demo:
     lang_selector = gr.Dropdown(
         choices=LANGUAGES,
@@ -998,12 +993,7 @@ with gr.Blocks(
                             )
                             # 预览区域上方已经有“## Preview”标题，这里关闭组件自带 label，
                             # 避免 Gradio 的标签卡片在布局调整后漂到左侧中间
-                            preview = PDF(
-                                label=None,
-                                show_label=False,
-                                visible=True,
-                                elem_classes=["pdf-preview-fixed"],
-                            )
+                            preview, preview_image = create_pdf_preview()
 
                 # 其余高级配置都移动到设置页
                 with gr.Group(
@@ -2247,7 +2237,7 @@ with gr.Blocks(
                 output_file_zip_glossary,  # File
                 uploaded_files_view,  # Uploaded files view
             ],
-            show_progress_on=[preview],
+            show_progress_on=[preview_image],
         )
 
         # ADDED: Handle result selector change
@@ -2649,7 +2639,6 @@ with gr.Blocks(
 
         # JavaScript: 动态调整 PDF canvas 缩放，确保完全适配容器高度
         # 使用兼容性更好的语法，避免 ES6 特性导致解析错误
-        demo.load(None, None, None, js=pdf_preview_js)
 
 
 def parse_user_passwd(file_path: str, welcome_page: str) -> tuple[list, str]:
@@ -2699,12 +2688,17 @@ def setup_gui(
     if server_name not in {"127.0.0.1", "localhost", "::1"}:
         logger.warning(
             "Security warning: GUI listening on %s may be accessible to other "
-            "devices. Use authentication and a trusted network.", server_name
+            "devices. Use authentication and a trusted network.",
+            server_name,
         )
     if share:
         logger.warning("Security warning: public GUI sharing was explicitly enabled")
     # Never retry with a wider address or a public tunnel after launch failure.
     demo.launch(
+        theme=gr.themes.Default(
+            primary_hue=custom_blue, spacing_size="md", radius_size="lg"
+        ),
+        css=custom_css,
         server_name=server_name,
         debug=True,
         inbrowser=inbrowser,

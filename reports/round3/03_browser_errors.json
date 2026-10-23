@@ -1,0 +1,17 @@
+{
+  "native": [],
+  "oldComponent": [
+    {
+      "level": "error",
+      "message": "TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:17868/gradio_api/custom_component/eb0d23a3a9b8017748e76dd516694dec95d4bd4980dbae255603030599d7f5fa/client/component/svelte_runtime_entry.js",
+      "timestamp": "2026-10-23T13:10:13.754Z",
+      "url": "http://127.0.0.1:17868/"
+    },
+    {
+      "level": "error",
+      "message": "TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:17868/gradio_api/custom_component/eb0d23a3a9b8017748e76dd516694dec95d4bd4980dbae255603030599d7f5fa/client/component/index.js",
+      "timestamp": "2026-10-23T13:10:13.843Z",
+      "url": "http://127.0.0.1:17868/"
+    }
+  ]
+}

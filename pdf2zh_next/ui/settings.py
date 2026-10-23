@@ -249,7 +249,7 @@ def build_translate_settings(
                 type_hint = field.annotation
                 type_args = typing.get_args(type_hint)
 
-                if value is None:
+                if value is None or (value == "" and _type_hint_allows_none(type_hint)):
                     if _type_hint_allows_none(type_hint):
                         setattr(term_detail_settings, field_name, None)
                     continue
@@ -341,6 +341,8 @@ def build_translate_settings(
                         continue
                 value = ui_inputs.get(field_name)
                 type_hint = detail_setting.model_fields[field_name].annotation
+                if value == "" and _type_hint_allows_none(type_hint):
+                    value = None
                 original_type = typing.get_origin(type_hint)
                 type_args = typing.get_args(type_hint)
                 if type_hint is str or str in type_args:

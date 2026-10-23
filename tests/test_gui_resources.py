@@ -1,5 +1,3 @@
-import shutil
-import subprocess
 import sys
 
 import pytest
@@ -22,39 +20,16 @@ def test_gui_resources_load_from_another_working_directory(gui, monkeypatch, tmp
     assert gui.logo_path.is_file()
 
 
-def test_preview_script_is_bound_once_without_python_callback(gui):
-    dependencies = [
-        item
-        for item in gui.demo.config["dependencies"]
-        if item.get("js") and "adjustPDFCanvasScale" in item["js"]
+def test_preview_uses_only_native_components(gui):
+    components = gui.demo.config["components"]
+    assert not any(item["type"] == "pdf" for item in components)
+    assert any(item["type"] == "image" for item in components)
+
+
+def test_native_preview_events_are_private(gui):
+    callbacks = {"first_page", "render_page", "previous_page", "next_page"}
+    bound = [
+        fn for fn in gui.demo.fns.values() if fn.fn and fn.fn.__name__ in callbacks
     ]
-    assert len(dependencies) == 1
-    assert dependencies[0]["inputs"] == []
-    assert dependencies[0]["outputs"] == []
-
-
-def test_preview_script_is_a_callable_javascript_function(gui, tmp_path):
-    node = shutil.which("node")
-    if node is None:
-        pytest.skip("Node.js is required for the optional JavaScript syntax check")
-    script = gui.translation_file_path.parent / "preview.js"
-    runner = (
-        "const fs = require('node:fs');"
-        "const source = fs.readFileSync(process.argv[1], 'utf8');"
-        "const callback = new Function('return (' + source + ')')();"
-        "if (typeof callback !== 'function') throw new Error('Expected a callback function');"
-        "const originalFetch = () => {};"
-        "global.window = {fetch: originalFetch, addEventListener: () => {}};"
-        "global.document = {readyState: 'complete', querySelectorAll: () => [], body: {}};"
-        "global.MutationObserver = class {observe() {}};"
-        "callback();"
-        "if (window.fetch !== originalFetch) throw new Error('Preview must preserve the component worker fetch');"
-    )
-    result = subprocess.run(
-        [node, "-e", runner, str(script)],
-        cwd=tmp_path,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    assert result.returncode == 0, result.stderr
+    assert len(bound) == 4
+    assert all(fn.api_visibility == "private" for fn in bound)
