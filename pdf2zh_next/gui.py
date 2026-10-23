@@ -828,7 +828,6 @@ config_fake_pdf_path = DEFAULT_CONFIG_DIR / "config.fake.pdf"
 pdf_preview_allowed_paths = [
     logo_path,
     Path("pdf2zh_files").resolve(),  # translation outputs
-    Path(tempfile.gettempdir()).resolve(),  # uploaded temp files
 ]
 
 if not config_fake_pdf_path.exists():
@@ -2690,99 +2689,32 @@ def setup_gui(
     welcome_page: str | None = None,
     server_port=7860,
     inbrowser: bool = True,
+    server_name: str = "127.0.0.1",
 ) -> None:
-    """
-    This function sets up the GUI for the application.
-
-    Inputs:
-        - share: Whether to share the GUI
-        - auth_file: The authentication file
-        - server_port: The port to run the server on
-
-    Returns:
-        - None
-    """
-
+    """Launch locally by default; network access and sharing require opt-in."""
     install_redacting_filters()
-    user_list = None
-    html = None
-
     user_list, html = parse_user_passwd(auth_file, welcome_page)
-
-    if not auth_file or not user_list:
-        try:
-            demo.launch(
-                server_name="0.0.0.0",
-                debug=True,
-                inbrowser=inbrowser,
-                share=share,
-                server_port=server_port,
-                allowed_paths=[str(p) for p in pdf_preview_allowed_paths],
-            )
-        except Exception:
-            print(
-                "Error launching GUI using 0.0.0.0.\nThis may be caused by global mode of proxy software."
-            )
-            try:
-                demo.launch(
-                    server_name="127.0.0.1",
-                    debug=True,
-                    inbrowser=inbrowser,
-                    share=share,
-                    server_port=server_port,
-                    allowed_paths=[str(p) for p in pdf_preview_allowed_paths],
-                )
-            except Exception:
-                print(
-                    "Error launching GUI using 127.0.0.1.\nThis may be caused by global mode of proxy software."
-                )
-                demo.launch(
-                    debug=True,
-                    inbrowser=inbrowser,
-                    share=True,
-                    server_port=server_port,
-                    allowed_paths=[str(p) for p in pdf_preview_allowed_paths],
-                )
-    else:
-        try:
-            demo.launch(
-                server_name="0.0.0.0",
-                debug=True,
-                inbrowser=inbrowser,
-                share=share,
-                auth=user_list,
-                auth_message=html,
-                server_port=server_port,
-                allowed_paths=[str(p) for p in pdf_preview_allowed_paths],
-            )
-        except Exception:
-            print(
-                "Error launching GUI using 0.0.0.0.\nThis may be caused by global mode of proxy software."
-            )
-            try:
-                demo.launch(
-                    server_name="127.0.0.1",
-                    debug=True,
-                    inbrowser=inbrowser,
-                    share=share,
-                    auth=user_list,
-                    auth_message=html,
-                    server_port=server_port,
-                    allowed_paths=[str(p) for p in pdf_preview_allowed_paths],
-                )
-            except Exception:
-                print(
-                    "Error launching GUI using 127.0.0.1.\nThis may be caused by global mode of proxy software."
-                )
-                demo.launch(
-                    debug=True,
-                    inbrowser=inbrowser,
-                    share=True,
-                    auth=user_list,
-                    auth_message=html,
-                    server_port=server_port,
-                    allowed_paths=[str(p) for p in pdf_preview_allowed_paths],
-                )
+    if auth_file and not user_list:
+        raise ValueError("The authentication file contains no valid users")
+    if server_name not in {"127.0.0.1", "localhost", "::1"}:
+        logger.warning(
+            "Security warning: GUI listening on %s may be accessible to other "
+            "devices. Use authentication and a trusted network.", server_name
+        )
+    if share:
+        logger.warning("Security warning: public GUI sharing was explicitly enabled")
+    # Never retry with a wider address or a public tunnel after launch failure.
+    demo.launch(
+        server_name=server_name,
+        debug=True,
+        inbrowser=inbrowser,
+        share=share,
+        auth=user_list or None,
+        auth_message=html,
+        server_port=server_port,
+        allowed_paths=[str(p) for p in pdf_preview_allowed_paths],
+        blocked_paths=[str(DEFAULT_CONFIG_DIR)],
+    )
 
 
 # For auto-reloading while developing

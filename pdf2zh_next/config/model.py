@@ -76,6 +76,9 @@ class GUISettings(BaseModel):
         default=False, description="Disable automatic saving of configuration"
     )
     server_port: int = Field(default=7860, description="WebUI port")
+    server_name: str = Field(
+        default="127.0.0.1", description="WebUI listen address; other addresses expose the GUI"
+    )
     ui_lang: str | None = Field(default="en", description="UI language")
 
 

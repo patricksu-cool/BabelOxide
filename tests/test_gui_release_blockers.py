@@ -1,5 +1,4 @@
 import sys
-import tempfile
 from pathlib import Path
 
 
@@ -40,7 +39,6 @@ def test_pdf_preview_allowed_paths_keep_accepted_preview_locations(monkeypatch):
     expected_paths = {
         gui.logo_path.resolve(),
         Path("pdf2zh_files").resolve(),
-        Path(tempfile.gettempdir()).resolve(),
     }
 
     assert set(allowed_paths) == expected_paths

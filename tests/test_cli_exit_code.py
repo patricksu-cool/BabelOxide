@@ -94,7 +94,8 @@ def test_gui_branch_keeps_success_status(monkeypatch):
     settings = SimpleNamespace(
         basic=SimpleNamespace(debug=False, version=False, gui=True),
         gui_settings=SimpleNamespace(
-            auth_file=None, welcome_page=None, server_port=7860
+            auth_file=None, welcome_page=None, server_port=7860,
+            share=False, server_name="127.0.0.1"
         ),
     )
     monkeypatch.setattr(

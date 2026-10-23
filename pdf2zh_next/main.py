@@ -95,9 +95,11 @@ async def main() -> int:
         from pdf2zh_next.gui import setup_gui
 
         setup_gui(
+            share=settings.gui_settings.share,
             auth_file=settings.gui_settings.auth_file,
             welcome_page=settings.gui_settings.welcome_page,
             server_port=settings.gui_settings.server_port,
+            server_name=settings.gui_settings.server_name,
         )
         return 0
 
