@@ -48,7 +48,9 @@ def build_deepseek_settings(
     return settings
 
 
-def build_translator(settings: SettingsModel) -> tuple[OpenAITranslator, FakeOpenAIClient]:
+def build_translator(
+    settings: SettingsModel,
+) -> tuple[OpenAITranslator, FakeOpenAIClient]:
     fake_client = FakeOpenAIClient()
     with patch(
         "pdf2zh_next.translator.translator_impl.openai.openai.OpenAI",

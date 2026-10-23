@@ -91,7 +91,11 @@ class ClaudeCodeTranslator(BaseTranslator):
             logger.debug("Claude Code response characters: %d", len(stdout))
 
             if process.returncode != 0:
-                logger.error("Claude Code failed (exit %s; stderr characters: %d)", process.returncode, len(stderr))
+                logger.error(
+                    "Claude Code failed (exit %s; stderr characters: %d)",
+                    process.returncode,
+                    len(stderr),
+                )
                 raise subprocess.CalledProcessError(process.returncode, cmd, stderr)
 
             translation = self._parse_output(stdout)

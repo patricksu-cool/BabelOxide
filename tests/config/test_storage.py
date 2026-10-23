@@ -145,7 +145,9 @@ def test_windows_transient_replace_denial_is_recovered(monkeypatch, tmp_path):
     assert list(tmp_path.iterdir()) == [target]
 
 
-def test_windows_permanent_denial_is_bounded_and_preserves_old_file(monkeypatch, tmp_path):
+def test_windows_permanent_denial_is_bounded_and_preserves_old_file(
+    monkeypatch, tmp_path
+):
     target = tmp_path / "config.toml"
     target.write_bytes(b"value = 1\n")
     denied = PermissionError("synthetic permanent denial")

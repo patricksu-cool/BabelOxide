@@ -122,7 +122,9 @@ class CLITranslatorTranslator(BaseTranslator):
         cmd = [self.command] + self.args
 
         try:
-            logger.debug("Executing configured CLI translator with %d arguments", len(self.args))
+            logger.debug(
+                "Executing configured CLI translator with %d arguments", len(self.args)
+            )
 
             # Pass text via stdin
             process = subprocess.Popen(

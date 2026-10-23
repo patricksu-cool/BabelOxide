@@ -4,6 +4,9 @@ import sys
 
 import pytest
 
+# Input to a mocked launcher; these tests never bind an external interface.
+ANY_INTERFACE = "0.0.0.0"  # noqa: S104
+
 
 @pytest.fixture
 def gui(monkeypatch):
@@ -15,7 +18,7 @@ def gui(monkeypatch):
 
 def test_default_binding_overrides_gradio_environment(gui, monkeypatch):
     calls = []
-    monkeypatch.setenv("GRADIO_SERVER_NAME", "0.0.0.0")
+    monkeypatch.setenv("GRADIO_SERVER_NAME", ANY_INTERFACE)
     monkeypatch.setenv("GRADIO_SHARE", "true")
     monkeypatch.setattr(gui.demo, "launch", lambda **kw: calls.append(kw))
     gui.setup_gui(inbrowser=False)
@@ -27,8 +30,8 @@ def test_default_binding_overrides_gradio_environment(gui, monkeypatch):
 def test_explicit_network_binding_warns(gui, monkeypatch, caplog):
     calls = []
     monkeypatch.setattr(gui.demo, "launch", lambda **kw: calls.append(kw))
-    gui.setup_gui(server_name="0.0.0.0")
-    assert calls[0]["server_name"] == "0.0.0.0"
+    gui.setup_gui(server_name=ANY_INTERFACE)
+    assert calls[0]["server_name"] == ANY_INTERFACE
     assert "Security warning" in caplog.text
 
 
@@ -56,5 +59,5 @@ def test_cli_accepts_explicit_server_name():
     from pdf2zh_next.config.main import build_args_parser
 
     parser, _ = build_args_parser()
-    args = parser.parse_args(["--gui", "--server-name", "0.0.0.0"])
-    assert args.server_name == "0.0.0.0"
+    args = parser.parse_args(["--gui", "--server-name", ANY_INTERFACE])
+    assert args.server_name == ANY_INTERFACE

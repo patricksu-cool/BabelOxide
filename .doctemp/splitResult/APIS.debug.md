@@ -26,23 +26,23 @@ For example, if you want translate a document from English to Chinese using Goog
 from pdf2zh_next import translate, translate_stream
 
 params = {
-    'lang_in': 'en',
-    'lang_out': 'zh',
-    'service': 'google',
-    'thread': 4,
+    "lang_in": "en",
+    "lang_out": "zh",
+    "service": "google",
+    "thread": 4,
 }
 ```
 <!-- CHUNK ID: chunk_2DB09B71  CHUNK TYPE: paragraph START_LINE:29 -->
 Translate with files:
 <!-- CHUNK ID: chunk_1F8B4E30  CHUNK TYPE: code_block START_LINE:30 -->
 ```python
-(file_mono, file_dual) = translate(files=['example.pdf'], **params)[0]
+(file_mono, file_dual) = translate(files=["example.pdf"], **params)[0]
 ```
 <!-- CHUNK ID: chunk_8C07F04C  CHUNK TYPE: paragraph START_LINE:33 -->
 Translate with stream:
 <!-- CHUNK ID: chunk_258306A3  CHUNK TYPE: code_block START_LINE:34 -->
 ```python
-with open('example.pdf', 'rb') as f:
+with open("example.pdf", "rb") as f:
     (stream_mono, stream_dual) = translate_stream(stream=f.read(), **params)
 ```
 

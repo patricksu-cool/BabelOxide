@@ -20,19 +20,19 @@ Por exemplo, se você deseja traduzir um documento do inglês para o chinês usa
 from pdf2zh_next import translate, translate_stream
 
 params = {
-    'lang_in': 'en',
-    'lang_out': 'zh',
-    'service': 'google',
-    'thread': 4,
+    "lang_in": "en",
+    "lang_out": "zh",
+    "service": "google",
+    "thread": 4,
 }
 ```
 Traduzir com arquivos:
 ```python
-(file_mono, file_dual) = translate(files=['example.pdf'], **params)[0]
+(file_mono, file_dual) = translate(files=["example.pdf"], **params)[0]
 ```
 Traduzir com fluxo:
 ```python
-with open('example.pdf', 'rb') as f:
+with open("example.pdf", "rb") as f:
     (stream_mono, stream_dual) = translate_stream(stream=f.read(), **params)
 ```
 

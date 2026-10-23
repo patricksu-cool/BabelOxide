@@ -67,18 +67,25 @@ def test_positional_controls_keep_main_and_term_field_order(gui):
 def test_browser_blank_optional_service_fields_are_unset(gui, tmp_path):
     (tmp_path / "input.pdf").write_bytes(b"%PDF-1.4\n")
     function = next(
-        fn for fn in gui.demo.fns.values()
+        fn
+        for fn in gui.demo.fns.values()
         if fn.fn and fn.fn.__name__ == "translate_files"
     )
     inputs = gui.build_ui_inputs(*(control.value for control in function.inputs[3:]))
     inputs.update(
-        service="OpenAI", openai_model="offline-identity",
-        openai_api_key="synthetic-test-key", openai_timeout="",
-        openai_base_url="", openai_temperature="",
+        service="OpenAI",
+        openai_model="offline-identity",
+        openai_api_key="synthetic-test-key",
+        openai_timeout="",
+        openai_base_url="",
+        openai_temperature="",
     )
     result = gui._build_translate_settings(
-        CLIEnvSettingsModel(), tmp_path / "input.pdf", tmp_path,
-        gui.SaveMode.never, inputs,
+        CLIEnvSettingsModel(),
+        tmp_path / "input.pdf",
+        tmp_path,
+        gui.SaveMode.never,
+        inputs,
     )
     assert result.translate_engine_settings.openai_timeout is None
     assert result.translate_engine_settings.openai_base_url is None

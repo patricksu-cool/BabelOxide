@@ -1,7 +1,6 @@
 import gradio as gr
 import pymupdf
 import pytest
-
 from pdf2zh_next.ui.preview import first_page
 from pdf2zh_next.ui.preview import next_page
 from pdf2zh_next.ui.preview import previous_page

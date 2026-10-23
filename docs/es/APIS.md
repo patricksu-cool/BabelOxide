@@ -20,19 +20,19 @@ Por ejemplo, si deseas traducir un documento del inglés al chino usando Google 
 from pdf2zh_next import translate, translate_stream
 
 params = {
-    'lang_in': 'en',
-    'lang_out': 'zh',
-    'service': 'google',
-    'thread': 4,
+    "lang_in": "en",
+    "lang_out": "zh",
+    "service": "google",
+    "thread": 4,
 }
 ```
 Traducir con archivos:
 ```python
-(file_mono, file_dual) = translate(files=['example.pdf'], **params)[0]
+(file_mono, file_dual) = translate(files=["example.pdf"], **params)[0]
 ```
 Traducir con transmisión:
 ```python
-with open('example.pdf', 'rb') as f:
+with open("example.pdf", "rb") as f:
     (stream_mono, stream_dual) = translate_stream(stream=f.read(), **params)
 ```
 

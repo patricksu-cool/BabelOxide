@@ -20,19 +20,19 @@
 from pdf2zh_next import translate, translate_stream
 
 params = {
-    'lang_in': 'en',
-    'lang_out': 'zh',
-    'service': 'google',
-    'thread': 4,
+    "lang_in": "en",
+    "lang_out": "zh",
+    "service": "google",
+    "thread": 4,
 }
 ```
 使用檔案翻譯：
 ```python
-(file_mono, file_dual) = translate(files=['example.pdf'], **params)[0]
+(file_mono, file_dual) = translate(files=["example.pdf"], **params)[0]
 ```
 串流翻譯：
 ```python
-with open('example.pdf', 'rb') as f:
+with open("example.pdf", "rb") as f:
     (stream_mono, stream_dual) = translate_stream(stream=f.read(), **params)
 ```
 

@@ -79,6 +79,7 @@ from pdf2zh_next.high_level import do_translate_async_stream
 # Assume you already have a valid SettingsModel instance named `settings`
 # and a PDF file path
 
+
 async def translate_one(settings, pdf_path: str | Path):
     try:
         async for event in do_translate_async_stream(settings, pdf_path):
@@ -87,7 +88,10 @@ async def translate_one(settings, pdf_path: str | Path):
             if etype == "stage_summary":
                 # Optional pre-flight summary of stages
                 stages = event.get("stages", [])
-                print("Stage summary:", ", ".join(f"{s['name']}:{s['percent']:.2f}" for s in stages))
+                print(
+                    "Stage summary:",
+                    ", ".join(f"{s['name']}:{s['percent']:.2f}" for s in stages),
+                )
 
             elif etype in {"progress_start", "progress_update", "progress_end"}:
                 stage = event.get("stage")
@@ -95,7 +99,9 @@ async def translate_one(settings, pdf_path: str | Path):
                 overall = event.get("overall_progress")  # 0..100
                 part_i = event.get("part_index")
                 part_n = event.get("total_parts")
-                print(f"[{etype}] {stage} | stage {stage_prog:.1f}% | overall {overall:.1f}% (part {part_i}/{part_n})")
+                print(
+                    f"[{etype}] {stage} | stage {stage_prog:.1f}% | overall {overall:.1f}% (part {part_i}/{part_n})"
+                )
 
             elif etype == "error":
                 # You will also get a raised exception after this yield
@@ -106,15 +112,24 @@ async def translate_one(settings, pdf_path: str | Path):
                 print("Done in", getattr(result, "total_seconds", None), "s")
                 print("Mono:", getattr(result, "mono_pdf_path", None))
                 print("Dual:", getattr(result, "dual_pdf_path", None))
-                print("No-watermark Mono:", getattr(result, "no_watermark_mono_pdf_path", None))
-                print("No-watermark Dual:", getattr(result, "no_watermark_dual_pdf_path", None))
-                print("Glossary:", getattr(result, "auto_extracted_glossary_path", None))
+                print(
+                    "No-watermark Mono:",
+                    getattr(result, "no_watermark_mono_pdf_path", None),
+                )
+                print(
+                    "No-watermark Dual:",
+                    getattr(result, "no_watermark_dual_pdf_path", None),
+                )
+                print(
+                    "Glossary:", getattr(result, "auto_extracted_glossary_path", None)
+                )
                 print("Peak memory:", getattr(result, "peak_memory_usage", None))
                 break
 
     except Exception as exc:
         # Catch exceptions raised by the stream after an error event
         print("Translation failed:", exc)
+
 
 # asyncio.run(translate_one(settings, "/path/to/file.pdf"))
 ```
@@ -126,6 +141,7 @@ async def translate_one(settings, pdf_path: str | Path):
 import asyncio
 from pdf2zh_next.high_level import do_translate_async_stream
 
+
 async def cancellable(settings, pdf):
     task = asyncio.create_task(_consume(settings, pdf))
     await asyncio.sleep(1.0)  # let it start
@@ -134,6 +150,7 @@ async def cancellable(settings, pdf):
         await task
     except asyncio.CancelledError:
         print("Cancelled")
+
 
 async def _consume(settings, pdf):
     async for event in do_translate_async_stream(settings, pdf):

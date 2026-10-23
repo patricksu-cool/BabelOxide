@@ -50,6 +50,7 @@ from pdf2zh_next.ui.files import update_preview
 from pdf2zh_next.ui.languages import lang_map as lang_map
 from pdf2zh_next.ui.languages import page_map as page_map
 from pdf2zh_next.ui.languages import rev_lang_map as rev_lang_map
+from pdf2zh_next.ui.preview import create_pdf_preview
 from pdf2zh_next.ui.rate_options import (
     _calculate_rate_limit_params as _calculate_rate_limit_params,
 )
@@ -57,7 +58,6 @@ from pdf2zh_next.ui.rate_options import (
     _validate_rate_limit_inputs as _validate_rate_limit_inputs,
 )
 from pdf2zh_next.ui.resources import custom_css
-from pdf2zh_next.ui.preview import create_pdf_preview
 from pdf2zh_next.ui.resources import translation_file_path as translation_file_path
 from pdf2zh_next.ui.session import new_session_state
 from pdf2zh_next.ui.settings import SaveMode
