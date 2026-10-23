@@ -3,7 +3,6 @@
 import asyncio
 import logging
 import uuid
-import zipfile
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,6 +11,8 @@ import gradio as gr
 
 from pdf2zh_next.config.model import SettingsModel
 from pdf2zh_next.i18n import gettext as _
+from pdf2zh_next.ui.results import build_progress_update
+from pdf2zh_next.ui.results import write_download_archives
 from pdf2zh_next.ui.settings import SaveMode
 
 logger = logging.getLogger(__name__)
@@ -180,54 +181,6 @@ async def translate_files(
     zip_glossary_path = output_dir / "all_glossaries.zip"
 
     # Default return values (Hidden/Empty)
-    def get_current_ui_update(preview_file_key=None):
-        """Helper to generate the massive return tuple based on current state"""
-        # Determine choices from display_map
-        choices = list(state["display_map"].keys())
-
-        # Determine values based on the preview_file_key (default to first processed file)
-        current_res = {"mono": None, "dual": None, "glossary": None}
-        preview_path = None
-
-        if preview_file_key:
-            preview_path = state["display_map"].get(preview_file_key)
-            parent_key = state["parent_map"].get(preview_file_key)
-            if parent_key and parent_key in state["results"]:
-                current_res = state["results"][parent_key]
-
-        # Build uploaded files markdown view
-        uploaded_files = state.get("uploaded_files") or []
-        if uploaded_files:
-            uploaded_md = "\n".join(
-                f"{idx + 1}. {name}" for idx, name in enumerate(uploaded_files)
-            )
-            uploaded_view_update = gr.update(value=uploaded_md, visible=True)
-        else:
-            uploaded_view_update = gr.update(value="", visible=False)
-
-        return (
-            current_res["mono"],
-            preview_path,
-            current_res["dual"],
-            current_res["glossary"],
-            gr.update(visible=bool(current_res["mono"])),
-            gr.update(visible=bool(current_res["dual"])),
-            gr.update(visible=bool(current_res["glossary"])),
-            gr.update(visible=True, value="## Processing..."),  # Title
-            gr.update(
-                choices=choices, value=preview_file_key, visible=True
-            ),  # Result Selector
-            gr.update(visible=True),  # Result Selector Container
-            gr.update(visible=False),  # Zip
-            None,
-            gr.update(visible=False),
-            None,
-            gr.update(visible=False),
-            None,
-            gr.update(visible=False),
-            None,
-            uploaded_view_update,
-        )
 
     try:
         # Step 1: Prepare input files
@@ -330,44 +283,12 @@ async def translate_files(
                 )
 
             # Generate the intermediate UI update
-            yield get_current_ui_update(current_preview_label)
+            yield build_progress_update(state, current_preview_label)
 
-        # Step 3: Finalize (Create Zips)
-        # All files zip
-        with zipfile.ZipFile(zip_path, "w") as zipf:
-            for _fname, res in state["results"].items():
-                if res["mono"]:
-                    zipf.write(res["mono"], arcname=f"mono_{Path(res['mono']).name}")
-                if res["dual"]:
-                    zipf.write(res["dual"], arcname=f"dual_{Path(res['dual']).name}")
-                if res["glossary"]:
-                    zipf.write(
-                        res["glossary"],
-                        arcname=f"glossary_{Path(res['glossary']).name}",
-                    )
-
-        # Individual Zips
-        has_mono, has_dual, has_glossary = False, False, False
-        with zipfile.ZipFile(zip_mono_path, "w") as zipf:
-            for _fname, res in state["results"].items():
-                if res["mono"]:
-                    zipf.write(res["mono"], arcname=f"mono_{Path(res['mono']).name}")
-                    has_mono = True
-
-        with zipfile.ZipFile(zip_dual_path, "w") as zipf:
-            for _fname, res in state["results"].items():
-                if res["dual"]:
-                    zipf.write(res["dual"], arcname=f"dual_{Path(res['dual']).name}")
-                    has_dual = True
-
-        with zipfile.ZipFile(zip_glossary_path, "w") as zipf:
-            for _fname, res in state["results"].items():
-                if res["glossary"]:
-                    zipf.write(
-                        res["glossary"],
-                        arcname=f"glossary_{Path(res['glossary']).name}",
-                    )
-                    has_glossary = True
+        # Finalize download archives using the same per-result member order.
+        has_mono, has_dual, has_glossary = write_download_archives(
+            state["results"], zip_path, zip_mono_path, zip_dual_path, zip_glossary_path
+        )
 
         progress(1.0, desc=_("All translations complete!"))
 
@@ -411,7 +332,7 @@ async def translate_files(
             _u8,
             _u9,
             uploaded_view_update,
-        ) = get_current_ui_update(final_preview_label)
+        ) = build_progress_update(state, final_preview_label)
 
         # After successful translation of all files, clear uploaded files for next batch
         if "uploaded_files" in state:

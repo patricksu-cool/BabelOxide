@@ -76,6 +76,39 @@ def test_task_error_surfaces_and_clears_current_task(setup_task, monkeypatch):
     assert state["current_task"] is None
 
 
+def test_multiple_files_keep_archive_order_and_optional_outputs(
+    setup_task, monkeypatch
+):
+    gui, state, mono, dual = setup_task
+    second = mono.parent / "second.pdf"
+    second.write_bytes(b"second")
+    terms = mono.parent / "terms.csv"
+    terms.write_text("source,target\n")
+    monkeypatch.setattr(
+        gui, "_prepare_input_file", lambda *_: [mono.parent / "paper.pdf", second]
+    )
+
+    async def run(_settings, path, *_args, **_kwargs):
+        return (None, None, terms, None) if path == second else (mono, dual, None, None)
+
+    monkeypatch.setattr(gui, "_run_translation_task", run)
+
+    async def consume():
+        return [update async for update in gui.translate_files("File", [], "")]
+
+    updates = asyncio.run(consume())
+    assert len(updates) == 3 and len(state["results"]) == 2
+    with zipfile.ZipFile(updates[-1][11]) as archive:
+        assert archive.namelist() == [
+            "mono_mono.pdf",
+            "dual_dual.pdf",
+            "glossary_terms.csv",
+        ]
+    assert updates[-1][0] is None and updates[-1][2] is None
+    assert updates[-1][3] == str(terms)
+    assert updates[-1][16]["visible"] is True
+
+
 def test_cancel_reaches_worker_and_preserves_output_contract(setup_task, monkeypatch):
     gui, state, _, _ = setup_task
 

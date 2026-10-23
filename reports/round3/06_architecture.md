@@ -21,3 +21,7 @@ codebase-memory 檢查相關檔案 coverage／freshness，查詢 gui 與 high_le
 將翻譯批次、進度事件、取消、Session 結果整合從 gui.py 拆到 ui/tasks.py。TaskContext 明確注入五個入口（UI 資料轉換、輸入準備、設定組裝、目前設定、單檔任務），控制器不讀取 GUI 元件或 ConfigManager 全域。BabelDOC stream 與公開 TranslationError 由相容入口注入，保留 root gui 回呼名稱／簽章和 monkeypatch 邊界。
 
 取消函式原樣搬移；逐檔 task 建立、等待、取消、finally 清理及 19 個事件輸出順序保持。完整回歸 **231 passed，11.96 秒**；沒有觸及 provider 重試或 IPC。
+
+## 6c 結果與下載
+
+ui/results.py 接收 Session 字典並建立進度／結果輸出，抽離原控制器內的閉包；四份 ZIP 使用同一個 writer，維持原結果順序、mono／dual／glossary 前綴、空 ZIP 建立及可見性旗標。新增多檔混合 glossary 測試，在重構前先通過，拆分後 18 項相關測試通過。沒有改變設定保存、翻譯、重試或取消順序。
