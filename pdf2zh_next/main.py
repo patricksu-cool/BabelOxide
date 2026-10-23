@@ -102,8 +102,8 @@ async def main() -> int:
         return 0
 
     assert len(settings.basic.input_files) >= 1, "At least one input file is required"
-    await do_translate_file_async(settings, ignore_error=True)
-    return 0
+    failure_count = await do_translate_file_async(settings, ignore_error=True)
+    return 1 if failure_count else 0
 
 
 def cli():
