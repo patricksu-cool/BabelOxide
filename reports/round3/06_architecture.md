@@ -33,3 +33,7 @@ ui/results.py 接收 Session 字典並建立進度／結果輸出，抽離原控
 ## 6e Config CLI 解析
 
 config/cli.py 專責由 Pydantic 設定模型建立 argparse；MagicDefault 與允許重複欄位規則由同一模組提供，config/main.py 保留相容 re-export 與 ConfigManager 的載入／優先順序／儲存管理。parser 函式 AST 原樣搬移。完整回歸 **234 passed，11.86 秒**，含原 Config 測試與新增取消／多檔結果測試。
+
+## 6f 元件宣告去重
+
+ui/components.py 集中主／術語服務欄位的 Dropdown、Textbox、password、Checkbox 宣告，外層仍保留服務選擇、敏感欄位政策、欄位順序、相依事件與索引；未合併翻譯服務策略。既有完整控制值契約與 DeepSeek visibility 測試保護兩條路徑，完整回歸通過。

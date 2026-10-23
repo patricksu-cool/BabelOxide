@@ -2,7 +2,6 @@ import csv
 import io
 import logging
 import tempfile
-import typing
 from pathlib import Path
 
 import chardet
@@ -30,6 +29,7 @@ from pdf2zh_next.i18n import update_current_languages
 from pdf2zh_next.security_logging import install_redacting_filters
 from pdf2zh_next.ui import settings as gui_settings
 from pdf2zh_next.ui import tasks as task_controller
+from pdf2zh_next.ui.components import create_engine_field
 from pdf2zh_next.ui.fields import _field_gui_extra as _field_gui_extra
 from pdf2zh_next.ui.fields import (
     _gui_dependency_field_name as _gui_dependency_field_name,
@@ -511,61 +511,19 @@ with gr.Blocks(
                                         continue
                                     if field_name == "support_llm":
                                         continue
-                                    type_hint = field.annotation
-                                    original_type = typing.get_origin(type_hint)
-                                    type_args = typing.get_args(type_hint)
-                                    value = getattr(detail_settings, field_name)
-                                    gui_extra = _field_gui_extra(field)
                                     field_values = {
                                         name: getattr(detail_settings, name)
                                         for name in metadata.setting_model_type.model_fields
                                     }
-                                    field_visible = _gui_field_visible(
+                                    field_input, gui_extra = create_engine_field(
                                         field_name,
                                         field,
+                                        getattr(detail_settings, field_name),
                                         visible,
                                         field_values,
+                                        password=field_name in GUI_PASSWORD_FIELDS,
+                                        scope="translation",
                                     )
-                                    if gui_extra.get("widget") == "dropdown":
-                                        field_input = gr.Dropdown(
-                                            label=field.description,
-                                            choices=gui_extra["choices"],
-                                            value=_gui_field_value(field, value),
-                                            interactive=True,
-                                            visible=field_visible,
-                                        )
-                                    elif (
-                                        type_hint is str
-                                        or str in type_args
-                                        or type_hint is int
-                                        or int in type_args
-                                    ):
-                                        if field_name in GUI_PASSWORD_FIELDS:
-                                            field_input = gr.Textbox(
-                                                label=field.description,
-                                                value=value,
-                                                interactive=True,
-                                                type="password",
-                                                visible=field_visible,
-                                            )
-                                        else:
-                                            field_input = gr.Textbox(
-                                                label=field.description,
-                                                value=value,
-                                                interactive=True,
-                                                visible=field_visible,
-                                            )
-                                    elif type_hint is bool or bool in type_args:
-                                        field_input = gr.Checkbox(
-                                            label=field.description,
-                                            value=value,
-                                            interactive=True,
-                                            visible=field_visible,
-                                        )
-                                    else:
-                                        raise Exception(
-                                            f"Unsupported type {type_hint} for field {field_name} in gui translation engine settings"
-                                        )
                                     detail_text_input_index_map[
                                         metadata.translate_engine_type
                                     ].append(detail_index)
@@ -737,65 +695,19 @@ with gr.Blocks(
                                             if base_name in GUI_PASSWORD_FIELDS:
                                                 continue
 
-                                        type_hint = field.annotation
-                                        original_type = typing.get_origin(type_hint)
-                                        type_args = typing.get_args(type_hint)
-                                        value = getattr(
-                                            term_detail_settings, field_name
-                                        )
-                                        gui_extra = _field_gui_extra(field)
-                                        term_field_values = {
+                                        field_values = {
                                             name: getattr(term_detail_settings, name)
                                             for name in term_metadata.term_setting_model_type.model_fields
                                         }
-                                        field_visible = _gui_field_visible(
+                                        field_input, gui_extra = create_engine_field(
                                             field_name,
                                             field,
+                                            getattr(term_detail_settings, field_name),
                                             False,
-                                            term_field_values,
+                                            field_values,
+                                            password=base_name in GUI_PASSWORD_FIELDS,
+                                            scope="term extraction",
                                         )
-
-                                        if gui_extra.get("widget") == "dropdown":
-                                            field_input = gr.Dropdown(
-                                                label=field.description,
-                                                choices=gui_extra["choices"],
-                                                value=_gui_field_value(field, value),
-                                                interactive=True,
-                                                visible=field_visible,
-                                            )
-                                        elif (
-                                            type_hint is str
-                                            or str in type_args
-                                            or type_hint is int
-                                            or int in type_args
-                                        ):
-                                            if base_name in GUI_PASSWORD_FIELDS:
-                                                field_input = gr.Textbox(
-                                                    label=field.description,
-                                                    value=value,
-                                                    interactive=True,
-                                                    type="password",
-                                                    visible=field_visible,
-                                                )
-                                            else:
-                                                field_input = gr.Textbox(
-                                                    label=field.description,
-                                                    value=value,
-                                                    interactive=True,
-                                                    visible=field_visible,
-                                                )
-                                        elif type_hint is bool or bool in type_args:
-                                            field_input = gr.Checkbox(
-                                                label=field.description,
-                                                value=value,
-                                                interactive=True,
-                                                visible=field_visible,
-                                            )
-                                        else:
-                                            raise Exception(
-                                                f"Unsupported type {type_hint} for field {field_name} in gui term extraction engine settings"
-                                            )
-
                                         term_detail_text_input_index_map[
                                             term_metadata.translate_engine_type
                                         ].append(term_detail_index)
