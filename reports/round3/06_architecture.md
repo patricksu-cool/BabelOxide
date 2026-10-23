@@ -25,3 +25,7 @@ codebase-memory 檢查相關檔案 coverage／freshness，查詢 gui 與 high_le
 ## 6c 結果與下載
 
 ui/results.py 接收 Session 字典並建立進度／結果輸出，抽離原控制器內的閉包；四份 ZIP 使用同一個 writer，維持原結果順序、mono／dual／glossary 前綴、空 ZIP 建立及可見性旗標。新增多檔混合 glossary 測試，在重構前先通過，拆分後 18 項相關測試通過。沒有改變設定保存、翻譯、重試或取消順序。
+
+## 6d CLI 批次與核心傳輸
+
+將 high_level.do_translate_file_async 的批次 loop 移到 translation/batch.py，透過 factory／stream／例外型別／logger 注入保持原行為。high_level 保留同簽章公開入口、同步 wrapper、跨行程函式與例外類別 module path。重構前新增 RuntimeError 與 CancelledError 傳遞測試；拆分後 CLI、adapters 與 34 項 Retry 測試全部通過。

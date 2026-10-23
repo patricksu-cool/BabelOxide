@@ -58,6 +58,28 @@ def test_translation_runner_counts_file_failures(
     assert result == expected_failures
 
 
+@pytest.mark.parametrize("error_type", [RuntimeError, asyncio.CancelledError])
+def test_batch_propagates_failure_and_cancellation(monkeypatch, error_type):
+    settings = SimpleNamespace(
+        basic=SimpleNamespace(input_files=[Path("first.pdf")], debug=False)
+    )
+    monkeypatch.setattr(high_level, "BabelDOCConfig", lambda **_kwargs: object())
+    monkeypatch.setattr(
+        high_level,
+        "create_progress_handler",
+        lambda _config: (nullcontext(), lambda _event: None),
+    )
+
+    async def stream(_settings, _file):
+        yield {"type": "progress"}
+        raise error_type("synthetic batch interruption")
+
+    monkeypatch.setattr(high_level, "do_translate_async_stream", stream)
+    with pytest.raises(error_type, match="synthetic batch interruption"):
+        asyncio.run(high_level.do_translate_file_async(settings))
+    assert settings.basic.input_files == set()
+
+
 @pytest.mark.parametrize(
     ("failure_count", "expected_exit"),
     [(0, 0), (1, 1), (2, 1)],
