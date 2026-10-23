@@ -14,9 +14,6 @@ from pathlib import Path
 
 from babeldoc.format.pdf.high_level import async_translate as babeldoc_translate
 from babeldoc.format.pdf.translation_config import TranslationConfig as BabelDOCConfig
-from babeldoc.format.pdf.translation_config import (
-    WatermarkOutputMode as BabelDOCWatermarkMode,
-)
 from babeldoc.glossary import Glossary
 from babeldoc.main import create_progress_handler
 from rich.logging import RichHandler
@@ -24,6 +21,12 @@ from rich.logging import RichHandler
 from pdf2zh_next.config.model import SettingsModel
 from pdf2zh_next.security_logging import install_redacting_filters
 from pdf2zh_next.security_logging import register_secret_values
+from pdf2zh_next.translation.configuration import (
+    BabelDOCWatermarkMode as BabelDOCWatermarkMode,
+)
+from pdf2zh_next.translation.configuration import build_babeldoc_config
+from pdf2zh_next.translation.configuration import load_glossaries
+from pdf2zh_next.translation.usage import collect_token_usage
 from pdf2zh_next.translator import get_term_translator
 from pdf2zh_next.translator import get_translator
 from pdf2zh_next.utils import asynchronize
@@ -186,92 +189,7 @@ def _translate_wrapper(
                         break
                     # Send normal progress events as before
                     if event["type"] == "finish":
-                        # Extract token usage
-                        token_usage = {}
-
-                        # Main translator
-                        if hasattr(config.translator, "token_count"):
-                            token_usage["main"] = {
-                                "total": config.translator.token_count.value
-                                if hasattr(config.translator, "token_count")
-                                else 0,
-                                "prompt": config.translator.prompt_token_count.value
-                                if hasattr(config.translator, "prompt_token_count")
-                                else 0,
-                                "completion": config.translator.completion_token_count.value
-                                if hasattr(config.translator, "completion_token_count")
-                                else 0,
-                                "cache_hit_prompt": config.translator.cache_hit_prompt_token_count.value
-                                if hasattr(
-                                    config.translator, "cache_hit_prompt_token_count"
-                                )
-                                else 0,
-                            }
-
-                        # Term extraction translator
-                        if (
-                            hasattr(config.term_extraction_translator, "token_count")
-                            and config.term_extraction_translator != config.translator
-                        ):
-                            token_usage["term"] = {
-                                "total": config.term_extraction_translator.token_count.value
-                                if hasattr(
-                                    config.term_extraction_translator, "token_count"
-                                )
-                                else 0,
-                                "prompt": config.term_extraction_translator.prompt_token_count.value
-                                if hasattr(
-                                    config.term_extraction_translator,
-                                    "prompt_token_count",
-                                )
-                                else 0,
-                                "completion": config.term_extraction_translator.completion_token_count.value
-                                if hasattr(
-                                    config.term_extraction_translator,
-                                    "completion_token_count",
-                                )
-                                else 0,
-                                "cache_hit_prompt": config.term_extraction_translator.cache_hit_prompt_token_count.value
-                                if hasattr(
-                                    config.term_extraction_translator,
-                                    "cache_hit_prompt_token_count",
-                                )
-                                else 0,
-                            }
-                        elif config.term_extraction_token_usage:
-                            token_usage["term"] = {
-                                "total": config.term_extraction_token_usage[
-                                    "total_tokens"
-                                ],
-                                "prompt": config.term_extraction_token_usage[
-                                    "prompt_tokens"
-                                ],
-                                "completion": config.term_extraction_token_usage[
-                                    "completion_tokens"
-                                ],
-                                "cache_hit_prompt": config.term_extraction_token_usage[
-                                    "cache_hit_prompt_tokens"
-                                ],
-                            }
-                            if sum(token_usage["term"].values()) == 0:
-                                token_usage.pop("term")
-                        if (
-                            "main" in token_usage
-                            and "term" in token_usage
-                            and config.term_extraction_translator
-                            and config.term_extraction_translator == config.translator
-                        ):
-                            # 如果术语翻译器和主翻译器是同一个实例，避免重复计算
-                            term_usage = token_usage["term"]
-                            main_usage = token_usage["main"]
-                            main_usage["total"] -= term_usage["total"]
-                            main_usage["prompt"] -= term_usage["prompt"]
-                            main_usage["completion"] -= term_usage["completion"]
-                            main_usage["cache_hit_prompt"] -= term_usage[
-                                "cache_hit_prompt"
-                            ]
-
-                        event["token_usage"] = token_usage
+                        event["token_usage"] = collect_token_usage(config)
                         pipe_progress_send.send(event)
                         break
                     pipe_progress_send.send(event)
@@ -523,117 +441,19 @@ async def _translate_in_subprocess(
 
 
 def _get_glossaries(settings: SettingsModel) -> list[Glossary] | None:
-    glossaries = []
-    if not settings.translation.glossaries:
-        return None
-    for file in settings.translation.glossaries.split(","):
-        glossaries.append(
-            Glossary.from_csv(Path(file), target_lang_out=settings.translation.lang_out)
-        )
-    return glossaries
+    return load_glossaries(settings, glossary_type=Glossary)
 
 
 def create_babeldoc_config(settings: SettingsModel, file: Path) -> BabelDOCConfig:
-    if not isinstance(settings, SettingsModel):
-        raise ValueError(f"{type(settings)} is not SettingsModel")
-    translator = get_translator(settings)
-    if translator is None:
-        raise ValueError("No translator found")
-
-    if (
-        settings.term_extraction_engine_settings == settings.translate_engine_settings
-        and settings.translation.term_qps == settings.translation.qps
-    ):
-        term_extraction_translator = translator
-        if recommended_qps := getattr(translator, "pdf2zh_next_recommended_qps", None):
-            settings.translation.term_qps = recommended_qps
-            logger.info(f"Updated term qps to {recommended_qps}")
-        if recommended_pool_max_workers := getattr(
-            translator, "pdf2zh_next_recommended_pool_max_workers", None
-        ):
-            settings.translation.term_pool_max_workers = recommended_pool_max_workers
-            logger.info(
-                f"Updated term pool max workers to {recommended_pool_max_workers}"
-            )
-    else:
-        term_extraction_translator = get_term_translator(settings)
-
-    # 设置分割策略
-    split_strategy = None
-    if settings.pdf.max_pages_per_part:
-        split_strategy = BabelDOCConfig.create_max_pages_per_part_split_strategy(
-            settings.pdf.max_pages_per_part
-        )
-
-    # 设置水印模式
-    watermark_output_mode_maps = {
-        "no_watermark": BabelDOCWatermarkMode.NoWatermark,
-        "both": BabelDOCWatermarkMode.Both,
-        "watermarked": BabelDOCWatermarkMode.Watermarked,
-    }
-
-    watermark_output_mode = settings.pdf.watermark_output_mode
-
-    watermark_mode = watermark_output_mode_maps.get(
-        watermark_output_mode, BabelDOCWatermarkMode.Watermarked
+    return build_babeldoc_config(
+        settings,
+        file,
+        translator_factory=get_translator,
+        term_translator_factory=get_term_translator,
+        config_type=BabelDOCConfig,
+        glossary_loader=_get_glossaries,
+        logger=logger,
     )
-
-    table_model = None
-    if settings.pdf.translate_table_text:
-        from babeldoc.docvision.table_detection.rapidocr import RapidOCRModel
-
-        table_model = RapidOCRModel()
-
-    babeldoc_config = BabelDOCConfig(
-        input_file=file,
-        font=None,
-        pages=settings.pdf.pages,
-        output_dir=settings.translation.output,
-        doc_layout_model=None,
-        translator=translator,
-        debug=settings.basic.debug,
-        lang_in=settings.translation.lang_in,
-        lang_out=settings.translation.lang_out,
-        no_dual=settings.pdf.no_dual,
-        no_mono=settings.pdf.no_mono,
-        qps=settings.translation.qps,
-        # 传递原来缺失的参数
-        formular_font_pattern=settings.pdf.formular_font_pattern,
-        formular_char_pattern=settings.pdf.formular_char_pattern,
-        split_short_lines=settings.pdf.split_short_lines,
-        short_line_split_factor=settings.pdf.short_line_split_factor,
-        disable_rich_text_translate=settings.pdf.disable_rich_text_translate,
-        dual_translate_first=settings.pdf.dual_translate_first,
-        enhance_compatibility=settings.pdf.enhance_compatibility,
-        use_alternating_pages_dual=settings.pdf.use_alternating_pages_dual,
-        watermark_output_mode=watermark_mode,
-        min_text_length=settings.translation.min_text_length,
-        report_interval=settings.report_interval,
-        skip_clean=settings.pdf.skip_clean,
-        # 添加分割策略
-        split_strategy=split_strategy,
-        # 添加表格模型，仅在需要翻译表格时
-        table_model=table_model,
-        skip_scanned_detection=settings.pdf.skip_scanned_detection,
-        ocr_workaround=settings.pdf.ocr_workaround,
-        custom_system_prompt=settings.translation.custom_system_prompt,
-        glossaries=_get_glossaries(settings),
-        auto_enable_ocr_workaround=settings.pdf.auto_enable_ocr_workaround,
-        pool_max_workers=settings.translation.pool_max_workers,
-        auto_extract_glossary=not settings.translation.no_auto_extract_glossary,
-        primary_font_family=settings.translation.primary_font_family,
-        only_include_translated_page=settings.pdf.only_include_translated_page,
-        # BabelDOC v0.5.1 new options
-        merge_alternating_line_numbers=not settings.pdf.no_merge_alternating_line_numbers,
-        remove_non_formula_lines=not settings.pdf.no_remove_non_formula_lines,
-        non_formula_line_iou_threshold=settings.pdf.non_formula_line_iou_threshold,
-        figure_table_protection_threshold=settings.pdf.figure_table_protection_threshold,
-        skip_formula_offset_calculation=settings.pdf.skip_formula_offset_calculation,
-        # Term extraction translator (can be different from main translator)
-        term_extraction_translator=term_extraction_translator,
-        term_pool_max_workers=settings.translation.term_pool_max_workers,
-    )
-    return babeldoc_config
 
 
 async def do_translate_async_stream(
