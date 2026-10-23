@@ -15,3 +15,9 @@ codebase-memory 檢查相關檔案 coverage／freshness，查詢 gui 與 high_le
 先新增並通過 7 項 GUI 任務／輸入 characterization tests，涵蓋成功、錯誤、取消、19 個事件輸出、ZIP 項目名稱、檔名碰撞、上傳狀態 fallback。搬移後相關測試通過。
 
 後續單元會在測試後逐一提交，本報告隨最終實作補足。
+
+## 6b GUI 任務控制器
+
+將翻譯批次、進度事件、取消、Session 結果整合從 gui.py 拆到 ui/tasks.py。TaskContext 明確注入五個入口（UI 資料轉換、輸入準備、設定組裝、目前設定、單檔任務），控制器不讀取 GUI 元件或 ConfigManager 全域。BabelDOC stream 與公開 TranslationError 由相容入口注入，保留 root gui 回呼名稱／簽章和 monkeypatch 邊界。
+
+取消函式原樣搬移；逐檔 task 建立、等待、取消、finally 清理及 19 個事件輸出順序保持。完整回歸 **231 passed，11.96 秒**；沒有觸及 provider 重試或 IPC。
