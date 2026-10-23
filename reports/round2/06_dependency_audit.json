@@ -1,0 +1,545 @@
+{
+  "date": "2026-10-23",
+  "tool": "uv audit --locked --output-format json",
+  "baseline": {
+    "audited_packages": 218,
+    "raw_records": 99,
+    "unique_advisories": 69,
+    "adverse_statuses": 0,
+    "packages": {
+      "gitpython": 1,
+      "gradio": 7,
+      "pillow": 56,
+      "starlette": 5
+    }
+  },
+  "after_gitpython_fix": {
+    "audited_packages": 214,
+    "raw_records": 98,
+    "unique_advisories": 68,
+    "adverse_statuses": 0,
+    "packages": {
+      "gradio": 7,
+      "pillow": 56,
+      "starlette": 5
+    }
+  },
+  "runtime_baseline": {
+    "audited_packages": 164,
+    "raw_records": 98,
+    "unique_advisories": 68,
+    "adverse_statuses": 0,
+    "packages": {
+      "gradio": 7,
+      "pillow": 56,
+      "starlette": 5
+    }
+  },
+  "runtime_after": {
+    "audited_packages": 164,
+    "raw_records": 98,
+    "unique_advisories": 68,
+    "adverse_statuses": 0,
+    "packages": {
+      "gradio": 7,
+      "pillow": 56,
+      "starlette": 5
+    }
+  },
+  "removed_advisories": [
+    "GHSA-83vg-56qc-22m7"
+  ],
+  "baseline_advisories_by_package": {
+    "gitpython": [
+      {
+        "id": "GHSA-83vg-56qc-22m7",
+        "fix_versions": [
+          "3.2.1"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-114145"
+      }
+    ],
+    "gradio": [
+      {
+        "id": "PYSEC-2026-211",
+        "fix_versions": [
+          "6.15.1"
+        ],
+        "link": "https://vuldb.com/cve/CVE-2026-10783"
+      },
+      {
+        "id": "PYSEC-2026-2178",
+        "fix_versions": [
+          "6.15.0"
+        ],
+        "link": "https://github.com/gradio-app/gradio/releases/tag/gradio%406.15.0"
+      },
+      {
+        "id": "PYSEC-2026-2179",
+        "fix_versions": [
+          "6.16.0"
+        ],
+        "link": "https://github.com/gradio-app/gradio/releases/tag/gradio%406.16.0"
+      },
+      {
+        "id": "PYSEC-2026-63",
+        "fix_versions": [
+          "6.6.0"
+        ],
+        "link": "https://osv.dev/vulnerability/PYSEC-2026-63"
+      },
+      {
+        "id": "PYSEC-2026-64",
+        "fix_versions": [
+          "6.7.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-28414"
+      },
+      {
+        "id": "PYSEC-2026-65",
+        "fix_versions": [
+          "6.6.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-28415"
+      },
+      {
+        "id": "PYSEC-2026-66",
+        "fix_versions": [
+          "6.6.0"
+        ],
+        "link": "https://github.com/gradio-app/gradio/security/advisories/GHSA-jmh7-g254-2cq9"
+      }
+    ],
+    "pillow": [
+      {
+        "id": "GHSA-22hg-r758-rrw9",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112390"
+      },
+      {
+        "id": "GHSA-24rc-8hj2-v98c",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-96638"
+      },
+      {
+        "id": "GHSA-254f-3936-288h",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112391"
+      },
+      {
+        "id": "GHSA-27h8-gf7j-v5hc",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112392"
+      },
+      {
+        "id": "GHSA-332p-7hrc-92wf",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112393"
+      },
+      {
+        "id": "GHSA-3j72-p6qg-6xp7",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-96642"
+      },
+      {
+        "id": "GHSA-4558-3h8r-v8xp",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112394"
+      },
+      {
+        "id": "GHSA-462x-pgg6-55fp",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112395"
+      },
+      {
+        "id": "GHSA-4rm8-3hmm-39fg",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-96641"
+      },
+      {
+        "id": "GHSA-4rr5-89j8-mwwm",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112396"
+      },
+      {
+        "id": "GHSA-58r4-6rv3-gfh8",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112397"
+      },
+      {
+        "id": "GHSA-5xm2-6676-qcp9",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112399"
+      },
+      {
+        "id": "GHSA-65qm-jvmh-6pqg",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112400"
+      },
+      {
+        "id": "GHSA-74r2-7ff9-mjj2",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112401"
+      },
+      {
+        "id": "GHSA-78g4-xqwv-q3g8",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://github.com/python-pillow/Pillow/security/advisories/GHSA-78g4-xqwv-q3g8"
+      },
+      {
+        "id": "GHSA-7mwm-ghpf-9vrm",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112402"
+      },
+      {
+        "id": "GHSA-8g5g-8vmr-9782",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112403"
+      },
+      {
+        "id": "GHSA-9v9v-9qvf-h2hj",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-96644"
+      },
+      {
+        "id": "GHSA-c6hw-5grf-ff96",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112404"
+      },
+      {
+        "id": "GHSA-f2g6-542v-9j58",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112406"
+      },
+      {
+        "id": "GHSA-fc9g-5qg7-mf45",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112891"
+      },
+      {
+        "id": "GHSA-g4qv-2jxx-769h",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-96643"
+      },
+      {
+        "id": "GHSA-g7cr-3p24-7wf7",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-96778"
+      },
+      {
+        "id": "GHSA-g842-9rc4-69pw",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-96637"
+      },
+      {
+        "id": "GHSA-gg2r-wvfm-q9rx",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112892"
+      },
+      {
+        "id": "GHSA-j4m9-6w36-pw47",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112893"
+      },
+      {
+        "id": "GHSA-jg86-v3jv-hrpm",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112894"
+      },
+      {
+        "id": "GHSA-mrfp-p49p-3hf2",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-96640"
+      },
+      {
+        "id": "GHSA-p4wg-p73j-c528",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112895"
+      },
+      {
+        "id": "GHSA-p8hx-v2p6-rp84",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-96636"
+      },
+      {
+        "id": "GHSA-pchr-8j38-3x4p",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112896"
+      },
+      {
+        "id": "GHSA-q45j-58j2-45rg",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112897"
+      },
+      {
+        "id": "GHSA-rfgq-q3w2-pmv2",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112898"
+      },
+      {
+        "id": "GHSA-v9pv-5gc8-w2m6",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-96639"
+      },
+      {
+        "id": "GHSA-vx6w-vv9f-6gvg",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://github.com/python-pillow/Pillow/security/advisories/GHSA-vx6w-vv9f-6gvg"
+      },
+      {
+        "id": "GHSA-w889-685w-c8fh",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112900"
+      },
+      {
+        "id": "GHSA-xgh8-jp6q-p5x8",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-112901"
+      },
+      {
+        "id": "GHSA-xvh5-g6gv-559v",
+        "fix_versions": [
+          "13.0.0"
+        ],
+        "link": "https://github.com/python-pillow/Pillow/security/advisories/GHSA-xvh5-g6gv-559v"
+      },
+      {
+        "id": "PYSEC-2026-165",
+        "fix_versions": [
+          "12.2.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-42308"
+      },
+      {
+        "id": "PYSEC-2026-2249",
+        "fix_versions": [
+          "12.1.1"
+        ],
+        "link": "https://access.redhat.com/errata/RHSA-2026:10184"
+      },
+      {
+        "id": "PYSEC-2026-2250",
+        "fix_versions": [
+          "12.2.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-40192"
+      },
+      {
+        "id": "PYSEC-2026-2251",
+        "fix_versions": [
+          "12.2.0"
+        ],
+        "link": "https://github.com/python-pillow/Pillow/releases/tag/12.2.0"
+      },
+      {
+        "id": "PYSEC-2026-2252",
+        "fix_versions": [
+          "12.2.0"
+        ],
+        "link": "https://github.com/python-pillow/Pillow/releases/tag/12.2.0"
+      },
+      {
+        "id": "PYSEC-2026-2253",
+        "fix_versions": [
+          "12.3.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-54059"
+      },
+      {
+        "id": "PYSEC-2026-2254",
+        "fix_versions": [
+          "12.3.0"
+        ],
+        "link": "https://github.com/python-pillow/Pillow/blob/main/docs/releasenotes/12.3.0.rst"
+      },
+      {
+        "id": "PYSEC-2026-2255",
+        "fix_versions": [
+          "12.3.0"
+        ],
+        "link": "https://github.com/python-pillow/Pillow/blob/main/docs/releasenotes/12.3.0.rst"
+      },
+      {
+        "id": "PYSEC-2026-2256",
+        "fix_versions": [
+          "12.3.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-55380"
+      },
+      {
+        "id": "PYSEC-2026-2257",
+        "fix_versions": [
+          "12.3.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-55798"
+      },
+      {
+        "id": "PYSEC-2026-2874",
+        "fix_versions": [
+          "12.2.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-42310"
+      },
+      {
+        "id": "PYSEC-2026-3451",
+        "fix_versions": [
+          "12.3.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-59199"
+      },
+      {
+        "id": "PYSEC-2026-3453",
+        "fix_versions": [
+          "12.3.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-59205"
+      },
+      {
+        "id": "PYSEC-2026-3454",
+        "fix_versions": [
+          "12.3.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-59197"
+      },
+      {
+        "id": "PYSEC-2026-3493",
+        "fix_versions": [
+          "12.3.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-54058"
+      },
+      {
+        "id": "PYSEC-2026-3494",
+        "fix_versions": [
+          "12.3.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-59198"
+      },
+      {
+        "id": "PYSEC-2026-3495",
+        "fix_versions": [
+          "12.3.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-59200"
+      },
+      {
+        "id": "PYSEC-2026-3496",
+        "fix_versions": [
+          "12.3.0"
+        ],
+        "link": "https://nvd.nist.gov/vuln/detail/CVE-2026-59204"
+      }
+    ],
+    "starlette": [
+      {
+        "id": "PYSEC-2026-161",
+        "fix_versions": [
+          "1.0.1"
+        ],
+        "link": "https://github.com/Kludex/starlette/security/advisories/GHSA-86qp-5c8j-p5mr"
+      },
+      {
+        "id": "PYSEC-2026-2280",
+        "fix_versions": [
+          "1.1.0"
+        ],
+        "link": "https://github.com/Kludex/starlette/releases/tag/1.1.0"
+      },
+      {
+        "id": "PYSEC-2026-2281",
+        "fix_versions": [
+          "1.1.0"
+        ],
+        "link": "https://access.redhat.com/errata/RHSA-2026:30087"
+      },
+      {
+        "id": "PYSEC-2026-248",
+        "fix_versions": [
+          "1.3.0"
+        ],
+        "link": "https://github.com/Kludex/starlette/security/advisories/GHSA-jp82-jpqv-5vv3"
+      },
+      {
+        "id": "PYSEC-2026-249",
+        "fix_versions": [
+          "1.3.1"
+        ],
+        "link": "https://github.com/Kludex/starlette/security/advisories/GHSA-82w8-qh3p-5jfq"
+      }
+    ]
+  }
+}
