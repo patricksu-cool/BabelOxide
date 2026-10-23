@@ -136,3 +136,30 @@ def test_cancel_reaches_worker_and_preserves_output_contract(setup_task, monkeyp
 
     asyncio.run(exercise())
     assert state["current_task"] is None and state["uploaded_files"] == []
+
+
+@pytest.mark.parametrize("exception_name", ["TranslationError", "BabeldocError"])
+def test_structured_translation_error_keeps_original_message(
+    setup_task, monkeypatch, exception_name
+):
+    gui, state, mono, _ = setup_task
+    from pdf2zh_next import high_level
+
+    async def stream(_settings, _path):
+        yield {
+            "type": "progress_start",
+            "stage": "test",
+            "overall_progress": 0,
+            "part_index": 1,
+            "total_parts": 1,
+            "stage_current": 0,
+            "stage_total": 1,
+        }
+        raise getattr(high_level, exception_name)("synthetic preserved error")
+
+    monkeypatch.setattr(gui, "do_translate_async_stream", stream)
+    settings = SimpleNamespace(basic=SimpleNamespace(input_files=set()))
+    with pytest.raises(gr.Error, match="synthetic preserved error"):
+        asyncio.run(
+            gui._run_translation_task(settings, mono, state, lambda *_a, **_k: None)
+        )

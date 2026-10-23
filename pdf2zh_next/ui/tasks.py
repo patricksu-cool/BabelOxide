@@ -100,7 +100,8 @@ async def run_translation_task(
     except translation_error as e:
         # Handle structured translation errors
         logger.error(f"Translation error: {e}")
-        raise gr.Error(f"Translation error: {e.message}") from e
+        message = getattr(e, "message", str(e))
+        raise gr.Error(f"Translation error: {message}") from e
     except gr.Error as e:
         # Handle Gradio errors
         logger.error(f"Gradio error: {e}")

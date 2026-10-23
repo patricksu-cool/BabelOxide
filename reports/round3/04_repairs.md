@@ -29,3 +29,7 @@ mkdocs-static-i18n 的 reconfigure_material_theme 在載入個別語言設定後
 warnings-as-errors 額外檢查：223 passed、1 failed，Gradio 元件建立時未關閉的 Windows Proactor event loop／socket 被 GC 捕捉為 PytestUnraisableExceptionWarning；未全面忽略，未宣稱這項額外檢查通過。
 
 確認 BabelDOC 0.6.3 TranslationConfig 將 table_model 無條件設 None；停止建立已退休的 RapidOCRModel，保留設定格式及 None 參數。使用者啟用舊選項時明確記錄此功能不可用。測試確認不載入該模型，沒有直接修改上游。
+
+## 重構期間發現的既有錯誤
+
+GUI 的 structured TranslationError handler 讀取不存在的 .message，讓 TranslationError／BabeldocError 原始診斷被 AttributeError 覆蓋。兩項新增測試在修復前失敗，改為保留可選 .message 並回退 str(error) 後通過；成功與取消契約一併通過。這是獨立功能修復，不是宣稱所有搬移均零語意差異。
