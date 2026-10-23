@@ -1,0 +1,442 @@
+[
+  {
+    "path": ".doctemp/chunks/APIS.chunks.json",
+    "original_purpose": "English source chunks",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 5939
+  },
+  {
+    "path": ".doctemp/chunks/Aliyun.chunks.json",
+    "original_purpose": "English source chunks",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 1512
+  },
+  {
+    "path": ".doctemp/chunks/CODE_OF_CONDUCT.chunks.json",
+    "original_purpose": "English source chunks",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 10623
+  },
+  {
+    "path": ".doctemp/chunks/Contribution-Guide.chunks.json",
+    "original_purpose": "English source chunks",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 14595
+  },
+  {
+    "path": ".doctemp/chunks/Documentation-of-Translation-Services.chunks.json",
+    "original_purpose": "English source chunks",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 5005
+  },
+  {
+    "path": ".doctemp/chunks/FAQ.chunks.json",
+    "original_purpose": "English source chunks",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 9450
+  },
+  {
+    "path": ".doctemp/chunks/INSTALLATION_docker.chunks.json",
+    "original_purpose": "English source chunks",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 5246
+  },
+  {
+    "path": ".doctemp/chunks/INSTALLATION_uv.chunks.json",
+    "original_purpose": "English source chunks",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 3868
+  },
+  {
+    "path": ".doctemp/chunks/INSTALLATION_winexe.chunks.json",
+    "original_purpose": "English source chunks",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 4571
+  },
+  {
+    "path": ".doctemp/chunks/Language-Codes.chunks.json",
+    "original_purpose": "English source chunks",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 25456
+  },
+  {
+    "path": ".doctemp/chunks/README.chunks.json",
+    "original_purpose": "English source chunks",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 19683
+  },
+  {
+    "path": ".doctemp/chunks/SiliconFlow.chunks.json",
+    "original_purpose": "English source chunks",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 6510
+  },
+  {
+    "path": ".doctemp/chunks/Translate-Contribution-Guide.chunks.json",
+    "original_purpose": "English source chunks",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 5421
+  },
+  {
+    "path": ".doctemp/chunks/USAGE_commandline.chunks.json",
+    "original_purpose": "English source chunks",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 3771
+  },
+  {
+    "path": ".doctemp/chunks/USAGE_webui.chunks.json",
+    "original_purpose": "English source chunks",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 4289
+  },
+  {
+    "path": ".doctemp/chunks/advanced.chunks.json",
+    "original_purpose": "English source chunks",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 62429
+  },
+  {
+    "path": ".doctemp/chunks/getting-started.chunks.json",
+    "original_purpose": "English source chunks",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 2366
+  },
+  {
+    "path": ".doctemp/chunks/introduction.chunks.json",
+    "original_purpose": "English source chunks",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 2365
+  },
+  {
+    "path": ".doctemp/chunks/python.chunks.json",
+    "original_purpose": "English source chunks",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 15468
+  },
+  {
+    "path": ".doctemp/chunks/supported_languages.chunks.json",
+    "original_purpose": "English source chunks",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 518
+  },
+  {
+    "path": ".doctemp/splitResult/APIS.debug.md",
+    "original_purpose": "English source debug reconstruction",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 3541
+  },
+  {
+    "path": ".doctemp/splitResult/Aliyun.debug.md",
+    "original_purpose": "English source debug reconstruction",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 698
+  },
+  {
+    "path": ".doctemp/splitResult/CODE_OF_CONDUCT.debug.md",
+    "original_purpose": "English source debug reconstruction",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 7005
+  },
+  {
+    "path": ".doctemp/splitResult/Contribution-Guide.debug.md",
+    "original_purpose": "English source debug reconstruction",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 9149
+  },
+  {
+    "path": ".doctemp/splitResult/Documentation-of-Translation-Services.debug.md",
+    "original_purpose": "English source debug reconstruction",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 2697
+  },
+  {
+    "path": ".doctemp/splitResult/FAQ.debug.md",
+    "original_purpose": "English source debug reconstruction",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 4921
+  },
+  {
+    "path": ".doctemp/splitResult/INSTALLATION_docker.debug.md",
+    "original_purpose": "English source debug reconstruction",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 3305
+  },
+  {
+    "path": ".doctemp/splitResult/INSTALLATION_uv.debug.md",
+    "original_purpose": "English source debug reconstruction",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 2214
+  },
+  {
+    "path": ".doctemp/splitResult/INSTALLATION_winexe.debug.md",
+    "original_purpose": "English source debug reconstruction",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 2915
+  },
+  {
+    "path": ".doctemp/splitResult/Language-Codes.debug.md",
+    "original_purpose": "English source debug reconstruction",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 12195
+  },
+  {
+    "path": ".doctemp/splitResult/README.debug.md",
+    "original_purpose": "English source debug reconstruction",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 12531
+  },
+  {
+    "path": ".doctemp/splitResult/SiliconFlow.debug.md",
+    "original_purpose": "English source debug reconstruction",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 3643
+  },
+  {
+    "path": ".doctemp/splitResult/Translate-Contribution-Guide.debug.md",
+    "original_purpose": "English source debug reconstruction",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 3105
+  },
+  {
+    "path": ".doctemp/splitResult/USAGE_commandline.debug.md",
+    "original_purpose": "English source debug reconstruction",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 1991
+  },
+  {
+    "path": ".doctemp/splitResult/USAGE_webui.debug.md",
+    "original_purpose": "English source debug reconstruction",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 2243
+  },
+  {
+    "path": ".doctemp/splitResult/advanced.debug.md",
+    "original_purpose": "English source debug reconstruction",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 38371
+  },
+  {
+    "path": ".doctemp/splitResult/getting-started.debug.md",
+    "original_purpose": "English source debug reconstruction",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 1160
+  },
+  {
+    "path": ".doctemp/splitResult/introduction.debug.md",
+    "original_purpose": "English source debug reconstruction",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 1168
+  },
+  {
+    "path": ".doctemp/splitResult/python.debug.md",
+    "original_purpose": "English source debug reconstruction",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 11352
+  },
+  {
+    "path": ".doctemp/splitResult/supported_languages.debug.md",
+    "original_purpose": "English source debug reconstruction",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Regenerable source intermediate, not a translated output",
+    "risk": "low",
+    "bytes": 264
+  },
+  {
+    "path": "docs/de/APIS.md",
+    "original_purpose": "Superseded Python/HTTP API draft",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Current Python API is advanced/API/python.md; no implemented HTTP API",
+    "risk": "low",
+    "bytes": 2773
+  },
+  {
+    "path": "docs/es/APIS.md",
+    "original_purpose": "Superseded Python/HTTP API draft",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Current Python API is advanced/API/python.md; no implemented HTTP API",
+    "risk": "low",
+    "bytes": 2690
+  },
+  {
+    "path": "docs/fr/APIS.md",
+    "original_purpose": "Superseded Python/HTTP API draft",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Current Python API is advanced/API/python.md; no implemented HTTP API",
+    "risk": "low",
+    "bytes": 2775
+  },
+  {
+    "path": "docs/it/APIS.md",
+    "original_purpose": "Superseded Python/HTTP API draft",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Current Python API is advanced/API/python.md; no implemented HTTP API",
+    "risk": "low",
+    "bytes": 2666
+  },
+  {
+    "path": "docs/ja/APIS.md",
+    "original_purpose": "Superseded Python/HTTP API draft",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Current Python API is advanced/API/python.md; no implemented HTTP API",
+    "risk": "low",
+    "bytes": 2973
+  },
+  {
+    "path": "docs/ko/APIS.md",
+    "original_purpose": "Superseded Python/HTTP API draft",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Current Python API is advanced/API/python.md; no implemented HTTP API",
+    "risk": "low",
+    "bytes": 2812
+  },
+  {
+    "path": "docs/pt/APIS.md",
+    "original_purpose": "Superseded Python/HTTP API draft",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Current Python API is advanced/API/python.md; no implemented HTTP API",
+    "risk": "low",
+    "bytes": 2660
+  },
+  {
+    "path": "docs/ru/APIS.md",
+    "original_purpose": "Superseded Python/HTTP API draft",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Current Python API is advanced/API/python.md; no implemented HTTP API",
+    "risk": "low",
+    "bytes": 3389
+  },
+  {
+    "path": "docs/zh/APIS.md",
+    "original_purpose": "Superseded Python/HTTP API draft",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Current Python API is advanced/API/python.md; no implemented HTTP API",
+    "risk": "low",
+    "bytes": 2504
+  },
+  {
+    "path": "docs/zh_TW/APIS.md",
+    "original_purpose": "Superseded Python/HTTP API draft",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Current Python API is advanced/API/python.md; no implemented HTTP API",
+    "risk": "low",
+    "bytes": 2489
+  },
+  {
+    "path": "pdf2zh_next/ui/resources/preview.js",
+    "original_purpose": "Svelte PDF canvas workaround",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Native preview superseded the custom component",
+    "risk": "low",
+    "bytes": 4395
+  },
+  {
+    "path": "script/Dockerfile.China",
+    "original_purpose": "Legacy deployment for the original pdf2zh",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Wrong package/CLI or unpinned model/dependency downloads; supported root Dockerfile and EXE workflow retained",
+    "risk": "low",
+    "bytes": 645
+  },
+  {
+    "path": "script/Dockerfile.Demo",
+    "original_purpose": "Legacy deployment for the original pdf2zh",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Wrong package/CLI or unpinned model/dependency downloads; supported root Dockerfile and EXE workflow retained",
+    "risk": "low",
+    "bytes": 972
+  },
+  {
+    "path": "script/setup.bat",
+    "original_purpose": "Legacy deployment for the original pdf2zh",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Wrong package/CLI or unpinned model/dependency downloads; supported root Dockerfile and EXE workflow retained",
+    "risk": "low",
+    "bytes": 896
+  },
+  {
+    "path": "setup.cfg",
+    "original_purpose": "Unused duplicate Flake8 configuration",
+    "references": "Checked tracked source, docs, package resources, workflows and current build paths; no active consumer. Historical PO/report text retained.",
+    "reason": "Ruff is the configured project checker",
+    "risk": "low",
+    "bytes": 95
+  }
+]

@@ -2,7 +2,6 @@
 docs
 .git
 .pre-commit-config.yaml
-uv.lock
 pdf2zh_files
 gui/pdf2zh_files
 gradio_files
@@ -173,3 +172,22 @@ cython_debug/
 .idea/
 .vscode
 .DS_Store
+
+# Exclude local settings, secrets and generated artifacts; include uv.lock.
+config/
+.env
+.env.*
+*.pem
+*.p12
+*.pfx
+*.key
+credentials.json
+secrets.json
+.venv/
+.test-output/
+.baseline-home/
+.uv-cache/
+.ruff_cache/
+.serena/
+.doctemp/
+reports/

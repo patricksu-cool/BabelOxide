@@ -389,7 +389,6 @@ markdown_extensions:
 
   # Python Markdown
   - github-callouts
-  - markdown_include.include
   - def_list
   - admonition
 
@@ -435,6 +434,7 @@ nav:
   - Supported Languages: supported_languages.md
   - API: advanced/API/python.md
   - FAQ: FAQ.md
+  - Development: development.md
   - Community:
     - Contribution-Guide: community/Contribution-Guide.md
     - For Translators: community/Translate-Contribution-Guide.md
