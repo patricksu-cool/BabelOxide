@@ -90,7 +90,7 @@ PDF 科学论文翻译与双语对照。基于 [BabelDOC](https://github.com/fun
 
 <!-- <!-- For downstream applications, please refer to our document about [API Details](./docs/APIS.md) for futher information about: -->
 
-- [Python API](./docs/zh/advanced/API/python.md)，如何在其他 Python 程序中使用该程序
+- [Python API](advanced/API/python.md)，如何在其他 Python 程序中使用该程序
 <!-- - [HTTP API](./docs/APIS.md#api-http), how to communicate with a server with the program installed -->
 
 <h2 id="langcode">语言代码</h2>

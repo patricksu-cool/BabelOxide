@@ -1,23 +1,27 @@
+<a id="toc"></a>
+
 [**高級選項**](./introduction.md) > **高級選項** _(current)_
 
 ---
 
 <h3 id="目錄">目錄</h3>
 
-- [#### 命令行參數](#命令行參數)
-- [#### 速率限制配置指南](#速率限制配置指南)
-- [#### 部分翻譯](#部分翻譯)
-- [#### 指定來源與目標語言](#指定來源與目標語言)
-- [#### 使用例外進行翻譯](#使用例外進行翻譯)
-- [#### 自訂提示詞](#自訂提示詞)
-- [#### 自定義配置](#自定義配置)
-- [#### 跳過清理](#跳過清理)
-- [#### 翻譯快取](#翻譯快取)
-- [#### 部署為公共服務](#部署為公共服務)
-- [#### 驗證與歡迎頁面](#驗證與歡迎頁面)
-- [#### 詞彙表支持](#詞彙表支持)
+- [#### 命令行參數](#option-cli)
+- [#### 速率限制配置指南](#option-rate-limits)
+- [#### 部分翻譯](#option-pages)
+- [#### 指定來源與目標語言](#option-languages)
+- [#### 使用例外進行翻譯](#option-exceptions)
+- [#### 自訂提示詞](#option-prompt)
+- [#### 自定義配置](#option-config)
+- [#### 跳過清理](#option-clean)
+- [#### 翻譯快取](#option-cache)
+- [#### 部署為公共服務](#option-deployment)
+- [#### 驗證與歡迎頁面](#option-auth)
+- [#### 詞彙表支持](#option-glossaries)
 
 ---
+
+<a id="option-cli"></a>
 
 #### 命令行參數
 
@@ -100,6 +104,8 @@
 
 ---
 
+<a id="option-rate-limits"></a>
+
 #### 速率限制配置指南
 
 在使用翻譯服務時，適當的速率限制配置對於避免 API 錯誤和優化效能至關重要。本指南解釋如何根據不同的上游服務限制來配置 `--qps` 和 `--pool-max-worker` 參數。
@@ -158,6 +164,8 @@ pdf2zh example.pdf --qps 45 --pool-max-worker 45
 
 ---
 
+<a id="option-pages"></a>
+
 #### 部分翻譯
 
 使用 `--pages` 參數來翻譯文件的一部分。
@@ -197,6 +205,8 @@ pdf2zh_next example.pdf --pages "1,3,10-20,25-"
 
 ---
 
+<a id="option-languages"></a>
+
 #### 指定來源與目標語言
 
 請參閱 [Google Languages Codes](https://developers.google.com/admin-sdk/directory/v1/languages)、[DeepL Languages Codes](https://developers.deepl.com/docs/resources/supported-languages)
@@ -208,6 +218,8 @@ pdf2zh_next example.pdf --lang-in en -lang-out ja
 [⬆️ 回到頂部](#toc)
 
 ---
+
+<a id="option-exceptions"></a>
 
 #### 使用例外進行翻譯
 
@@ -227,6 +239,8 @@ pdf2zh_next example.pdf --formular-font-pattern "(CM[^R]|MS.M|XY|MT|BL|RM|EU|LA|
 
 ---
 
+<a id="option-prompt"></a>
+
 #### 自訂提示詞
 
 <!-- Note: System prompt is currently not supported. See [this change](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/pull/637). -->
@@ -240,6 +254,8 @@ pdf2zh_next example.pdf --custom-system-prompt "/no_think You are a professional
 [⬆️ 回到頂部](#toc)
 
 ---
+
+<a id="option-config"></a>
 
 #### 自定義配置
 
@@ -256,7 +272,7 @@ pdf2zh_next example.pdf --custom-system-prompt "/no_think You are a professional
 
 - 透過 **命令行參數** 修改配置
 
-對於大多數情況，您可以直接通過命令行參數傳遞所需的設定。更多資訊請參閱 [命令行參數](#cmd)。
+對於大多數情況，您可以直接通過命令行參數傳遞所需的設定。更多資訊請參閱 [命令行參數](#toc)。
 
 例如，如果您想要啟用 GUI 視窗，可以使用以下命令：
 
@@ -302,6 +318,8 @@ pdf2zh_next --config-file '/path/config.toml'
 
 ---
 
+<a id="option-clean"></a>
+
 #### 跳過清理
 
 當此參數設為 True 時，將跳過 PDF 清理步驟，這可以提高兼容性並避免一些字體處理問題。
@@ -323,6 +341,8 @@ PDF2ZH_SKIP_CLEAN=TRUE pdf2zh_next example.pdf
 
 ---
 
+<a id="option-cache"></a>
+
 #### 翻譯快取
 
 PDFMathTranslate 會快取已翻譯的文字，以提高速度並避免對相同內容進行不必要的 API 呼叫。您可以使用 `--ignore-cache` 選項來忽略翻譯快取並強制重新翻譯。
@@ -334,6 +354,8 @@ pdf2zh_next example.pdf --ignore-cache
 [⬆️ 回到頂部](#toc)
 
 ---
+
+<a id="option-deployment"></a>
 
 #### 部署為公共服務
 
@@ -363,6 +385,8 @@ disable_config_auto_save = true
 [⬆️ 回到頂部](#toc)
 
 ---
+
+<a id="option-auth"></a>
 
 #### 驗證與歡迎頁面
 
@@ -412,6 +436,8 @@ welcome_page = "/path/to/welcome/html/file"
 [⬆️ 回到頂部](#toc)
 
 ---
+
+<a id="option-glossaries"></a>
 
 #### 詞彙表支持
 

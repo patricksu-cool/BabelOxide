@@ -12,7 +12,7 @@ Usamos o [Weblate](https://weblate.org/) para gerenciar as traduções da nossa 
 
 É muito simples propor melhorias de tradução via Weblate, e você nem precisa registrar uma conta. Continue lendo para ver o processo passo a passo.
 
-Suponha que você queira melhorar a primeira frase na seção "命令行参数" de [高级选项 → 高级](docs/en/advanced/advanced.md):
+Suponha que você queira melhorar a primeira frase na seção "命令行参数" de [高级选项 → 高级](../advanced/advanced.md):
 
 1. Abra a [página do projeto no Weblate](https://hosted.weblate.org/projects/pdfmathtranslate-next/).
 

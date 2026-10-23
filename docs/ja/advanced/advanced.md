@@ -1,23 +1,27 @@
+<a id="toc"></a>
+
 [**高度な設定**](./introduction.md) > **高度な設定** _(現在)_
 
 ---
 
 <h3 id="目次">目次</h3>
 
-- [コマンドライン引数](#コマンドライン引数)
-- [レート制限設定ガイド](#レート制限設定ガイド)
-- [部分翻訳](#部分翻訳)
-- [ソース言語とターゲット言語を指定する](#ソース言語とターゲット言語を指定する)
-- [例外付き翻訳](#例外付き翻訳)
-- [カスタムプロンプト](#カスタムプロンプト)
-- [カスタム設定](#カスタム設定)
-- [クリーンスキップ](#クリーンスキップ)
-- [翻訳キャッシュ](#翻訳キャッシュ)
-- [パブリックサービスとしてのデプロイ](#パブリックサービスとしてのデプロイ)
-- [認証とウェルカムページ](#認証とウェルカムページ)
-- [用語集サポート](#用語集サポート)
+- [コマンドライン引数](#option-cli)
+- [レート制限設定ガイド](#option-rate-limits)
+- [部分翻訳](#option-pages)
+- [ソース言語とターゲット言語を指定する](#option-languages)
+- [例外付き翻訳](#option-exceptions)
+- [カスタムプロンプト](#option-prompt)
+- [カスタム設定](#option-config)
+- [クリーンスキップ](#option-clean)
+- [翻訳キャッシュ](#option-cache)
+- [パブリックサービスとしてのデプロイ](#option-deployment)
+- [認証とウェルカムページ](#option-auth)
+- [用語集サポート](#option-glossaries)
 
 ---
+
+<a id="option-cli"></a>
 
 #### コマンドライン引数
 
@@ -100,6 +104,8 @@
 
 ---
 
+<a id="option-rate-limits"></a>
+
 #### レート制限設定ガイド
 
 翻訳サービスを使用する際、適切なレート制限設定は API エラーを回避し、パフォーマンスを最適化するために重要です。このガイドでは、様々な上流サービスの制限に基づいて `--qps` と `--pool-max-worker` パラメータを設定する方法について説明します。
@@ -158,6 +164,8 @@ pdf2zh example.pdf --qps 45 --pool-max-worker 45
 
 ---
 
+<a id="option-pages"></a>
+
 #### 部分翻訳
 
 `--pages` パラメータを使用して、文書の一部を翻訳します。
@@ -198,6 +206,8 @@ pdf2zh_next example.pdf --pages "1,3,10-20,25-"
 
 ---
 
+<a id="option-languages"></a>
+
 #### ソース言語とターゲット言語を指定する
 
 [Google 言語コード](https://developers.google.com/admin-sdk/directory/v1/languages)、[DeepL 言語コード](https://developers.deepl.com/docs/resources/supported-languages) を参照してください。
@@ -209,6 +219,8 @@ pdf2zh_next example.pdf --lang-in en -lang-out ja
 [⬆️ トップに戻る](#toc)
 
 ---
+
+<a id="option-exceptions"></a>
 
 #### 例外付き翻訳
 
@@ -228,6 +240,8 @@ pdf2zh_next example.pdf --formular-font-pattern "(CM[^R]|MS.M|XY|MT|BL|RM|EU|LA|
 
 ---
 
+<a id="option-prompt"></a>
+
 #### カスタムプロンプト
 
 <!-- Note: System prompt is currently not supported. See [this change](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/pull/637). -->
@@ -241,6 +255,8 @@ pdf2zh_next example.pdf --custom-system-prompt "/no_think You are a professional
 [⬆️ トップに戻る](#toc)
 
 ---
+
+<a id="option-config"></a>
 
 #### カスタム設定
 
@@ -257,7 +273,7 @@ pdf2zh_next example.pdf --custom-system-prompt "/no_think You are a professional
 
 - **コマンドライン引数**による設定の変更
 
-ほとんどの場合、コマンドライン引数を通じて希望の設定を直接渡すことができます。詳細については、[コマンドライン引数](#cmd) を参照してください。
+ほとんどの場合、コマンドライン引数を通じて希望の設定を直接渡すことができます。詳細については、[コマンドライン引数](#toc) を参照してください。
 
 たとえば、GUI ウィンドウを有効にしたい場合は、次のコマンドを使用できます：
 
@@ -303,6 +319,8 @@ pdf2zh_next --config-file '/path/config.toml'
 
 ---
 
+<a id="option-clean"></a>
+
 #### クリーンスキップ
 
 このパラメータを `True` に設定すると、PDF のクリーンアップステップがスキップされ、互換性が向上し、一部のフォント処理の問題を回避できます。
@@ -324,6 +342,8 @@ PDF2ZH_SKIP_CLEAN=TRUE pdf2zh_next example.pdf
 
 ---
 
+<a id="option-cache"></a>
+
 #### 翻訳キャッシュ
 
 PDFMathTranslate は翻訳速度を向上させ、同じ内容に対して不必要な API 呼び出しを避けるために、翻訳されたテキストをキャッシュします。`--ignore-cache` オプションを使用して翻訳キャッシュを無視し、強制的に再翻訳を行うことができます。
@@ -335,6 +355,8 @@ pdf2zh_next example.pdf --ignore-cache
 [⬆️ トップに戻る](#toc)
 
 ---
+
+<a id="option-deployment"></a>
 
 #### パブリックサービスとしてのデプロイ
 
@@ -364,6 +386,8 @@ disable_config_auto_save = true
 [⬆️ トップに戻る](#toc)
 
 ---
+
+<a id="option-auth"></a>
 
 #### 認証とウェルカムページ
 
@@ -413,6 +437,8 @@ welcome_page = "/path/to/welcome/html/file"
 [⬆️ トップに戻る](#toc)
 
 ---
+
+<a id="option-glossaries"></a>
 
 #### 用語集サポート
 

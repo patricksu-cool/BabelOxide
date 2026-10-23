@@ -90,7 +90,7 @@ Per spiegazioni dettagliate, si prega di fare riferimento al nostro documento su
 
 <!-- <!-- For downstream applications, please refer to our document about [API Details](./docs/APIS.md) for futher information about: -->
 
-- [API Python](./docs/it/advanced/API/python.md), come utilizzare il programma in altri programmi Python
+- [API Python](advanced/API/python.md), come utilizzare il programma in altri programmi Python
 <!-- - [HTTP API](./docs/APIS.md#api-http), how to communicate with a server with the program installed -->
 
 <h2 id="codice-lingua">Codice lingua</h2>

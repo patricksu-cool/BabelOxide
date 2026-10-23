@@ -84,9 +84,9 @@ def build_babeldoc_config(
 
     table_model = None
     if settings.pdf.translate_table_text:
-        from babeldoc.docvision.table_detection.rapidocr import RapidOCRModel
-
-        table_model = RapidOCRModel()
+        # The pinned BabelDOC 0.6.3 discards table_model unconditionally.
+        # Keep accepting saved settings without constructing a retired model.
+        logger.warning("Table-text detection is unavailable in BabelDOC 0.6.3")
 
     babeldoc_config = config_type(
         input_file=file,

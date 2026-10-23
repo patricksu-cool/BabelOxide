@@ -1,3 +1,5 @@
+<a id="faq"></a>
+
 Algumas perguntas são frequentemente feitas, por isso fornecemos uma lista para usuários que encontram problemas semelhantes.
 
 ## É necessária uma GPU?
@@ -56,7 +58,7 @@ If you encounter SSL errors or other network issues when using **pdf2zh**, pleas
 5. **Check the Server Status**:
    - Visit [PDFMathTranslate Status Page](https://status.pdf2zh.com) to see if there are any ongoing issues.
 
-If the problem persists, please contact our [Community](#community) or check the [FAQ](#faq) for more help.
+If the problem persists, please contact our [Community](community/Contribution-Guide.md) or check the [FAQ](#faq) for more help.
 - **Problema**:
 Ao baixar modelos do hugging face, usuários na China podem encontrar erros de rede. Por exemplo, em [issue #55](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/issues/55), [#70](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/issues/70).
 

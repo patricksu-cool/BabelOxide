@@ -36,7 +36,7 @@
 
 Перевод научных статей в формате PDF и двуязычное сравнение. Основано на [BabelDOC](https://github.com/funstory-ai/BabelDOC). Кроме того, этот проект также является официальной эталонной реализацией для вызова BabelDOC для выполнения перевода PDF.
 
-- 📊 Сохранение формул, диаграмм, оглавления и аннотаций _([предварительный просмотр](#предварительный-просмотр))_.
+- 📊 Сохранение формул, диаграмм, оглавления и аннотаций _([предварительный просмотр](#preview))_.
 - 🌐 Поддержка [множества языков](https://pdf2zh-next.com/supported_languages.html) и разнообразных [служб перевода](https://pdf2zh-next.com/advanced/Documentation-of-Translation-Services.html).
 - 🤖 Предоставляет [инструмент командной строки](https://pdf2zh-next.com/getting-started/USAGE_commandline.html), [интерактивный пользовательский интерфейс](https://pdf2zh-next.com/getting-started/USAGE_webui.html) и [Docker](https://pdf2zh-next.com/getting-started/INSTALLATION_docker.html)
 
@@ -90,7 +90,7 @@
 
 <!-- <!-- For downstream applications, please refer to our document about [API Details](./docs/APIS.md) for futher information about: -->
 
-- [Python API](./docs/ru/advanced/API/python.md), как использовать программу в других программах на Python
+- [Python API](advanced/API/python.md), как использовать программу в других программах на Python
 <!-- - [HTTP API](./docs/APIS.md#api-http), how to communicate with a server with the program installed -->
 
 <h2 id="кодязыка">Код языка</h2>

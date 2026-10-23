@@ -340,7 +340,7 @@ def build_translate_settings(
                     if field_name in GUI_SENSITIVE_FIELDS:
                         continue
                 value = ui_inputs.get(field_name)
-                type_hint = detail_setting.model_fields[field_name].annotation
+                type_hint = type(detail_setting).model_fields[field_name].annotation
                 if value == "" and _type_hint_allows_none(type_hint):
                     value = None
                 original_type = typing.get_origin(type_hint)

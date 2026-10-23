@@ -72,7 +72,7 @@ Si encuentras problemas al usar algún servicio de traducción:
    - Puedes cambiar a otro servicio de traducción en la configuración
 
 4. **Consulta la documentación**
-   - Consulta la [Documentación de servicios de traducción](./translation-services.md) para obtener información detallada
+   - Consulta la [Documentación de servicios de traducción](./Documentation-of-Translation-Services.md) para obtener información detallada
 
 #### Notas importantes
 
@@ -92,7 +92,7 @@ Si encuentras problemas al usar algún servicio de traducción:
 
 Esta política puede actualizarse periódicamente. Por favor, consulta esta página regularmente para obtener la información más reciente.
 
-Para obtener información más detallada sobre cada servicio de traducción, consulta la [Documentación de servicios de traducción](./translation-services.md).
+Para obtener información más detallada sobre cada servicio de traducción, consulta la [Documentación de servicios de traducción](./Documentation-of-Translation-Services.md).
 
 #### Nivel 1 (Soporte oficial)
 

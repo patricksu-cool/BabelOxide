@@ -4,20 +4,22 @@
 
 <h3 id="toc">Table des matières</h3>
 
-- [#### Command Line Args](#command-line-args)
-- [#### Rate Limiting Configuration Guide](#rate-limiting-configuration-guide)
-- [#### Partial translation](#partial-translation)
-- [#### Specify source and target languages](#specify-source-and-target-languages)
-- [#### Translate wih exceptions](#translate-wih-exceptions)
-- [#### Custom prompt](#custom-prompt)
-- [#### Custom configuration](#custom-configuration)
-- [#### Skip clean](#skip-clean)
-- [#### Translation cache](#translation-cache)
-- [#### Deployment as a public services](#deployment-as-a-public-services)
-- [#### Authentication and welcome page](#authentication-and-welcome-page)
-- [#### Glossary Support](#glossary-support)
+- [#### Command Line Args](#option-cli)
+- [#### Rate Limiting Configuration Guide](#option-rate-limits)
+- [#### Partial translation](#option-pages)
+- [#### Specify source and target languages](#option-languages)
+- [#### Translate wih exceptions](#option-exceptions)
+- [#### Custom prompt](#option-prompt)
+- [#### Custom configuration](#option-config)
+- [#### Skip clean](#option-clean)
+- [#### Translation cache](#option-cache)
+- [#### Deployment as a public services](#option-deployment)
+- [#### Authentication and welcome page](#option-auth)
+- [#### Glossary Support](#option-glossaries)
 
 ---
+
+<a id="option-cli"></a>
 
 #### Arguments de ligne de commande
 
@@ -100,6 +102,8 @@ Dans le tableau suivant, nous listons toutes les options avancées pour référe
 
 ---
 
+<a id="option-rate-limits"></a>
+
 #### Guide de configuration de la limitation de débit
 
 Lors de l'utilisation des services de traduction, une configuration appropriée de la limitation de débit est cruciale pour éviter les erreurs d'API et optimiser les performances. Ce guide explique comment configurer les paramètres `--qps` et `--pool-max-worker` en fonction des différentes limitations des services en amont.
@@ -158,6 +162,8 @@ pdf2zh example.pdf --qps 45 --pool-max-worker 45
 
 ---
 
+<a id="option-pages"></a>
+
 #### Traduction partielle
 
 Utilisez le paramètre `--pages` pour traduire une partie d'un document.
@@ -197,6 +203,8 @@ Cette commande traduira la première page, la troisième page, les pages 10 à 2
 
 ---
 
+<a id="option-languages"></a>
+
 #### Spécifier les langues source et cible
 
 Voir [Google Languages Codes](https://developers.google.com/admin-sdk/directory/v1/languages), [DeepL Languages Codes](https://developers.deepl.com/docs/resources/supported-languages)
@@ -208,6 +216,8 @@ pdf2zh_next example.pdf --lang-in en -lang-out ja
 [⬆️ Retour en haut](#toc)
 
 ---
+
+<a id="option-exceptions"></a>
 
 #### Traduire avec exceptions
 
@@ -227,6 +237,8 @@ pdf2zh_next example.pdf --formular-font-pattern "(CM[^R]|MS.M|XY|MT|BL|RM|EU|LA|
 
 ---
 
+<a id="option-prompt"></a>
+
 #### Invite personnalisée
 
 <!-- Note: System prompt is currently not supported. See [this change](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/pull/637). -->
@@ -240,6 +252,8 @@ pdf2zh_next example.pdf --custom-system-prompt "/no_think You are a professional
 [⬆️ Retour en haut](#toc)
 
 ---
+
+<a id="option-config"></a>
 
 #### Configuration personnalisée
 
@@ -302,6 +316,8 @@ Il est fortement recommandé de se référer au contenu de ce fichier de configu
 
 ---
 
+<a id="option-clean"></a>
+
 #### Ignorer le nettoyage
 
 Lorsque ce paramètre est défini sur True, l'étape de nettoyage du PDF sera ignorée, ce qui peut améliorer la compatibilité et éviter certains problèmes de traitement des polices.
@@ -323,6 +339,8 @@ PDF2ZH_SKIP_CLEAN=TRUE pdf2zh_next example.pdf
 
 ---
 
+<a id="option-cache"></a>
+
 #### Cache de traduction
 
 PDFMathTranslate met en cache les textes traduits pour augmenter la vitesse et éviter les appels API inutiles pour les mêmes contenus. Vous pouvez utiliser l'option `--ignore-cache` pour ignorer le cache de traduction et forcer une nouvelle traduction.
@@ -334,6 +352,8 @@ pdf2zh_next example.pdf --ignore-cache
 [⬆️ Retour en haut](#toc)
 
 ---
+
+<a id="option-deployment"></a>
 
 #### Déploiement en tant que services publics
 
@@ -363,6 +383,8 @@ disable_config_auto_save = true
 [⬆️ Retour en haut](#toc)
 
 ---
+
+<a id="option-auth"></a>
 
 #### Authentification et page d'accueil
 
@@ -412,6 +434,8 @@ welcome_page = "/path/to/welcome/html/file"
 [⬆️ Retour en haut](#toc)
 
 ---
+
+<a id="option-glossaries"></a>
 
 #### Prise en charge du glossaire
 

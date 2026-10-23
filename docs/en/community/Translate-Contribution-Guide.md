@@ -12,7 +12,7 @@ We use [Weblate](https://weblate.org/) to manage our documentation translations.
 
 It's very simple to propose translation improvements via Weblate, and you don't even need to register an account. Read on for the step-by-step process.
 
-Assume you want to improve the first sentence in the "Command-line arguments" section of [Advanced → Advanced](docs/en/advanced/advanced.md):
+Assume you want to improve the first sentence in the "Command-line arguments" section of [Advanced → Advanced](../advanced/advanced.md):
 
 1. Open the [project's Weblate page](https://hosted.weblate.org/projects/pdfmathtranslate-next/).
 

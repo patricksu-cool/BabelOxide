@@ -6,6 +6,7 @@ may replace one another's complete settings; they never share a temporary file.
 
 import os
 import tempfile
+import time
 from pathlib import Path
 
 import tomlkit
@@ -49,7 +50,16 @@ def write_toml_atomic(file_path: Path, content: dict) -> None:
             tomlkit.dump(encode_toml_content(content), stream)
             stream.flush()
             os.fsync(stream.fileno())
-        temporary_path.replace(file_path)
+        # Windows can briefly deny replacement while another writer or scanner
+        # holds the destination. Never fall back to truncating the old file.
+        for attempt in range(5):
+            try:
+                temporary_path.replace(file_path)
+                break
+            except PermissionError as exc:
+                if getattr(exc, "winerror", None) not in {5, 32, 33} or attempt == 4:
+                    raise
+                time.sleep(0.01 * 2**attempt)
     finally:
         if temporary_path is not None:
             temporary_path.unlink(missing_ok=True)

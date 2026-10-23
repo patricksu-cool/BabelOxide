@@ -12,7 +12,7 @@
 
 通过 Weblate 提出翻译改进建议非常简单，甚至无需注册账户。请继续阅读以下指南。
 
-假设您想改进 [高级选项 → 高级](docs/en/advanced/advanced.md) 中 "命令行参数" 部分的第一个句子：
+假设您想改进 [高级选项 → 高级](../advanced/advanced.md) 中 "命令行参数" 部分的第一个句子：
 
 1. 打开 [项目的 Weblate 页面](https://hosted.weblate.org/projects/pdfmathtranslate-next/)。
 

@@ -36,7 +36,7 @@
 
 Traduction d'articles scientifiques PDF et comparaison bilingue. Basé sur [BabelDOC](https://github.com/funstory-ai/BabelDOC). De plus, ce projet est également l'implémentation de référence officielle pour appeler BabelDOC afin d'effectuer la traduction PDF.
 
-- 📊 Préserve les formules, les graphiques, la table des matières et les annotations _([aperçu](#aperçu))_.
+- 📊 Préserve les formules, les graphiques, la table des matières et les annotations _([aperçu](#preview))_.
 - 🌐 Prend en charge [plusieurs langues](https://pdf2zh-next.com/supported_languages.html) et divers [services de traduction](https://pdf2zh-next.com/advanced/Documentation-of-Translation-Services.html).
 - 🤖 Fournit un [outil en ligne de commande](https://pdf2zh-next.com/getting-started/USAGE_commandline.html), une [interface utilisateur interactive](https://pdf2zh-next.com/getting-started/USAGE_webui.html) et [Docker](https://pdf2zh-next.com/getting-started/INSTALLATION_docker.html)
 
@@ -90,7 +90,7 @@ Pour des explications détaillées, veuillez vous référer à notre document su
 
 <!-- <!-- For downstream applications, please refer to our document about [API Details](./docs/APIS.md) for futher information about: -->
 
-- [API Python](./docs/fr/advanced/API/python.md), comment utiliser le programme dans d'autres programmes Python
+- [API Python](advanced/API/python.md), comment utiliser le programme dans d'autres programmes Python
 <!-- - [HTTP API](./docs/APIS.md#api-http), how to communicate with a server with the program installed -->
 
 <h2 id="langcode">Code de langue</h2>

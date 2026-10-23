@@ -141,7 +141,7 @@ def test_config_maps_pdf_translation_and_split_options(
 
 
 @pytest.mark.usefixtures("factories")
-def test_table_model_is_created_only_when_enabled(settings, monkeypatch):
+def test_retired_table_model_is_never_loaded(settings, monkeypatch, caplog):
     table_model = object()
     constructor = Mock(return_value=table_model)
     monkeypatch.setitem(
@@ -154,8 +154,9 @@ def test_table_model_is_created_only_when_enabled(settings, monkeypatch):
     constructor.assert_not_called()
     settings.pdf.translate_table_text = True
     enabled = high_level.create_babeldoc_config(settings, Path("input.pdf"))
-    assert enabled.table_model is table_model
-    constructor.assert_called_once_with()
+    assert enabled.table_model is None
+    constructor.assert_not_called()
+    assert "Table-text detection is unavailable" in caplog.text
 
 
 def test_configuration_validation_fails_before_external_calls(settings, factories):

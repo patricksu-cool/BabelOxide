@@ -1,23 +1,27 @@
+<a id="toc"></a>
+
 [**Erweiterte Optionen**](./introduction.md) > **Erweiterte Optionen** _(aktuell)_
 
 ---
 
 <h3 id="inhaltsverzeichnis">Inhaltsverzeichnis</h3>
 
-- [#### Kommandozeilenargumente](#kommandozeilenargumente)
-- [#### Ratenbegrenzungskonfigurationsleitfaden](#ratenbegrenzungskonfigurationsleitfaden)
-- [#### Teilweise Übersetzung](#teilweise-übersetzung)
-- [#### Quell- und Zielsprachen angeben](#quell--und-zielsprachen-angeben)
-- [#### Übersetzen mit Ausnahmen](#übersetzen-mit-ausnahmen)
-- [#### Benutzerdefinierte Eingabeaufforderung](#benutzerdefinierte-eingabeaufforderung)
-- [#### Benutzerdefinierte Konfiguration](#benutzerdefinierte-konfiguration)
-- [#### Überspringe Bereinigung](#überspringe-bereinigung)
-- [#### Übersetzungscache](#übersetzungscache)
-- [#### Bereitstellung als öffentlicher Dienst](#bereitstellung-als-öffentlicher-dienst)
-- [#### Authentifizierung und Willkommensseite](#authentifizierung-und-willkommensseite)
-- [#### Glossar-Unterstützung](#glossar-unterstützung)
+- [#### Kommandozeilenargumente](#option-cli)
+- [#### Ratenbegrenzungskonfigurationsleitfaden](#option-rate-limits)
+- [#### Teilweise Übersetzung](#option-pages)
+- [#### Quell- und Zielsprachen angeben](#option-languages)
+- [#### Übersetzen mit Ausnahmen](#option-exceptions)
+- [#### Benutzerdefinierte Eingabeaufforderung](#option-prompt)
+- [#### Benutzerdefinierte Konfiguration](#option-config)
+- [#### Überspringe Bereinigung](#option-clean)
+- [#### Übersetzungscache](#option-cache)
+- [#### Bereitstellung als öffentlicher Dienst](#option-deployment)
+- [#### Authentifizierung und Willkommensseite](#option-auth)
+- [#### Glossar-Unterstützung](#option-glossaries)
 
 ---
+
+<a id="option-cli"></a>
 
 #### Kommandozeilenargumente
 
@@ -100,6 +104,8 @@ In der folgenden Tabelle listen wir alle erweiterten Optionen zur Referenz auf:
 
 ---
 
+<a id="option-rate-limits"></a>
+
 #### Ratenbegrenzungskonfigurationsleitfaden
 
 Bei der Verwendung von Übersetzungsdiensten ist eine ordnungsgemäße Ratenbegrenzungskonfiguration entscheidend, um API-Fehler zu vermeiden und die Leistung zu optimieren. Dieser Leitfaden erklärt, wie die Parameter `--qps` und `--pool-max-worker` basierend auf den verschiedenen Einschränkungen der Upstream-Dienste konfiguriert werden.
@@ -158,6 +164,8 @@ pdf2zh example.pdf --qps 45 --pool-max-worker 45
 
 ---
 
+<a id="option-pages"></a>
+
 #### Teilweise Übersetzung
 
 Verwenden Sie den `--pages`-Parameter, um einen Teil eines Dokuments zu übersetzen.
@@ -197,6 +205,8 @@ Dieser Befehl übersetzt die erste Seite, die dritte Seite, die Seiten 10-20 und
 
 ---
 
+<a id="option-languages"></a>
+
 #### Quell- und Zielsprachen angeben
 
 Siehe [Google Languages Codes](https://developers.google.com/admin-sdk/directory/v1/languages), [DeepL Languages Codes](https://developers.deepl.com/docs/resources/supported-languages)
@@ -208,6 +218,8 @@ pdf2zh_next example.pdf --lang-in en -lang-out ja
 [⬆️ Zurück zum Anfang](#toc)
 
 ---
+
+<a id="option-exceptions"></a>
 
 #### Übersetzen mit Ausnahmen
 
@@ -227,6 +239,8 @@ pdf2zh_next example.pdf --formular-font-pattern "(CM[^R]|MS.M|XY|MT|BL|RM|EU|LA|
 
 ---
 
+<a id="option-prompt"></a>
+
 #### Benutzerdefinierte Eingabeaufforderung
 
 <!-- Note: System prompt is currently not supported. See [this change](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/pull/637). -->
@@ -240,6 +254,8 @@ pdf2zh_next example.pdf --custom-system-prompt "/no_think You are a professional
 [⬆️ Zurück zum Anfang](#toc)
 
 ---
+
+<a id="option-config"></a>
 
 #### Benutzerdefinierte Konfiguration
 
@@ -256,7 +272,7 @@ Es gibt mehrere Möglichkeiten, die Konfigurationsdatei zu ändern und zu import
 
 - Ändern der Konfiguration über **Kommandozeilenargumente**
 
-In den meisten Fällen können Sie Ihre gewünschten Einstellungen direkt über Kommandozeilenargumente übergeben. Weitere Informationen finden Sie unter [Kommandozeilenargumente](#cmd).
+In den meisten Fällen können Sie Ihre gewünschten Einstellungen direkt über Kommandozeilenargumente übergeben. Weitere Informationen finden Sie unter [Kommandozeilenargumente](#toc).
 
 Wenn Sie beispielsweise ein GUI-Fenster aktivieren möchten, können Sie den folgenden Befehl verwenden:
 
@@ -302,6 +318,8 @@ Es wird dringend empfohlen, auf den Inhalt dieser Konfigurationsdatei zu verweis
 
 ---
 
+<a id="option-clean"></a>
+
 #### Überspringe Bereinigung
 
 Wenn dieser Parameter auf True gesetzt wird, wird der PDF-Bereinigungsschritt übersprungen, was die Kompatibilität verbessern und einige Schriftverarbeitungsprobleme vermeiden kann.
@@ -323,6 +341,8 @@ PDF2ZH_SKIP_CLEAN=TRUE pdf2zh_next example.pdf
 
 ---
 
+<a id="option-cache"></a>
+
 #### Übersetzungscache
 
 PDFMathTranslate cached übersetzte Texte, um die Geschwindigkeit zu erhöhen und unnötige API-Aufrufe für gleiche Inhalte zu vermeiden. Sie können die Option `--ignore-cache` verwenden, um den Übersetzungscache zu ignorieren und eine erneute Übersetzung zu erzwingen.
@@ -334,6 +354,8 @@ pdf2zh_next example.pdf --ignore-cache
 [⬆️ Zurück zum Anfang](#toc)
 
 ---
+
+<a id="option-deployment"></a>
 
 #### Bereitstellung als öffentlicher Dienst
 
@@ -363,6 +385,8 @@ disable_config_auto_save = true
 [⬆️ Zurück zum Anfang](#toc)
 
 ---
+
+<a id="option-auth"></a>
 
 #### Authentifizierung und Willkommensseite
 
@@ -412,6 +436,8 @@ welcome_page = "/path/to/welcome/html/file"
 [⬆️ Zurück zum Anfang](#toc)
 
 ---
+
+<a id="option-glossaries"></a>
 
 #### Glossar-Unterstützung
 

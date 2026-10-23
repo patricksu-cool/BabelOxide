@@ -90,7 +90,7 @@ Para explicaciones detalladas, consulta nuestro documento sobre [Uso avanzado](h
 
 <!-- <!-- For downstream applications, please refer to our document about [API Details](./docs/APIS.md) for futher information about: -->
 
-- [Python API](./docs/es/advanced/API/python.md), cómo usar el programa en otros programas Python
+- [Python API](advanced/API/python.md), cómo usar el programa en otros programas Python
 <!-- - [HTTP API](./docs/APIS.md#api-http), how to communicate with a server with the program installed -->
 
 <h2 id="códigoidioma">Language Code</h2>

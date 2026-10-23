@@ -4,20 +4,22 @@
 
 <h3 id="toc">Table of Contents</h3>
 
-- [Command Line Args](#command-line-args)
-- [Rate Limiting Configuration Guide](#rate-limiting-configuration-guide)
-- [Partial translation](#partial-translation)
-- [Specify source and target languages](#specify-source-and-target-languages)
-- [Translate wih exceptions](#translate-wih-exceptions)
-- [Custom prompt](#custom-prompt)
-- [Custom configuration](#custom-configuration)
-- [Skip clean](#skip-clean)
-- [Translation cache](#translation-cache)
-- [Deployment as a public services](#deployment-as-a-public-services)
-- [Authentication and welcome page](#authentication-and-welcome-page)
-- [Glossary Support](#glossary-support)
+- [Command Line Args](#option-cli)
+- [Rate Limiting Configuration Guide](#option-rate-limits)
+- [Partial translation](#option-pages)
+- [Specify source and target languages](#option-languages)
+- [Translate wih exceptions](#option-exceptions)
+- [Custom prompt](#option-prompt)
+- [Custom configuration](#option-config)
+- [Skip clean](#option-clean)
+- [Translation cache](#option-cache)
+- [Deployment as a public services](#option-deployment)
+- [Authentication and welcome page](#option-auth)
+- [Glossary Support](#option-glossaries)
 
 ---
+
+<a id="option-cli"></a>
 
 #### Command Line Args
 
@@ -100,6 +102,8 @@ In the following table, we list all advanced options for reference:
 
 ---
 
+<a id="option-rate-limits"></a>
+
 #### Rate Limiting Configuration Guide
 
 When using translation services, proper rate limiting configuration is crucial to avoid API errors and optimize performance. This guide explains how to configure `--qps` and `--pool-max-worker` parameters based on different upstream service limitations.
@@ -158,6 +162,8 @@ pdf2zh example.pdf --qps 45 --pool-max-worker 45
 
 ---
 
+<a id="option-pages"></a>
+
 #### Partial translation
 
 Use the `--pages` parameter to translate a portion of a document.
@@ -198,6 +204,8 @@ This command will translate the first page, the third page, pages 10-20, and all
 
 ---
 
+<a id="option-languages"></a>
+
 #### Specify source and target languages
 
 See [Google Languages Codes](https://developers.google.com/admin-sdk/directory/v1/languages), [DeepL Languages Codes](https://developers.deepl.com/docs/resources/supported-languages)
@@ -209,6 +217,8 @@ pdf2zh_next example.pdf --lang-in en -lang-out ja
 [⬆️ Back to top](#toc)
 
 ---
+
+<a id="option-exceptions"></a>
 
 #### Translate wih exceptions
 
@@ -228,6 +238,8 @@ pdf2zh_next example.pdf --formular-font-pattern "(CM[^R]|MS.M|XY|MT|BL|RM|EU|LA|
 
 ---
 
+<a id="option-prompt"></a>
+
 #### Custom prompt
 
 <!-- Note: System prompt is currently not supported. See [this change](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/pull/637). -->
@@ -241,6 +253,8 @@ pdf2zh_next example.pdf --custom-system-prompt "/no_think You are a professional
 [⬆️ Back to top](#toc)
 
 ---
+
+<a id="option-config"></a>
 
 #### Custom configuration
 
@@ -257,7 +271,7 @@ There are multiple ways to modify and import the configuration file.
 
 - Modifying Configuration via **Command Line Arguments**
 
-For most cases, you can directly pass your desired settings through command line arguments. Please refer to [Command Line Args](#cmd) for more information.
+For most cases, you can directly pass your desired settings through command line arguments. Please refer to [Command Line Args](#toc) for more information.
 
 For example, if you want to enable a GUI window, you can use the following command:
 
@@ -303,6 +317,8 @@ It is strongly recommended to refer to this configuration file's content and use
 
 ---
 
+<a id="option-clean"></a>
+
 #### Skip clean
 
 When this parameter is set to True, the PDF cleaning step will be skipped, which can improve compatibility and avoid some font processing issues.
@@ -324,6 +340,8 @@ PDF2ZH_SKIP_CLEAN=TRUE pdf2zh_next example.pdf
 
 ---
 
+<a id="option-cache"></a>
+
 #### Translation cache
 
 PDFMathTranslate caches translated texts to increase speed and avoid unnecessary API calls for same contents. You can use `--ignore-cache` option to ignore translation cache and force retranslation.
@@ -335,6 +353,8 @@ pdf2zh_next example.pdf --ignore-cache
 [⬆️ Back to top](#toc)
 
 ---
+
+<a id="option-deployment"></a>
 
 #### Deployment as a public services
 
@@ -364,6 +384,8 @@ disable_config_auto_save = true
 [⬆️ Back to top](#toc)
 
 ---
+
+<a id="option-auth"></a>
 
 #### Authentication and welcome page
 
@@ -413,6 +435,8 @@ welcome_page = "/path/to/welcome/html/file"
 [⬆️ Back to top](#toc)
 
 ---
+
+<a id="option-glossaries"></a>
 
 #### Glossary Support
 

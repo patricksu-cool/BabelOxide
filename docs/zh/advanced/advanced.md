@@ -1,23 +1,27 @@
+<a id="toc"></a>
+
 [**高级选项**](./introduction.md) > **高级选项** _(当前)_
 
 ---
 
 <h3 id="目录">目录</h3>
 
-- [命令行参数](#命令行参数)
-- [限流配置指南](#限流配置指南)
-- [部分翻译](#部分翻译)
-- [指定源语言和目标语言](#指定源语言和目标语言)
-- [使用例外进行翻译](#使用例外进行翻译)
-- [自定义提示词](#自定义提示词)
-- [自定义配置](#自定义配置)
-- [跳过清理](#跳过清理)
-- [翻译缓存](#翻译缓存)
-- [部署为公共服务](#部署为公共服务)
-- [认证与欢迎页面](#认证与欢迎页面)
-- [术语表支持](#术语表支持)
+- [命令行参数](#option-cli)
+- [限流配置指南](#option-rate-limits)
+- [部分翻译](#option-pages)
+- [指定源语言和目标语言](#option-languages)
+- [使用例外进行翻译](#option-exceptions)
+- [自定义提示词](#option-prompt)
+- [自定义配置](#option-config)
+- [跳过清理](#option-clean)
+- [翻译缓存](#option-cache)
+- [部署为公共服务](#option-deployment)
+- [认证与欢迎页面](#option-auth)
+- [术语表支持](#option-glossaries)
 
 ---
+
+<a id="option-cli"></a>
 
 #### 命令行参数
 
@@ -33,7 +37,7 @@
 | ------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | `input-files`                   | 要处理的输入 PDF 文件                                                              | `pdf2zh_next example.pdf`                                                                                             |
 | `--output`                      | 输出文件的目录                                                              | `pdf2zh_next example.pdf --output /outputpath`                                                                        |
-| `--<Services>`                  | 使用 [**特定服务**](./翻译服务文档.md) 进行翻译 | `pdf2zh_next example.pdf --openai`<br>`pdf2zh_next example.pdf --deepseek`                                            |
+| `--<Services>`                  | 使用 [**特定服务**](./Documentation-of-Translation-Services.md) 进行翻译 | `pdf2zh_next example.pdf --openai`<br>`pdf2zh_next example.pdf --deepseek`                                            |
 | `--help`, `-h`                  | 显示帮助信息并退出                                                              | `pdf2zh_next -h`                                                                                                      |
 | `--config-file`                 | 配置文件路径                                                          | `pdf2zh_next --config-file /path/to/config/config.toml`                                                               |
 | `--report-interval`             | 进度报告间隔（秒）                                                     | `pdf2zh_next example.pdf --report-interval 5`                                                                         |
@@ -100,6 +104,8 @@
 
 ---
 
+<a id="option-rate-limits"></a>
+
 #### 限流配置指南
 
 在使用翻译服务时，适当的限流配置对于避免 API 错误和优化性能至关重要。本指南解释了如何根据不同的上游服务限制来配置 `--qps` 和 `--pool-max-worker` 参数。
@@ -158,6 +164,8 @@ pdf2zh example.pdf --qps 45 --pool-max-worker 45
 
 ---
 
+<a id="option-pages"></a>
+
 #### 部分翻译
 
 使用 `--pages` 参数来翻译文档的一部分。
@@ -193,9 +201,11 @@ pdf2zh_next example.pdf --pages "1,3,10-20,25-"
 
 此命令将翻译第一页、第三页、第 10 到 20 页，以及从第 25 页开始的所有后续页面。
 
-[⬆️ 回到顶部](#目录)
+[⬆️ 回到顶部](#toc)
 
 ---
+
+<a id="option-languages"></a>
 
 #### 指定源语言和目标语言
 
@@ -208,6 +218,8 @@ pdf2zh_next example.pdf --lang-in en -lang-out ja
 [⬆️ 返回顶部](#toc)
 
 ---
+
+<a id="option-exceptions"></a>
 
 #### 使用例外进行翻译
 
@@ -227,6 +239,8 @@ pdf2zh_next example.pdf --formular-font-pattern "(CM[^R]|MS.M|XY|MT|BL|RM|EU|LA|
 
 ---
 
+<a id="option-prompt"></a>
+
 #### 自定义提示词
 
 <!-- Note: System prompt is currently not supported. See [this change](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/pull/637). -->
@@ -240,6 +254,8 @@ pdf2zh_next example.pdf --custom-system-prompt "/no_think You are a professional
 [⬆️ 返回顶部](#toc)
 
 ---
+
+<a id="option-config"></a>
 
 #### 自定义配置
 
@@ -256,7 +272,7 @@ pdf2zh_next example.pdf --custom-system-prompt "/no_think You are a professional
 
 - 通过 **命令行参数** 修改配置
 
-对于大多数情况，您可以直接通过命令行参数传递所需的设置。更多信息请参考 [命令行参数](#命令行参数)。
+对于大多数情况，您可以直接通过命令行参数传递所需的设置。更多信息请参考 [命令行参数](#option-cli)。
 
 例如，如果您想要启用 GUI 窗口，可以使用以下命令：
 
@@ -302,6 +318,8 @@ pdf2zh_next --config-file '/path/config.toml'
 
 ---
 
+<a id="option-clean"></a>
+
 #### 跳过清理
 
 当此参数设置为 True 时，将跳过 PDF 清理步骤，这可以提高兼容性并避免一些字体处理问题。
@@ -323,6 +341,8 @@ PDF2ZH_SKIP_CLEAN=TRUE pdf2zh_next example.pdf
 
 ---
 
+<a id="option-cache"></a>
+
 #### 翻译缓存
 
 PDFMathTranslate 会缓存已翻译的文本，以提高速度并避免对相同内容进行不必要的 API 调用。您可以使用 `--ignore-cache` 选项来忽略翻译缓存并强制重新翻译。
@@ -334,6 +354,8 @@ pdf2zh_next example.pdf --ignore-cache
 [⬆️ 返回顶部](#toc)
 
 ---
+
+<a id="option-deployment"></a>
 
 #### 部署为公共服务
 
@@ -363,6 +385,8 @@ disable_config_auto_save = true
 [⬆️ 返回顶部](#toc)
 
 ---
+
+<a id="option-auth"></a>
 
 #### 认证与欢迎页面
 
@@ -413,6 +437,8 @@ welcome_page = "/path/to/welcome/html/file"
 
 ---
 
+<a id="option-glossaries"></a>
+
 #### 术语表支持
 
 PDFMathTranslate 支持术语表功能。术语表文件应为 `csv` 格式。
@@ -436,7 +462,7 @@ pdf2zh_next example.pdf --glossaries "glossary1.csv,glossary2.csv,glossary3.csv"
 
 您现在可以上传自己的术语表文件了。上传文件后，您可以通过点击文件名来查看它们，内容会显示在下方。
 
-[⬆️ 回到顶部](#目录)
+[⬆️ 回到顶部](#toc)
 
 <div align="right"> 
 <h6><small>本页面的部分内容由 GPT 翻译，可能包含错误。</small></h6>

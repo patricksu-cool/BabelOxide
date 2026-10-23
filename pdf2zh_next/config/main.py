@@ -66,13 +66,13 @@ def build_args_parser(
     if field_name2type is None:
         field_name2type = {}
 
-    if settings_model is not None:
+    if settings_model is None:
+        settings_model = CLIEnvSettingsModel
+    elif isinstance(parser, argparse.ArgumentParser):
         parser = parser.add_argument_group(
             title=settings_model.__name__,
             description=getdoc(settings_model),
         )
-    else:
-        settings_model = CLIEnvSettingsModel
 
     for field_name, field_detail in settings_model.model_fields.items():
         if field_name not in _no_duplicate_field_name and field_name in field_name2type:

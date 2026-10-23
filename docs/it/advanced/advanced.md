@@ -4,20 +4,22 @@
 
 <h3 id="toc">Indice dei contenuti</h3>
 
-- [#### Argomenti della Riga di Comando](#argomenti-della-riga-di-comando)
-- [#### Guida alla configurazione della limitazione della frequenza](#guida-alla-configurazione-della-limitazione-della-frequenza)
-- [#### Traduzione parziale](#traduzione-parziale)
-- [#### Specificare le lingue di origine e di destinazione](#specificare-le-lingue-di-origine-e-di-destinazione)
-- [#### Traduci con eccezioni](#traduci-con-eccezioni)
-- [#### Prompt personalizzato](#prompt-personalizzato)
-- [#### Configurazione personalizzata](#configurazione-personalizzata)
-- [#### Salta pulizia](#salta-pulizia)
-- [#### Cache delle traduzioni](#cache-delle-traduzioni)
-- [#### Distribuzione come servizi pubblici](#distribuzione-come-servizi-pubblici)
-- [#### Autenticazione e pagina di benvenuto](#autenticazione-e-pagina-di-benvenuto)
-- [#### Glossario Supportato](#glossario-supportato)
+- [#### Argomenti della Riga di Comando](#option-cli)
+- [#### Guida alla configurazione della limitazione della frequenza](#option-rate-limits)
+- [#### Traduzione parziale](#option-pages)
+- [#### Specificare le lingue di origine e di destinazione](#option-languages)
+- [#### Traduci con eccezioni](#option-exceptions)
+- [#### Prompt personalizzato](#option-prompt)
+- [#### Configurazione personalizzata](#option-config)
+- [#### Salta pulizia](#option-clean)
+- [#### Cache delle traduzioni](#option-cache)
+- [#### Distribuzione come servizi pubblici](#option-deployment)
+- [#### Autenticazione e pagina di benvenuto](#option-auth)
+- [#### Glossario Supportato](#option-glossaries)
 
 ---
+
+<a id="option-cli"></a>
 
 #### Argomenti della Riga di Comando
 
@@ -100,6 +102,8 @@ Nella seguente tabella, elenchiamo tutte le opzioni avanzate per riferimento:
 
 ---
 
+<a id="option-rate-limits"></a>
+
 #### Guida alla configurazione della limitazione della frequenza
 
 Quando si utilizzano i servizi di traduzione, una corretta configurazione della limitazione della frequenza è fondamentale per evitare errori API e ottimizzare le prestazioni. Questa guida spiega come configurare i parametri `--qps` e `--pool-max-worker` in base alle diverse limitazioni dei servizi upstream.
@@ -158,6 +162,8 @@ pdf2zh example.pdf --qps 45 --pool-max-worker 45
 
 ---
 
+<a id="option-pages"></a>
+
 #### Traduzione parziale
 
 Usa il parametro `--pages` per tradurre una porzione di un documento.
@@ -197,6 +203,8 @@ Questo comando tradurrà la prima pagina, la terza pagina, le pagine da 10 a 20 
 
 ---
 
+<a id="option-languages"></a>
+
 #### Specificare le lingue di origine e di destinazione
 
 Vedi [Google Languages Codes](https://developers.google.com/admin-sdk/directory/v1/languages), [DeepL Languages Codes](https://developers.deepl.com/docs/resources/supported-languages)
@@ -208,6 +216,8 @@ pdf2zh_next example.pdf --lang-in en -lang-out ja
 [⬆️ Torna all'inizio](#toc)
 
 ---
+
+<a id="option-exceptions"></a>
 
 #### Traduci con eccezioni
 
@@ -227,6 +237,8 @@ pdf2zh_next example.pdf --formular-font-pattern "(CM[^R]|MS.M|XY|MT|BL|RM|EU|LA|
 
 ---
 
+<a id="option-prompt"></a>
+
 #### Prompt personalizzato
 
 <!-- Note: System prompt is currently not supported. See [this change](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/pull/637). -->
@@ -240,6 +252,8 @@ pdf2zh_next example.pdf --custom-system-prompt "/no_think You are a professional
 [⬆️ Torna all'inizio](#toc)
 
 ---
+
+<a id="option-config"></a>
 
 #### Configurazione personalizzata
 
@@ -256,7 +270,7 @@ Esistono diversi modi per modificare e importare il file di configurazione.
 
 - Modifica della configurazione tramite **Argomenti della Riga di Comando**
 
-Per la maggior parte dei casi, puoi passare direttamente le impostazioni desiderate tramite gli argomenti della riga di comando. Si prega di fare riferimento a [Argomenti della Riga di Comando](#cmd) per ulteriori informazioni.
+Per la maggior parte dei casi, puoi passare direttamente le impostazioni desiderate tramite gli argomenti della riga di comando. Si prega di fare riferimento a [Argomenti della Riga di Comando](#toc) per ulteriori informazioni.
 
 Ad esempio, se desideri abilitare una finestra GUI, puoi utilizzare il seguente comando:
 
@@ -302,6 +316,8 @@ Si prega di non modificare i file di configurazione nella directory `default`.
 
 ---
 
+<a id="option-clean"></a>
+
 #### Salta pulizia
 
 Quando questo parametro è impostato su True, il passaggio di pulizia del PDF verrà saltato, il che può migliorare la compatibilità ed evitare alcuni problemi di elaborazione dei caratteri.
@@ -323,6 +339,8 @@ PDF2ZH_SKIP_CLEAN=TRUE pdf2zh_next example.pdf
 
 ---
 
+<a id="option-cache"></a>
+
 #### Cache delle traduzioni
 
 PDFMathTranslate memorizza nella cache i testi tradotti per aumentare la velocità ed evitare chiamate API non necessarie per contenuti identici. Puoi utilizzare l'opzione `--ignore-cache` per ignorare la cache delle traduzioni e forzare una nuova traduzione.
@@ -334,6 +352,8 @@ pdf2zh_next example.pdf --ignore-cache
 [⬆️ Torna all'inizio](#toc)
 
 ---
+
+<a id="option-deployment"></a>
 
 #### Distribuzione come servizi pubblici
 
@@ -363,6 +383,8 @@ disable_config_auto_save = true
 [⬆️ Torna all'inizio](#toc)
 
 ---
+
+<a id="option-auth"></a>
 
 #### Autenticazione e pagina di benvenuto
 
@@ -412,6 +434,8 @@ welcome_page = "/path/to/welcome/html/file"
 [⬆️ Torna all'inizio](#toc)
 
 ---
+
+<a id="option-glossaries"></a>
 
 #### Glossario Supportato
 

@@ -12,7 +12,7 @@
 
 1. 文档国际化/翻译
 2. 与核心基础设施相关的贡献，例如 HTTP API 等。
-3. 明确标记为“无需帮助”的 Issue（包括 [Byaidu/PDFMathTranslate](Byaidu/PDFMathTranslate) 和 [PDFMathTranslate-next/PDFMathTranslate-next](PDFMathTranslate-next/PDFMathTranslate-next) 仓库中的 Issue）。
+3. 明确标记为“无需帮助”的 Issue（包括 [Byaidu/PDFMathTranslate](https://github.com/Byaidu/PDFMathTranslate) 和 [PDFMathTranslate-next/PDFMathTranslate-next](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next) 仓库中的 Issue）。
 4. 维护者认为不合适的其他贡献。
 5. 贡献文档，但修改非英语语言的文档。
 6. 需要修改 PDF 文件的 PR。

@@ -12,7 +12,7 @@ Vielen Dank für Ihr Interesse an diesem Projekt! Bevor Sie mit Ihrem Beitrag be
 
 1. Dokumentation Internationalisierung/Übersetzung
 2. Beiträge im Zusammenhang mit der Kerninfrastruktur, wie z.B. HTTP-API, etc.
-3. Issues, die explizit als "Keine Hilfe benötigt" markiert sind (einschließlich Issues im [Byaidu/PDFMathTranslate](Byaidu/PDFMathTranslate)- und [PDFMathTranslate-next/PDFMathTranslate-next](PDFMathTranslate-next/PDFMathTranslate-next)-Repository).
+3. Issues, die explizit als "Keine Hilfe benötigt" markiert sind (einschließlich Issues im [Byaidu/PDFMathTranslate](https://github.com/Byaidu/PDFMathTranslate)- und [PDFMathTranslate-next/PDFMathTranslate-next](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next)-Repository).
 4. Andere Beiträge, die von den Maintainern als unangemessen erachtet werden.
 5. Beiträge zur Dokumentation, bei denen die Dokumentation in anderen Sprachen als Englisch geändert wird.
 6. PRs, die das Ändern von `PDF`-Dateien erfordern.

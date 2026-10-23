@@ -12,7 +12,7 @@
 
 Weblate 를 통해 번역 개선을 제안하는 것은 매우 간단하며, 계정 등록도 필요하지 않습니다. 단계별 과정을 계속 읽어보세요.
 
-[高级选项 → 高级](docs/en/advanced/advanced.md) 의 "명령줄 인수" 섹션 첫 번째 문장을 개선하고 싶다고 가정해 보겠습니다:
+[高级选项 → 高级](../advanced/advanced.md) 의 "명령줄 인수" 섹션 첫 번째 문장을 개선하고 싶다고 가정해 보겠습니다:
 
 1. [프로젝트의 Weblate 페이지](https://hosted.weblate.org/projects/pdfmathtranslate-next/) 를 엽니다.
 

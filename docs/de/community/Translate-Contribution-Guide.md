@@ -12,7 +12,7 @@ Wir verwenden [Weblate](https://weblate.org/) zur Verwaltung unserer Dokumentati
 
 Es ist sehr einfach, Verbesserungsvorschläge für Übersetzungen über Weblate einzureichen, und Sie müssen nicht einmal ein Konto registrieren. Lesen Sie weiter für den schrittweisen Prozess.
 
-Angenommen, Sie möchten den ersten Satz im Abschnitt "命令行参数" von [高级选项 → 高级](docs/en/advanced/advanced.md) verbessern:
+Angenommen, Sie möchten den ersten Satz im Abschnitt "命令行参数" von [高级选项 → 高级](../advanced/advanced.md) verbessern:
 
 1. Öffnen Sie die [Weblate-Seite des Projekts](https://hosted.weblate.org/projects/pdfmathtranslate-next/).
 

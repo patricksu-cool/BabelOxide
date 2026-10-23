@@ -4,20 +4,22 @@
 
 <h3 id="toc">Tabla de Contenidos</h3>
 
-- [Argumentos de línea de comandos](#argumentos-de-línea-de-comandos)
-- [Guía de configuración de límites de tasa](#guía-de-configuración-de-límites-de-tasa)
-- [Traducción parcial](#traducción-parcial)
-- [Especificar idiomas de origen y destino](#especificar-idiomas-de-origen-y-destino)
-- [Traducir con excepciones](#traducir-con-excepciones)
-- [Custom prompt](#custom-prompt)
-- [Configuración personalizada](#configuración-personalizada)
-- [Omitir limpieza](#omitir-limpieza)
-- [Caché de traducción](#caché-de-traducción)
-- [Despliegue como servicios públicos](#despliegue-como-servicios-públicos)
-- [Autenticación y página de bienvenida](#autenticación-y-página-de-bienvenida)
-- [Glosario de soporte](#glosario-de-soporte)
+- [Argumentos de línea de comandos](#option-cli)
+- [Guía de configuración de límites de tasa](#option-rate-limits)
+- [Traducción parcial](#option-pages)
+- [Especificar idiomas de origen y destino](#option-languages)
+- [Traducir con excepciones](#option-exceptions)
+- [Custom prompt](#option-prompt)
+- [Configuración personalizada](#option-config)
+- [Omitir limpieza](#option-clean)
+- [Caché de traducción](#option-cache)
+- [Despliegue como servicios públicos](#option-deployment)
+- [Autenticación y página de bienvenida](#option-auth)
+- [Glosario de soporte](#option-glossaries)
 
 ---
+
+<a id="option-cli"></a>
 
 #### Argumentos de línea de comandos
 
@@ -100,6 +102,8 @@ En la siguiente tabla, enumeramos todas las opciones avanzadas para referencia:
 
 ---
 
+<a id="option-rate-limits"></a>
+
 #### Guía de configuración de límites de tasa
 
 Al usar servicios de traducción, una configuración adecuada de límites de tasa es crucial para evitar errores de API y optimizar el rendimiento. Esta guía explica cómo configurar los parámetros `--qps` y `--pool-max-worker` según las diferentes limitaciones de los servicios ascendentes.
@@ -158,6 +162,8 @@ pdf2zh example.pdf --qps 45 --pool-max-worker 45
 
 ---
 
+<a id="option-pages"></a>
+
 #### Traducción parcial
 
 Usa el parámetro `--pages` para traducir una parte de un documento.
@@ -197,6 +203,8 @@ Este comando traducirá la primera página, la tercera página, las páginas 10-
 
 ---
 
+<a id="option-languages"></a>
+
 #### Especificar idiomas de origen y destino
 
 Consulte [Google Languages Codes](https://developers.google.com/admin-sdk/directory/v1/languages), [DeepL Languages Codes](https://developers.deepl.com/docs/resources/supported-languages)
@@ -208,6 +216,8 @@ pdf2zh_next example.pdf --lang-in en -lang-out ja
 [⬆️ Volver al inicio](#toc)
 
 ---
+
+<a id="option-exceptions"></a>
 
 #### Traducir con excepciones
 
@@ -227,6 +237,8 @@ pdf2zh_next example.pdf --formular-font-pattern "(CM[^R]|MS.M|XY|MT|BL|RM|EU|LA|
 
 ---
 
+<a id="option-prompt"></a>
+
 #### Custom prompt
 
 <!-- Note: System prompt is currently not supported. See [this change](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/pull/637). -->
@@ -240,6 +252,8 @@ pdf2zh_next example.pdf --custom-system-prompt "/no_think You are a professional
 [⬆️ Volver al inicio](#toc)
 
 ---
+
+<a id="option-config"></a>
 
 #### Configuración personalizada
 
@@ -256,7 +270,7 @@ Hay varias formas de modificar e importar el archivo de configuración.
 
 - Modificar configuración mediante **argumentos de línea de comandos**
 
-Para la mayoría de los casos, puedes pasar directamente tu configuración deseada a través de argumentos de línea de comandos. Por favor, consulta [Argumentos de línea de comandos](#cmd) para obtener más información.
+Para la mayoría de los casos, puedes pasar directamente tu configuración deseada a través de argumentos de línea de comandos. Por favor, consulta [Argumentos de línea de comandos](#toc) para obtener más información.
 
 Por ejemplo, si deseas habilitar una ventana GUI, puedes usar el siguiente comando:
 
@@ -302,6 +316,8 @@ Se recomienda encarecidamente consultar el contenido de este archivo de configur
 
 ---
 
+<a id="option-clean"></a>
+
 #### Omitir limpieza
 
 Cuando este parámetro se establece en True, se omitirá el paso de limpieza de PDF, lo que puede mejorar la compatibilidad y evitar algunos problemas de procesamiento de fuentes.
@@ -323,6 +339,8 @@ PDF2ZH_SKIP_CLEAN=TRUE pdf2zh_next example.pdf
 
 ---
 
+<a id="option-cache"></a>
+
 #### Caché de traducción
 
 PDFMathTranslate almacena en caché los textos traducidos para aumentar la velocidad y evitar llamadas API innecesarias para contenidos iguales. Puedes usar la opción `--ignore-cache` para ignorar la caché de traducción y forzar la retraducción.
@@ -334,6 +352,8 @@ pdf2zh_next example.pdf --ignore-cache
 [⬆️ Volver al inicio](#toc)
 
 ---
+
+<a id="option-deployment"></a>
 
 #### Despliegue como servicios públicos
 
@@ -363,6 +383,8 @@ disable_config_auto_save = true
 [⬆️ Volver al inicio](#toc)
 
 ---
+
+<a id="option-auth"></a>
 
 #### Autenticación y página de bienvenida
 
@@ -412,6 +434,8 @@ welcome_page = "/path/to/welcome/html/file"
 [⬆️ Volver al inicio](#toc)
 
 ---
+
+<a id="option-glossaries"></a>
 
 #### Glosario de soporte
 

@@ -12,7 +12,7 @@
 
 1. 문서 국제화/번역
 2. HTTP API 등과 같은 핵심 인프라와 관련된 기여
-3. "도움 필요 없음"으로 명시적으로 표시된 이슈 ([Byaidu/PDFMathTranslate](Byaidu/PDFMathTranslate) 및 [PDFMathTranslate-next/PDFMathTranslate-next](PDFMathTranslate-next/PDFMathTranslate-next) 저장소의 이슈 포함).
+3. "도움 필요 없음"으로 명시적으로 표시된 이슈 ([Byaidu/PDFMathTranslate](https://github.com/Byaidu/PDFMathTranslate) 및 [PDFMathTranslate-next/PDFMathTranslate-next](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next) 저장소의 이슈 포함).
 4. 유지 관리자가 부적절하다고 판단하는 기타 기여.
 5. 기여 문서이지만, 영어 이외의 언어로 된 문서를 변경하는 경우.
 6. PDF 파일 수정이 필요한 PR.

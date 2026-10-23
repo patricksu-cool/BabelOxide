@@ -1557,7 +1557,7 @@ with gr.Blocks(
                             headers=["source", "target"],
                             datatype=["str", "str"],
                             interactive=False,
-                            col_count=(2, "fixed"),
+                            column_count=2,
                             visible=False,
                         )
                         require_llm_translator_inputs.append(glossary_table)

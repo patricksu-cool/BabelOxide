@@ -90,7 +90,7 @@ Detaillierte Erklärungen finden Sie in unserem Dokument zur [Erweiterten Verwen
 
 <!-- <!-- For downstream applications, please refer to our document about [API Details](./docs/APIS.md) for futher information about: -->
 
-- [Python API](./docs/de/advanced/API/python.md), wie man das Programm in anderen Python-Programmen verwendet
+- [Python API](advanced/API/python.md), wie man das Programm in anderen Python-Programmen verwendet
 <!-- - [HTTP API](./docs/APIS.md#api-http), how to communicate with a server with the program installed -->
 
 <h2 id="langcode">Sprachcode</h2>

@@ -12,7 +12,7 @@ Gracias por tu interés en este proyecto. Antes de comenzar a contribuir, por fa
 
 1. Documentación de internacionalización/traducción
 2. Contribuciones relacionadas con la infraestructura central, como la API HTTP, etc.
-3. Issues marcados explícitamente como "No se necesita ayuda" (incluyendo issues en el repositorio [Byaidu/PDFMathTranslate](Byaidu/PDFMathTranslate) y en el repositorio [PDFMathTranslate-next/PDFMathTranslate-next](PDFMathTranslate-next/PDFMathTranslate-next)).
+3. Issues marcados explícitamente como "No se necesita ayuda" (incluyendo issues en el repositorio [Byaidu/PDFMathTranslate](https://github.com/Byaidu/PDFMathTranslate) y en el repositorio [PDFMathTranslate-next/PDFMathTranslate-next](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next)).
 4. Otras contribuciones consideradas inapropiadas por los mantenedores.
 5. Contribuir a la documentación, pero cambiando la documentación en idiomas distintos al inglés.
 6. PRs que requieran modificar archivos PDF.

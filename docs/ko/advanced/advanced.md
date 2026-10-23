@@ -1,23 +1,27 @@
+<a id="toc"></a>
+
 [**고급 옵션**](./introduction.md) > **고급 옵션** _(현재)_
 
 ---
 
 <h3 id="목차">목차</h3>
 
-- [명령줄 인수](#명령줄 - 인수)
-- [속도 제한 구성 가이드](#속도 - 제한 - 구성 - 가이드)
-- [부분 번역](#부분 - 번역)
-- [원본 및 대상 언어 지정](#원본 - 및 - 대상 - 언어 - 지정)
-- [예외와 함께 번역하기](#예외와 - 함께 - 번역하기)
-- [사용자 지정 프롬프트](#사용자 - 지정 - 프롬프트)
-- [사용자 지정 구성](#사용자 - 지정 - 구성)
-- [Skip clean](#skip-clean)
-- [번역 캐시](#번역 - 캐시)
-- [공개 서비스로 배포하기](#공개 - 서비스로 - 배포하기)
-- [인증 및 환영 페이지](#인증 - 및 - 환영 - 페이지)
-- [용어집 지원](#용어집 - 지원)
+- [명령줄 인수](#option-cli)
+- [속도 제한 구성 가이드](#option-rate-limits)
+- [부분 번역](#option-pages)
+- [원본 및 대상 언어 지정](#option-languages)
+- [예외와 함께 번역하기](#option-exceptions)
+- [사용자 지정 프롬프트](#option-prompt)
+- [사용자 지정 구성](#option-config)
+- [Skip clean](#option-clean)
+- [번역 캐시](#option-cache)
+- [공개 서비스로 배포하기](#option-deployment)
+- [인증 및 환영 페이지](#option-auth)
+- [용어집 지원](#option-glossaries)
 
 ---
+
+<a id="option-cli"></a>
 
 #### 명령줄 인수
 
@@ -100,6 +104,8 @@
 
 ---
 
+<a id="option-rate-limits"></a>
+
 #### 속도 제한 구성 가이드
 
 번역 서비스를 사용할 때 적절한 속도 제한 구성은 API 오류를 방지하고 성능을 최적화하는 데 중요합니다. 이 가이드는 다양한 업스트림 서비스 제한에 따라 `--qps` 및 `--pool-max-worker` 매개변수를 구성하는 방법을 설명합니다.
@@ -158,6 +164,8 @@ pdf2zh example.pdf --qps 45 --pool-max-worker 45
 
 ---
 
+<a id="option-pages"></a>
+
 #### 부분 번역
 
 `--pages` 매개변수를 사용하여 문서의 일부를 번역합니다.
@@ -197,6 +205,8 @@ pdf2zh_next example.pdf --pages "1,3,10-20,25-"
 
 ---
 
+<a id="option-languages"></a>
+
 #### 원본 및 대상 언어 지정
 
 [Google 언어 코드](https://developers.google.com/admin-sdk/directory/v1/languages), [DeepL 언어 코드](https://developers.deepl.com/docs/resources/supported-languages) 참조
@@ -208,6 +218,8 @@ pdf2zh_next example.pdf --lang-in en -lang-out ja
 [⬆️ 맨 위로 이동](#toc)
 
 ---
+
+<a id="option-exceptions"></a>
 
 #### 예외와 함께 번역하기
 
@@ -227,6 +239,8 @@ pdf2zh_next example.pdf --formular-font-pattern "(CM[^R]|MS.M|XY|MT|BL|RM|EU|LA|
 
 ---
 
+<a id="option-prompt"></a>
+
 #### 사용자 지정 프롬프트
 
 <!-- Note: System prompt is currently not supported. See [this change](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/pull/637). -->
@@ -240,6 +254,8 @@ pdf2zh_next example.pdf --custom-system-prompt "/no_think You are a professional
 [⬆️ 맨 위로 이동](#toc)
 
 ---
+
+<a id="option-config"></a>
 
 #### 사용자 지정 구성
 
@@ -256,7 +272,7 @@ pdf2zh_next example.pdf --custom-system-prompt "/no_think You are a professional
 
 - **명령줄 인수**를 통한 구성 수정
 
-대부분의 경우, 원하는 설정을 명령줄 인수를 통해 직접 전달할 수 있습니다. 자세한 내용은 [명령줄 인수](#cmd) 를 참조하세요.
+대부분의 경우, 원하는 설정을 명령줄 인수를 통해 직접 전달할 수 있습니다. 자세한 내용은 [명령줄 인수](#toc) 를 참조하세요.
 
 예를 들어, GUI 창을 활성화하려면 다음 명령을 사용할 수 있습니다:
 
@@ -302,6 +318,8 @@ pdf2zh_next --config-file '/path/config.toml'
 
 ---
 
+<a id="option-clean"></a>
+
 #### Skip clean
 
 이 매개변수가 True 로 설정되면 PDF 정리 단계가 건너뛰어져 호환성이 향상되고 일부 글꼴 처리 문제를 피할 수 있습니다.
@@ -323,6 +341,8 @@ PDF2ZH_SKIP_CLEAN=TRUE pdf2zh_next example.pdf
 
 ---
 
+<a id="option-cache"></a>
+
 #### 번역 캐시
 
 PDFMathTranslate 는 번역 속도를 높이고 동일한 콘텐츠에 대한 불필요한 API 호출을 방지하기 위해 번역된 텍스트를 캐시합니다. `--ignore-cache` 옵션을 사용하여 번역 캐시를 무시하고 강제로 재번역할 수 있습니다.
@@ -334,6 +354,8 @@ pdf2zh_next example.pdf --ignore-cache
 [⬆️ 맨 위로 이동](#toc)
 
 ---
+
+<a id="option-deployment"></a>
 
 #### 공개 서비스로 배포하기
 
@@ -363,6 +385,8 @@ disable_config_auto_save = true
 [⬆️ 맨 위로 이동](#toc)
 
 ---
+
+<a id="option-auth"></a>
 
 #### 인증 및 환영 페이지
 
@@ -412,6 +436,8 @@ welcome_page = "/path/to/welcome/html/file"
 [⬆️ 맨 위로 이동](#toc)
 
 ---
+
+<a id="option-glossaries"></a>
 
 #### 용어집 지원
 

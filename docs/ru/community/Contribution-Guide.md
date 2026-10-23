@@ -12,7 +12,7 @@
 
 1. Интернационализация/перевод документации
 2. Вклады, связанные с основной инфраструктурой, такие как HTTP API и т.д.
-3. Issues, явно помеченные как "No help needed" (включая issues в репозиториях [Byaidu/PDFMathTranslate](Byaidu/PDFMathTranslate) и [PDFMathTranslate-next/PDFMathTranslate-next](PDFMathTranslate-next/PDFMathTranslate-next)).
+3. Issues, явно помеченные как "No help needed" (включая issues в репозиториях [Byaidu/PDFMathTranslate](https://github.com/Byaidu/PDFMathTranslate) и [PDFMathTranslate-next/PDFMathTranslate-next](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next)).
 4. Другие вклады, которые сопровождающие сочтут неуместными.
 5. Внесение вклада в документацию, но изменение документации на языках, отличных от английского.
 6. PR, требующие изменения файлов PDF.

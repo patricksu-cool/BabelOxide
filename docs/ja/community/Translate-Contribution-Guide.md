@@ -12,7 +12,7 @@
 
 Weblate を介して翻訳の改善を提案するのは非常に簡単で、アカウント登録すら必要ありません。以下の手順をご覧ください。
 
-[高级选项 → 高级](docs/en/advanced/advanced.md) の「命令行参数」セクションの最初の文を改善したいと仮定します：
+[高级选项 → 高级](../advanced/advanced.md) の「命令行参数」セクションの最初の文を改善したいと仮定します：
 
 1. [プロジェクトの Weblate ページ](https://hosted.weblate.org/projects/pdfmathtranslate-next/) を開きます。
 

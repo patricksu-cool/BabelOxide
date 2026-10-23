@@ -3,6 +3,7 @@ from pathlib import Path
 from threading import Barrier
 from threading import Event
 from threading import Lock
+from unittest.mock import Mock
 
 import pdf2zh_next.config.main as config_main
 import pytest
@@ -120,4 +121,39 @@ def test_independent_writers_use_distinct_temporary_files(monkeypatch, tmp_path)
             future.result(timeout=15)
     assert len(set(temporary_names)) == 2
     assert tomlkit.parse(target.read_text())["value"] in {1, 2}
+    assert list(tmp_path.iterdir()) == [target]
+
+
+def test_windows_transient_replace_denial_is_recovered(monkeypatch, tmp_path):
+    target = tmp_path / "config.toml"
+    target.write_text("value = 1\n")
+    replace = storage.os.replace
+    denied = PermissionError("synthetic Windows sharing violation")
+    denied.winerror = 5
+    attempts = []
+
+    def transient(source, destination):
+        attempts.append(source)
+        if len(attempts) == 1:
+            raise denied
+        return replace(source, destination)
+
+    monkeypatch.setattr(storage.os, "replace", transient)
+    storage.write_toml_atomic(target, {"value": 2})
+    assert len(attempts) == 2
+    assert tomlkit.parse(target.read_text())["value"] == 2
+    assert list(tmp_path.iterdir()) == [target]
+
+
+def test_windows_permanent_denial_is_bounded_and_preserves_old_file(monkeypatch, tmp_path):
+    target = tmp_path / "config.toml"
+    target.write_bytes(b"value = 1\n")
+    denied = PermissionError("synthetic permanent denial")
+    denied.winerror = 32
+    replace = Mock(side_effect=denied)
+    monkeypatch.setattr(storage.os, "replace", replace)
+    with pytest.raises(PermissionError, match="permanent denial"):
+        storage.write_toml_atomic(target, {"value": 2})
+    assert replace.call_count == 5
+    assert target.read_bytes() == b"value = 1\n"
     assert list(tmp_path.iterdir()) == [target]

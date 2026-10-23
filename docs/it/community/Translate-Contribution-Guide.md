@@ -12,7 +12,7 @@ Utilizziamo [Weblate](https://weblate.org/) per gestire le traduzioni della nost
 
 È molto semplice proporre miglioramenti alle traduzioni tramite Weblate, e non è nemmeno necessario registrare un account. Continua a leggere per il processo passo dopo passo.
 
-Supponi di voler migliorare la prima frase nella sezione "命令行参数" di [高级选项 → 高级](docs/en/advanced/advanced.md):
+Supponi di voler migliorare la prima frase nella sezione "命令行参数" di [高级选项 → 高级](../advanced/advanced.md):
 
 1. Apri la [pagina Weblate del progetto](https://hosted.weblate.org/projects/pdfmathtranslate-next/).
 

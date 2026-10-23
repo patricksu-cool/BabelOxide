@@ -36,7 +36,7 @@
 
 PDF 科学論文の翻訳と二言語比較。 [BabelDOC](https://github.com/funstory-ai/BabelDOC) に基づいています。さらに、このプロジェクトは BabelDOC を呼び出して PDF 翻訳を実行するための公式リファレンス実装でもあります。
 
-- 📊 数式、チャート、目次、注釈を保持 _([プレビュー](#プレビュー))_。
+- 📊 数式、チャート、目次、注釈を保持 _([プレビュー](#preview))_。
 - 🌐 [複数言語](https://pdf2zh-next.com/supported_languages.html) をサポートし、多様な [翻訳サービス](https://pdf2zh-next.com/advanced/Documentation-of-Translation-Services.html) に対応。
 - 🤖 [コマンドラインツール](https://pdf2zh-next.com/getting-started/USAGE_commandline.html)、[インタラクティブユーザーインターフェース](https://pdf2zh-next.com/getting-started/USAGE_webui.html)、[Docker](https://pdf2zh-next.com/getting-started/INSTALLATION_docker.html) を提供。
 
@@ -90,7 +90,7 @@ PDF 科学論文の翻訳と二言語比較。 [BabelDOC](https://github.com/fun
 
 <!-- <!-- For downstream applications, please refer to our document about [API Details](./docs/APIS.md) for futher information about: -->
 
-- [Python API](./docs/ja/advanced/API/python.md)、他の Python プログラムで本プログラムを使用する方法
+- [Python API](advanced/API/python.md)、他の Python プログラムで本プログラムを使用する方法
 <!-- - [HTTP API](./docs/APIS.md#api-http), how to communicate with a server with the program installed -->
 
 <h2 id="langcode">言語コード</h2>

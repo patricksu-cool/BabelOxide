@@ -12,7 +12,7 @@
 
 1. ドキュメントの国際化・翻訳
 2. HTTP API など、コアインフラストラクチャに関連する貢献
-3. 「助け不要」と明示的にマークされた Issue（[Byaidu/PDFMathTranslate](Byaidu/PDFMathTranslate) および [PDFMathTranslate-next/PDFMathTranslate-next](PDFMathTranslate-next/PDFMathTranslate-next) リポジトリ内の Issue を含む）。
+3. 「助け不要」と明示的にマークされた Issue（[Byaidu/PDFMathTranslate](https://github.com/Byaidu/PDFMathTranslate) および [PDFMathTranslate-next/PDFMathTranslate-next](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next) リポジトリ内の Issue を含む）。
 4. メンテナーが不適切と判断したその他の貢献。
 5. ドキュメントへの貢献だが、英語以外の言語でドキュメントを変更するもの。
 6. `PDF` ファイルの変更を必要とする PR。

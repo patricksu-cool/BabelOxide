@@ -36,7 +36,7 @@
 
 PDF 과학 논문 번역 및 이중 언어 비교. [BabelDOC](https://github.com/funstory-ai/BabelDOC) 을 기반으로 합니다. 또한 이 프로젝트는 BabelDOC 을 호출하여 PDF 번역을 수행하기 위한 공식 참조 구현체이기도 합니다.
 
-- 📊 수식, 차트, 목차 및 주석을 보존합니다 _([미리보기](#미리보기))_.
+- 📊 수식, 차트, 목차 및 주석을 보존합니다 _([미리보기](#preview))_.
 - 🌐 [다양한 언어](https://pdf2zh-next.com/supported_languages.html) 를 지원하며, 다양한 [번역 서비스](https://pdf2zh-next.com/advanced/Documentation-of-Translation-Services.html) 를 제공합니다.
 - 🤖 [명령줄 도구](https://pdf2zh-next.com/getting-started/USAGE_commandline.html), [대화형 사용자 인터페이스](https://pdf2zh-next.com/getting-started/USAGE_webui.html) 및 [Docker](https://pdf2zh-next.com/getting-started/INSTALLATION_docker.html) 를 제공합니다.
 
@@ -90,7 +90,7 @@ PDF 과학 논문 번역 및 이중 언어 비교. [BabelDOC](https://github.com
 
 <!-- <!-- For downstream applications, please refer to our document about [API Details](./docs/APIS.md) for futher information about: -->
 
-- [Python API](./docs/ko/advanced/API/python.md), 다른 Python 프로그램에서 이 프로그램을 사용하는 방법
+- [Python API](advanced/API/python.md), 다른 Python 프로그램에서 이 프로그램을 사용하는 방법
 <!-- - [HTTP API](./docs/APIS.md#api-http), how to communicate with a server with the program installed -->
 
 <h2 id="langcode">언어 코드</h2>
