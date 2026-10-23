@@ -36,8 +36,9 @@ jobs:
         with:
           python-version: ${{ env.WIN_EXE_PYTHON_VERSION }}
           enable-cache: true
-          cache-dependency-glob: "pyproject.toml"
-          activate-environment: true
+          cache-dependency-glob: |
+            pyproject.toml
+            uv.lock
 
       - name: 执行所有任务（创建目录、下载、解压、复制文件、安装依赖）
         shell: pwsh
@@ -53,9 +54,6 @@ jobs:
           New-Item -Path "./build" -ItemType Directory -Force
           New-Item -Path "./build/runtime" -ItemType Directory -Force
           New-Item -Path "./dep_build" -ItemType Directory -Force
-
-          Write-Host "==== 复制代码到 dep_build ===="
-          Get-ChildItem -Path "./" -Exclude "dep_build", "build" | Copy-Item -Destination "./dep_build" -Recurse -Force
 
           Write-Host "==== 下载并解压 Python ${{ env.WIN_EXE_PYTHON_VERSION }} ===="
           Write-Host "pythonUrl: https://www.python.org/ftp/python/${{ env.WIN_EXE_PYTHON_VERSION }}/python-${{ env.WIN_EXE_PYTHON_VERSION }}-embed-amd64.zip"
@@ -79,13 +77,12 @@ jobs:
               Write-Host "错误: PyStand.exe 未找到！"
               exit 1
           }
-          Write-Host "==== 创建 Python venv 在 dep_build ===="
-          uv venv ./dep_build/venv
-
-          ./dep_build/venv/Scripts/activate
-
-          Write-Host "==== 在 venv 环境中安装项目依赖 ===="
-          uv pip install .
+          Write-Host "==== 使用锁文件安装非 editable 运行环境 ===="
+          $env:UV_PROJECT_ENVIRONMENT = Join-Path (Get-Location) "dep_build/venv"
+          uv sync --locked --no-dev --no-editable --python ${{ env.WIN_EXE_PYTHON_VERSION }}
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          uv pip check --python ./dep_build/venv/Scripts/python.exe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
           Write-Host "==== 复制 venv/Lib/site-packages 到 build/ ===="
           Copy-Item -Path "./dep_build/venv/Lib/site-packages" -Destination "./build/site-packages" -Recurse -Force
@@ -100,7 +97,8 @@ jobs:
               exit 1
           }
 
-          uv run --active babeldoc --generate-offline-assets ./build
+          uv run --no-sync babeldoc --generate-offline-assets ./build
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v5
