@@ -20,13 +20,15 @@ from pydantic import BaseModel
 
 from pdf2zh_next.config.cli_env_model import CLIEnvSettingsModel
 from pdf2zh_next.config.model import SettingsModel
+from pdf2zh_next.config.storage import decode_toml_content
+from pdf2zh_next.config.storage import write_toml_atomic
 from pdf2zh_next.config.translate_engine_model import TRANSLATION_ENGINE_METADATA
 from pdf2zh_next.const import DEFAULT_CONFIG_DIR
 from pdf2zh_next.const import DEFAULT_CONFIG_FILE
 from pdf2zh_next.const import LEGACY_CONFIG_FILE
 from pdf2zh_next.const import VERSION_DEFAULT_CONFIG_DIR
 from pdf2zh_next.const import VERSION_DEFAULT_CONFIG_FILE
-from pdf2zh_next.const import WRITE_TEMP_CONFIG_FILE
+from pdf2zh_next.const import WRITE_TEMP_CONFIG_FILE as WRITE_TEMP_CONFIG_FILE
 from pdf2zh_next.security_logging import install_redacting_filters
 from pdf2zh_next.security_logging import redact_for_log
 from pdf2zh_next.security_logging import register_secret_values
@@ -208,52 +210,18 @@ class ConfigManager:
             return {}
 
     def _process_toml_content(self, content: dict) -> dict:
-        """Process TOML content recursively, converting special values
-
-        Args:
-            content: Dictionary from TOML file
-
-        Returns:
-            Processed dictionary
-        """
-        # First convert "null" strings to None
-        processed = {}
-        for key, value in content.items():
-            if isinstance(value, dict):
-                processed[key] = self._process_toml_content(value)
-            elif isinstance(value, str) and value == "null":
-                processed[key] = None
-            else:
-                processed[key] = value
-
-        return processed
+        """Decode the existing TOML null representation."""
+        return decode_toml_content(content)
 
     def _write_toml_file(self, file_path: Path, content: dict) -> None:
-        """Write content to a TOML file
-
-        Args:
-            file_path: Path to write the TOML file
-            content: Content to write as dictionary, can be flattened or nested
-        """
+        """Persist a complete TOML file without exposing partial writes."""
         try:
-            # Convert None values to "null" strings for tomlkit
-            def convert_none_to_null(d):
-                result = {}
-                for k, v in d.items():
-                    if v is None:
-                        result[k] = "null"
-                    elif isinstance(v, dict):
-                        result[k] = convert_none_to_null(v)
-                    else:
-                        result[k] = v
-                return result
-
-            content = convert_none_to_null(content)
             with self._config_file_lock:
-                with file_path.open("w", encoding="utf-8") as f:
-                    tomlkit.dump(content, f)
-        except Exception as e:
-            log.warning(f"Error writing config file {file_path}: {e}")
+                write_toml_atomic(file_path, content)
+        except Exception as exc:
+            log.warning(
+                "Error writing config file %s: %s", file_path, type(exc).__name__
+            )
             raise
 
     def _is_file_content_identical(self, file_path: Path, content: dict) -> bool:
@@ -650,8 +618,7 @@ class ConfigManager:
             )
             return
 
-        self._write_toml_file(WRITE_TEMP_CONFIG_FILE, content)
-        WRITE_TEMP_CONFIG_FILE.replace(DEFAULT_CONFIG_FILE)
+        self._write_toml_file(DEFAULT_CONFIG_FILE, content)
         log.info(f"Written user default config file to {DEFAULT_CONFIG_FILE}")
 
     def _build_model_from_args(
