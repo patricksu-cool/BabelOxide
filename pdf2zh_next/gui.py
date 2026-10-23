@@ -48,18 +48,22 @@ from pdf2zh_next.ui.files import on_file_clear
 from pdf2zh_next.ui.files import on_file_input_change
 from pdf2zh_next.ui.files import on_file_upload
 from pdf2zh_next.ui.files import update_preview
+from pdf2zh_next.ui.languages import lang_map as lang_map
+from pdf2zh_next.ui.languages import page_map as page_map
+from pdf2zh_next.ui.languages import rev_lang_map as rev_lang_map
 from pdf2zh_next.ui.rate_options import (
     _calculate_rate_limit_params as _calculate_rate_limit_params,
 )
 from pdf2zh_next.ui.rate_options import (
     _validate_rate_limit_inputs as _validate_rate_limit_inputs,
 )
+from pdf2zh_next.ui.resources import custom_css
+from pdf2zh_next.ui.resources import pdf_preview_js
+from pdf2zh_next.ui.resources import translation_file_path as translation_file_path
 from pdf2zh_next.ui.session import new_session_state
 from pdf2zh_next.ui.settings import SaveMode
 
 logger = logging.getLogger(__name__)
-
-
 
 
 def get_translation_dic(file_path: Path):
@@ -72,185 +76,11 @@ __gui_term_service_arg_names = []
 LLM_support_index_map = {}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 # The following variables associate strings with specific languages
-lang_map = {
-    "English": "en",
-    "Simplified Chinese": "zh-CN",
-    "Traditional Chinese - Hong Kong": "zh-HK",
-    "Traditional Chinese - Taiwan": "zh-TW",
-    "Japanese": "ja",
-    "Korean": "ko",
-    "Polish": "pl",
-    "Russian": "ru",
-    "Spanish": "es",
-    "Portuguese": "pt",
-    "Brazilian Portuguese": "pt-BR",
-    "French": "fr",
-    "Malay": "ms",
-    "Indonesian": "id",
-    "Turkmen": "tk",
-    "Filipino (Tagalog)": "tl",
-    "Vietnamese": "vi",
-    "Kazakh (Latin)": "kk",
-    "German": "de",
-    "Dutch": "nl",
-    "Irish": "ga",
-    "Italian": "it",
-    "Greek": "el",
-    "Swedish": "sv",
-    "Danish": "da",
-    "Norwegian": "no",
-    "Icelandic": "is",
-    "Finnish": "fi",
-    "Ukrainian": "uk",
-    "Czech": "cs",
-    "Romanian": "ro",  # Covers Romanian, Moldovan, Moldovan (Cyrillic)
-    "Hungarian": "hu",
-    "Slovak": "sk",
-    "Croatian": "hr",  # Also listed later, keep first
-    "Estonian": "et",
-    "Latvian": "lv",
-    "Lithuanian": "lt",
-    "Belarusian": "be",
-    "Macedonian": "mk",
-    "Albanian": "sq",
-    "Serbian (Cyrillic)": "sr",  # Covers Serbian (Latin) too
-    "Slovenian": "sl",
-    "Catalan": "ca",
-    "Bulgarian": "bg",
-    "Maltese": "mt",
-    "Swahili": "sw",
-    "Amharic": "am",
-    "Oromo": "om",
-    "Tigrinya": "ti",
-    "Haitian Creole": "ht",
-    "Latin": "la",
-    "Lao": "lo",
-    "Malayalam": "ml",
-    "Gujarati": "gu",
-    "Thai": "th",
-    "Burmese": "my",
-    "Tamil": "ta",
-    "Telugu": "te",
-    "Oriya": "or",  # Also listed later, keep first
-    "Armenian": "hy",
-    "Mongolian (Cyrillic)": "mn",
-    "Georgian": "ka",
-    "Khmer": "km",
-    "Bosnian": "bs",
-    "Luxembourgish": "lb",
-    "Romansh": "rm",
-    "Turkish": "tr",
-    "Sinhala": "si",
-    "Uzbek": "uz",
-    "Kyrgyz": "ky",  # Listed as Kirghiz later, keep this one
-    "Tajik": "tg",
-    "Abkhazian": "ab",
-    "Afar": "aa",
-    "Afrikaans": "af",
-    "Akan": "ak",
-    "Aragonese": "an",
-    "Avaric": "av",
-    "Ewe": "ee",
-    "Aymara": "ay",
-    "Ojibwa": "oj",
-    "Occitan": "oc",
-    "Ossetian": "os",
-    "Pali": "pi",
-    "Bashkir": "ba",
-    "Basque": "eu",
-    "Breton": "br",
-    "Chamorro": "ch",
-    "Chechen": "ce",
-    "Chuvash": "cv",
-    "Tswana": "tn",
-    "Ndebele, South": "nr",
-    "Ndonga": "ng",
-    "Faroese": "fo",
-    "Fijian": "fj",
-    "Frisian, Western": "fy",
-    "Ganda": "lg",
-    "Kongo": "kg",
-    "Kalaallisut": "kl",
-    "Church Slavic": "cu",
-    "Guarani": "gn",
-    "Interlingua": "ia",
-    "Herero": "hz",
-    "Kikuyu": "ki",
-    "Rundi": "rn",
-    "Kinyarwanda": "rw",
-    "Galician": "gl",
-    "Kanuri": "kr",
-    "Cornish": "kw",
-    "Komi": "kv",
-    "Xhosa": "xh",
-    "Corsican": "co",
-    "Cree": "cr",
-    "Quechua": "qu",
-    "Kurdish (Latin)": "ku",
-    "Kuanyama": "kj",
-    "Limburgan": "li",
-    "Lingala": "ln",
-    "Manx": "gv",
-    "Malagasy": "mg",
-    "Marshallese": "mh",
-    "Maori": "mi",
-    "Navajo": "nv",
-    "Nauru": "na",
-    "Nyanja": "ny",
-    "Norwegian Nynorsk": "nn",
-    "Sardinian": "sc",
-    "Northern Sami": "se",
-    "Samoan": "sm",
-    "Sango": "sg",
-    "Shona": "sn",
-    "Esperanto": "eo",
-    "Scottish Gaelic": "gd",
-    "Somali": "so",
-    "Southern Sotho": "st",
-    "Tatar": "tt",
-    "Tahitian": "ty",
-    "Tongan": "to",
-    "Twi": "tw",
-    "Walloon": "wa",
-    "Welsh": "cy",
-    "Venda": "ve",
-    "Volapük": "vo",
-    "Interlingue": "ie",
-    "Hiri Motu": "ho",
-    "Igbo": "ig",
-    "Ido": "io",
-    "Inuktitut": "iu",
-    "Inupiaq": "ik",
-    "Sichuan Yi": "ii",
-    "Yoruba": "yo",
-    "Zhuang": "za",
-    "Tsonga": "ts",
-    "Zulu": "zu",
-}
 
-rev_lang_map = {v: k for k, v in lang_map.items()}
 
 # The following variable associate strings with page ranges
 # Page map with fixed internal keys
-page_map = {
-    "All": None,
-    "First": [0],
-    "First 5 pages": list(range(0, 5)),
-    "Range": None,  # User-defined range
-}
 
 
 def get_page_choices():
@@ -436,10 +266,6 @@ def _prepare_input_file(
     return prepared_files
 
 
-
-
-
-
 def _settings_saved(saved_settings):
     global settings
     settings = saved_settings
@@ -453,7 +279,11 @@ def _build_translate_settings(
     ui_inputs: dict,
 ) -> SettingsModel:
     return gui_settings.build_translate_settings(
-        base_settings, file_path, output_dir, save_mode, ui_inputs,
+        base_settings,
+        file_path,
+        output_dir,
+        save_mode,
+        ui_inputs,
         context=gui_settings.SettingsContext(
             config_manager=config_manager,
             lang_map=lang_map,
@@ -941,14 +771,6 @@ def swap_languages(lang_from_value, lang_to_value):
     return lang_to_value, lang_from_value
 
 
-
-
-
-
-
-
-
-
 def save_config(
     *ui_args,
     progress=None,
@@ -996,472 +818,12 @@ custom_blue = gr.themes.Color(
     c950="#020B33",
 )
 
-custom_css = """
-    .secondary-text {color: #999 !important;}
-    footer {visibility: hidden}
-    .env-warning {color: #dd5500 !important;}
-    .env-success {color: #559900 !important;}
-
-    /* SiliconFlow logo: 添加白色背景，确保在深色模式下清晰可见 */
-    img[alt="Powered By SiliconFlow"] {
-        background-color: #ffffff !important;
-        padding: 4px !important;
-        border-radius: 4px !important;
-    }
-
-    /* 保存设置按钮：添加背景色 */
-    .save-settings-btn button,
-    button.save-settings-btn {
-        background-color: var(--primary-500) !important;
-        color: #ffffff !important;
-        border-color: var(--primary-500) !important;
-    }
-    .save-settings-btn button:hover,
-    button.save-settings-btn:hover {
-        background-color: var(--primary-600) !important;
-        border-color: var(--primary-600) !important;
-    }
-
-    /* Add dashed border to input-file class */
-    .input-file {
-        border: 1.2px dashed #165DFF !important;
-        border-radius: 6px !important;
-    }
-
-    /* Upload box: make it more compact (about half height) and keep text in one row (as in ref fig2) */
-    .input-file [data-testid="file-upload"],
-    .input-file [data-testid="file-upload"] > div,
-    .input-file .wrap,
-    .input-file .upload-box {
-        min-height: 140px !important;
-        height: 140px !important;
-    }
-
-    /* Center the dropzone content */
-    .input-file [data-testid="file-upload"] .text,
-    .input-file [data-testid="file-upload"] .file-upload-text,
-    .input-file .file-upload-text,
-    .input-file .upload-text {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 10px !important;
-        white-space: nowrap !important;
-        text-align: center !important;
-        line-height: 1.2 !important;
-    }
-
-    /* Make the separator “- or -” behave like an inline pill */
-    .input-file [data-testid="file-upload"] .text > br,
-    .input-file .file-upload-text > br,
-    .input-file .upload-text > br {
-        display: none !important;
-    }
-
-    /* Slightly shrink icon/text so the compact height still looks balanced */
-    .input-file [data-testid="file-upload"] svg {
-        transform: scale(0.9);
-        transform-origin: center;
-    }
-    .input-file [data-testid="file-upload"] .text,
-    .input-file [data-testid="file-upload"] .file-upload-text,
-    .input-file .file-upload-text,
-    .input-file .upload-text {
-        font-size: 0.95rem !important;
-    }
-
-    .progress-bar-wrap {
-        border-radius: 8px !important;
-    }
-
-    .progress-bar {
-        border-radius: 8px !important;
-    }
-
-    .pdf-canvas canvas {
-        width: 100%;
-    }
-
-    /* 侧边栏：左侧窄卡片，两个图标按钮竖排 */
-    .sidebar-nav {
-        position: sticky;
-        top: 20px;
-        align-self: flex-start;
-        border: 1px solid var(--block-border-color);
-        border-radius: 14px;
-        padding: 16px 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        background: var(--block-background-fill);
-        box-shadow: var(--block-shadow);
-    }
-
-    .sidebar-btn {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto;
-    }
-
-    /* 首页左右列高度对齐：Row 内两列拉伸为同高 */
-    .tab-main-row {
-        align-items: stretch !important;
-        gap: 16px !important;  /* 左右两列之间留出适当间距 */
-    }
-    .tab-main-row > .gr-column {
-        height: 100% !important;
-    }
-    /* 左侧设置列：保持结构，用 padding 做与右侧对称的“外侧留白” */
-    .tab-main-row > .gr-column:first-of-type {
-        display: flex !important;
-        flex-direction: column !important;
-        padding-left: 20px !important;      /* 左侧留白 */
-        padding-right: 0 !important;
-    }
-
-
-    .tab-main-row > .gr-column:last-of-type {
-        background: rgba(0, 0, 0, 0.04) !important; /* 更明显的浅灰 */
-        padding-right: 20px !important;             /* 右侧留白，与左侧对称 */
-        padding-left: 0 !important;
-    }
-
-    /* 翻译/取消按钮一行展示，按钮收窄成圆角矩形 */
-    .action-row {
-        justify-content: flex-start !important;
-        gap: 12px !important;
-        margin-top: 12px !important;
-        margin-bottom: 4px !important;
-        padding-left: 8px !important;   /* 左侧留白，避免按钮贴左边 */
-        padding-right: 8px !important;  /* 右侧留白，避免按钮贴右边 */
-    }
-    .action-row .action-btn button,
-    .action-row button.action-btn {
-        border-radius: 8px !important;        
-        padding-inline: 24px !important;
-        padding-block: 10px !important;
-        min-width: 120px !important;
-        font-weight: 500 !important;
-    }
-    /* 取消按钮：改成明显的红色背景 */
-    .action-row .action-btn-secondary button,
-    .action-row button.action-btn-secondary {
-        background: #ff3b30 !important;
-        border-color: rgba(255, 59, 48, 0.6) !important;
-        color: #ffffff !important;
-    }
-
-    /* 固定大小的预览窗口，文档自动缩放以适配窗口高度，不再忽大忽小 */
-    .pdf-preview-fixed {
-        /* 在不同屏幕下保持较大的预览区域，减少“显示区域变小”的感觉 */
-        height: min(75vh, 720px) !important;
-        max-height: 720px !important;
-        overflow: hidden !important;
-        position: relative !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        padding: 12px !important;  /* 四周留白，确保文档不贴边 */
-    }
-    /* Gradio PDF 组件内部会渲染一个“BlockLabel”（data-testid="block-label"），
-       默认文案是“File”。我们右侧已经有上方标题，因此这里把它隐藏，
-       避免在 flex 居中布局下漂到左列按钮附近。 */
-    .pdf-preview-fixed [data-testid="block-label"] {
-        display: none !important;
-    }
-
-    /* PDF 容器：确保内容完全适配 */
-    .pdf-preview-fixed .pdf-canvas {
-        width: 100% !important;
-        height: 100% !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        overflow: hidden !important;
-        position: relative !important;
-    }
-
-    /* 让 PDF 内容按照高度缩放，宽度不超过窗口，并居中显示 */
-    /* 使用 max-height 确保完整显示，不被裁剪 */
-    .pdf-preview-fixed iframe,
-    .pdf-preview-fixed embed {
-        max-height: calc(100% - 24px) !important;  /* 减去上下 padding (12px * 2) */
-        height: auto !important;  /* 自动高度，保持宽高比 */
-        width: auto !important;
-        max-width: calc(100% - 24px) !important;  /* 减去左右 padding */
-        display: block !important;
-        margin: 0 auto !important;
-        object-fit: contain !important;  /* 确保完整显示，不被裁剪 */
-    }
-
-    /* Canvas 元素特殊处理：确保完全适配容器高度 */
-    .pdf-preview-fixed canvas {
-        max-height: calc(100% - 24px) !important;  /* 减去上下 padding (12px * 2) */
-        max-width: calc(100% - 24px) !important;  /* 减去左右 padding */
-        height: auto !important;
-        width: auto !important;
-        display: block !important;
-        margin: 0 auto !important;
-        /* Canvas 不支持 object-fit，需要通过 JS 动态缩放，但 CSS 确保不超出边界 */
-        background: #ffffff !important;  /* 浅色模式下保持白色 */
-        position: relative !important;
-    }
-
-    /* 深色模式下 PDF 预览区域背景保持深色 */
-    .dark .pdf-preview-fixed,
-    [data-theme="dark"] .pdf-preview-fixed,
-    body.dark .pdf-preview-fixed {
-        background: var(--block-background-fill, #1e1e1e) !important;
-    }
-
-    /* 深色模式下 PDF 容器背景保持透明，让深色背景显示 */
-    .dark .pdf-preview-fixed .pdf-canvas,
-    [data-theme="dark"] .pdf-preview-fixed .pdf-canvas,
-    body.dark .pdf-preview-fixed .pdf-canvas {
-        background: transparent !important;
-    }
-
-    /* 深色模式下 PDF canvas 使用柔和的浅灰色背景，不那么突兀 */
-    .dark .pdf-preview-fixed canvas,
-    [data-theme="dark"] .pdf-preview-fixed canvas,
-    body.dark .pdf-preview-fixed canvas {
-        background: #f5f5f5 !important;  /* 浅灰色，比纯白柔和 */
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;  /* 更柔和的阴影和边框 */
-        border-radius: 4px !important;  /* 圆角使过渡更自然 */
-        padding: 8px !important;  /* 内边距让背景稍微大一点 */
-        box-sizing: content-box !important;  /* 确保 padding 不影响 canvas 大小 */
-    }
-
-    /* 深色模式下 iframe 和 embed 使用相同处理 */
-    .dark .pdf-preview-fixed iframe,
-    .dark .pdf-preview-fixed embed,
-    [data-theme="dark"] .pdf-preview-fixed iframe,
-    [data-theme="dark"] .pdf-preview-fixed embed,
-    body.dark .pdf-preview-fixed iframe,
-    body.dark .pdf-preview-fixed embed {
-        background: #f5f5f5 !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
-        border-radius: 4px !important;
-    }
-
-    /* 确保 PDF 渲染容器在深色模式下背景透明 */
-    .dark .pdf-preview-fixed > div,
-    .dark .pdf-preview-fixed > div > div,
-    [data-theme="dark"] .pdf-preview-fixed > div,
-    [data-theme="dark"] .pdf-preview-fixed > div > div,
-    body.dark .pdf-preview-fixed > div,
-    body.dark .pdf-preview-fixed > div > div {
-        background: transparent !important;
-    }
-
-    /* 通用深色模式检测 */
-    [class*="dark"] .pdf-preview-fixed canvas,
-    [class*="dark"] .pdf-preview-fixed iframe,
-    [class*="dark"] .pdf-preview-fixed embed {
-        background: #f5f5f5 !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
-        border-radius: 4px !important;
-    }
-
-    /* 确保 PDF 文本层在深色模式下可见 */
-    .pdf-preview-fixed .textLayer {
-        mix-blend-mode: normal !important;
-    }
-
-    /* 深色模式下 PDF 注释层 */
-    .pdf-preview-fixed .annotationLayer {
-        background: transparent !important;
-    }
-
-    /* 为 PDF canvas 添加一个包装器，用于精确控制背景大小 */
-    .pdf-preview-fixed .pdf-canvas-wrapper {
-        display: inline-block !important;
-        background: transparent !important;
-        position: relative !important;
-    }
-
-    /* 深色模式下 canvas 包装器背景 */
-    .dark .pdf-preview-fixed .pdf-canvas-wrapper,
-    [data-theme="dark"] .pdf-preview-fixed .pdf-canvas-wrapper,
-    body.dark .pdf-preview-fixed .pdf-canvas-wrapper {
-        background: #f5f5f5 !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
-        border-radius: 4px !important;
-        padding: 8px !important;
-        display: inline-block !important;
-    }
-
-    /* 重新布局 PDF 翻页控件：左右箭头居中悬浮，页码在底部居中 */
-    .pdf-preview-fixed .button-row {
-        position: absolute !important;
-        inset: 0 !important;
-        pointer-events: none !important; /* 只禁用容器，内部按钮和页码再单独开启 */
-        background: transparent !important;
-        z-index: 5 !important;
-    }
-
-    /* 左右翻页按钮：分别悬浮在左右居中位置，使用透明圆形按钮样式（类似 p1） */
-    .pdf-preview-fixed .button-row > button {
-        position: absolute !important;
-        top: 50% !important;
-        transform: translateY(-50%) !important;
-        pointer-events: auto !important;
-        background: transparent !important;      /* 默认透明背景 */
-        border-radius: 999px !important;        /* 圆形按钮 */
-        border: none !important;
-        box-shadow: none !important;
-        width: 40px !important;
-        height: 40px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        color: #ffffff !important;              /* 白色箭头 */
-        transition: background-color 0.18s ease-out, transform 0.18s ease-out !important;
-    }
-    /* 悬停时出现半透明高亮圈，模拟“隐约选中变色”效果 */
-    .pdf-preview-fixed .button-row > button:hover {
-        background: rgba(255, 255, 255, 0.12) !important;
-        transform: translateY(-50%) scale(1.02) !important;
-    }
-    .pdf-preview-fixed .button-row > button:active {
-        background: rgba(255, 255, 255, 0.18) !important;
-        transform: translateY(-50%) scale(0.97) !important;
-    }
-    .pdf-preview-fixed .button-row > button:first-of-type {
-        left: 12px !important;
-    }
-    .pdf-preview-fixed .button-row > button:last-of-type {
-        right: 12px !important;
-    }
-
-    /* 页码信息：预览框内部底部居中悬浮 */
-    .pdf-preview-fixed .button-row .page-count {
-        position: absolute !important;
-        left: 50% !important;
-        bottom: 10px !important;
-        transform: translateX(-50%) !important;
-        pointer-events: auto !important;
-        padding: 4px 10px !important;
-        border-radius: 999px !important;
-        background: rgba(0, 0, 0, 0.65) !important;
-        color: #fff !important;
-        display: flex !important;
-        align-items: center !important;
-        gap: 6px !important;
-    }
-
-    /* 页码输入框：未点击时背景透明，点击后显示半透明背景 */
-    .pdf-preview-fixed .button-row .page-count input[type="number"] {
-        background: transparent !important;  /* 默认透明背景，融入外层胶囊 */
-        border: none !important;            /* 去掉矩形边框 */
-        color: #fff !important;
-        box-shadow: none !important;
-        width: 3ch !important;          /* 只容纳 2~3 位数字，缩小整体宽度 */
-        min-width: 3ch !important;
-        padding: 2px 4px !important;    /* 收紧内边距，让方框更小巧 */
-        font-size: 0.9em !important;
-        border-radius: 4px !important;   /* 圆角，与背景矩形协调 */
-        transition: background-color 0.2s ease !important;  /* 平滑过渡 */
-        /* 隐藏原生上下小箭头，避免误导 */
-        -moz-appearance: textfield !important;
-    }
-    /* 点击后（focus 状态）：显示半透明背景矩形 */
-    .pdf-preview-fixed .button-row .page-count input[type="number"]:focus {
-        background: rgba(255, 255, 255, 0.15) !important;  /* 半透明白色背景，提示可编辑 */
-        outline: none !important;  /* 去掉默认的浏览器 focus outline */
-    }
-    .pdf-preview-fixed .button-row .page-count input[type="number"]::-webkit-inner-spin-button,
-    .pdf-preview-fixed .button-row .page-count input[type="number"]::-webkit-outer-spin-button {
-        -webkit-appearance: none !important;
-        margin: 0 !important;
-    }
-
-    /* 整体视觉协调优化 */
-    /* 标题字体稍微变小，并与卡片边框留一点内边距 */
-    .tab-title h2 {
-        font-size: 1.05rem !important;
-        margin: 6px 8px 10px 8px !important;
-    }
-
-    /* 预览区标题和下拉框间距 */
-    .tab-main-row > .gr-column:last-of-type .tab-title h2 {
-        margin-bottom: 6px !important;
-    }
-
-    /* 左侧列内各区块间距优化 */
-    .tab-main-row > .gr-column:first-of-type > * {
-        margin-bottom: 16px !important;
-    }
-    .tab-main-row > .gr-column:first-of-type > *:last-child {
-        margin-bottom: 0 !important;
-    }
-
-    /* 设置界面：限制最大宽度并左对齐，使界面更美观 */
-    .settings-container {
-        max-width: min(900px, 85vw) !important;  /* 最大 900px，小屏幕时不超过 85% 视口宽度 */
-        margin: 0 !important;                     /* 左对齐，不居中 */
-        padding-left: 20px !important;            /* 左侧留白 */
-        padding-right: 0 !important;              /* 右侧不留白，让内容自然延伸 */
-    }
-
-    /* 上传文件列表：左侧留白，避免列表项贴左边 */
-    .uploaded-files-list {
-        padding-left: 12px !important;
-    }
-    .uploaded-files-list ul,
-    .uploaded-files-list ol {
-        padding-left: 0 !important;
-        margin-left: 0 !important;
-    }
-
-    /* 语言选择行：作为交换按钮的定位参照容器 */
-    .lang-row {
-        position: relative !important;
-        align-items: flex-start !important;
-    }
-
-    /* 语言交换按钮：悬浮在左侧标签文字右边的圆角矩形，两个下拉框仍紧挨在一起 */
-    .lang-row .lang-swap-btn {
-        position: absolute !important;
-        /* 放在"从...翻译"标签的右边，与文字在同一水平线 */
-        top: 7px !important;                 /* 与标签文字在同一水平线上 */
-        left: 20% !important;                /* 位于左侧标签右边，不居中 */
-        transform: none !important;          /* 不再居中，使用 left 直接定位 */
-        width: 24px !important;             /* 更小的圆形图标按钮 */
-        height: 24px !important;
-        min-width: 24px !important;
-        padding: 0 !important;
-        border-radius: 999px !important;    /* 完全圆形 */
-        background: transparent !important;
-        border: none !important;
-        color: rgba(148, 163, 184, 1) !important;  /* 中性色箭头，浅/深色都自然 */
-        font-size: 14px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        transition: all 0.2s ease !important;
-        cursor: pointer !important;
-        z-index: 5 !important;              /* 提到分隔线之上，避免被裁剪 */
-    }
-    .lang-swap-btn:hover {
-        background: rgba(148, 163, 184, 0.12) !important;
-        color: var(--primary-500) !important;
-    }
-    .lang-swap-btn:active {
-        background: rgba(148, 163, 184, 0.2) !important;
-    }
-    """
 
 # Build paths to resources
 current_dir = Path(__file__).parent
 assets_dir = current_dir / "assets"
 logo_path = assets_dir / "powered_by_siliconflow_light.png"
-translation_file_path = current_dir / "gui_translation.yaml"
+
 config_fake_pdf_path = DEFAULT_CONFIG_DIR / "config.fake.pdf"
 pdf_preview_allowed_paths = [
     logo_path,
@@ -1524,8 +886,12 @@ with gr.Blocks(
         with gr.Row(elem_classes=["tab-main-row"], equal_height=True):
             # 左侧侧边栏
             with gr.Column(scale=0, min_width=70, elem_classes=["sidebar-nav"]):
-                btn_main_tab = gr.Button("🚀", variant="primary", elem_classes=["sidebar-btn"])
-                btn_settings_tab = gr.Button("⚙️", variant="secondary", elem_classes=["sidebar-btn"])
+                btn_main_tab = gr.Button(
+                    "🚀", variant="primary", elem_classes=["sidebar-btn"]
+                )
+                btn_settings_tab = gr.Button(
+                    "⚙️", variant="secondary", elem_classes=["sidebar-btn"]
+                )
 
             # 右侧主内容区域：再拆成“主页”和“设置”两个分组
             with gr.Column(scale=1):
@@ -1558,7 +924,9 @@ with gr.Blocks(
                                 elem_classes=["uploaded-files-list"],
                             )
 
-                            gr.Markdown(_("## Translation Options"), elem_classes=["tab-title"])
+                            gr.Markdown(
+                                _("## Translation Options"), elem_classes=["tab-title"]
+                            )
 
                             # 语言选择与交换按钮所在的一行
                             with gr.Row(elem_classes=["lang-row"]):
@@ -1581,7 +949,9 @@ with gr.Blocks(
                                 )
 
                             # 主界面左侧保留翻译按钮和已翻译下载区
-                            output_title = gr.Markdown(_("## Translated"), visible=False)
+                            output_title = gr.Markdown(
+                                _("## Translated"), visible=False
+                            )
                             output_file_mono = gr.File(
                                 label=_("Download Translation (Mono)"), visible=False
                             )
@@ -1637,7 +1007,9 @@ with gr.Blocks(
                             )
 
                 # 其余高级配置都移动到设置页
-                with gr.Group(visible=False, elem_classes=["settings-container"]) as tab_settings:
+                with gr.Group(
+                    visible=False, elem_classes=["settings-container"]
+                ) as tab_settings:
                     # 界面语言切换只在“设置”页展示
                     lang_selector.render()
                     siliconflow_free_acknowledgement = gr.Markdown(
@@ -1755,8 +1127,10 @@ with gr.Blocks(
                                     detail_text_input_fields.append(field)
                                     visible_when = gui_extra.get("visible_when")
                                     if visible_when:
-                                        dependency_field_name = _gui_dependency_field_name(
-                                            field_name, visible_when["field"]
+                                        dependency_field_name = (
+                                            _gui_dependency_field_name(
+                                                field_name, visible_when["field"]
+                                            )
                                         )
                                         dependency_input = (
                                             detail_visibility_dependency_inputs.get(
@@ -1773,7 +1147,9 @@ with gr.Blocks(
                                                     field_input,
                                                 )
                                             )
-                                    detail_visibility_dependency_inputs[field_name] = field_input
+                                    detail_visibility_dependency_inputs[field_name] = (
+                                        field_input
+                                    )
                                     __gui_service_arg_names.append(field_name)
                                     translation_engine_arg_inputs.append(field_input)
                     with gr.Group() as rate_limit_settings:
@@ -1916,7 +1292,9 @@ with gr.Blocks(
                                         type_hint = field.annotation
                                         original_type = typing.get_origin(type_hint)
                                         type_args = typing.get_args(type_hint)
-                                        value = getattr(term_detail_settings, field_name)
+                                        value = getattr(
+                                            term_detail_settings, field_name
+                                        )
                                         gui_extra = _field_gui_extra(field)
                                         term_field_values = {
                                             name: getattr(term_detail_settings, name)
@@ -1975,17 +1353,19 @@ with gr.Blocks(
                                         ].append(term_detail_index)
                                         term_detail_index += 1
                                         term_detail_text_inputs.append(field_input)
-                                        term_detail_text_input_field_names.append(field_name)
+                                        term_detail_text_input_field_names.append(
+                                            field_name
+                                        )
                                         term_detail_text_input_fields.append(field)
                                         visible_when = gui_extra.get("visible_when")
                                         if visible_when:
-                                            dependency_field_name = _gui_dependency_field_name(
-                                                field_name, visible_when["field"]
-                                            )
-                                            dependency_input = (
-                                                term_detail_visibility_dependency_inputs.get(
-                                                    dependency_field_name
+                                            dependency_field_name = (
+                                                _gui_dependency_field_name(
+                                                    field_name, visible_when["field"]
                                                 )
+                                            )
+                                            dependency_input = term_detail_visibility_dependency_inputs.get(
+                                                dependency_field_name
                                             )
                                             if dependency_input is not None:
                                                 term_detail_visibility_dependency_events.append(
@@ -1997,9 +1377,13 @@ with gr.Blocks(
                                                         field_input,
                                                     )
                                                 )
-                                        term_detail_visibility_dependency_inputs[field_name] = field_input
+                                        term_detail_visibility_dependency_inputs[
+                                            field_name
+                                        ] = field_input
                                         __gui_term_service_arg_names.append(field_name)
-                                        translation_engine_arg_inputs.append(field_input)
+                                        translation_engine_arg_inputs.append(
+                                            field_input
+                                        )
 
                             term_rate_limit_mode = gr.Radio(
                                 choices=[
@@ -2068,17 +1452,17 @@ with gr.Blocks(
                     )
 
                     page_input = gr.Textbox(
-                    label=_("Page range (e.g., 1,3,5-10,-5)"),
-                    visible=False,
-                    interactive=True,
-                    placeholder=_("e.g., 1,3,5-10"),
+                        label=_("Page range (e.g., 1,3,5-10,-5)"),
+                        visible=False,
+                        interactive=True,
+                        placeholder=_("e.g., 1,3,5-10"),
                     )
 
                     only_include_translated_page = gr.Checkbox(
-                    label=_("Only include translated pages in the output PDF."),
-                    info=_("Effective only when a page range is specified."),
-                    value=settings.pdf.only_include_translated_page,
-                    interactive=True,
+                        label=_("Only include translated pages in the output PDF."),
+                        info=_("Effective only when a page range is specified."),
+                        value=settings.pdf.only_include_translated_page,
+                        interactive=True,
                     )
 
                     # PDF Output Options
@@ -2121,12 +1505,12 @@ with gr.Blocks(
                     # Additional translation options
                     with gr.Accordion(_("Advanced Options"), open=False):
                         prompt = gr.Textbox(
-                        label=_("Custom prompt for translation"),
-                        value="",
-                        visible=False,
-                        interactive=True,
-                        placeholder=_("Custom prompt for the translator"),
-                    )
+                            label=_("Custom prompt for translation"),
+                            value="",
+                            visible=False,
+                            interactive=True,
+                            placeholder=_("Custom prompt for the translator"),
+                        )
 
                         # New Textbox for custom_system_prompt
                         custom_system_prompt_input = gr.Textbox(
@@ -2147,7 +1531,9 @@ with gr.Blocks(
                         )
 
                         rpc_doclayout = gr.Textbox(
-                            label=_("RPC service for document layout analysis (optional)"),
+                            label=_(
+                                "RPC service for document layout analysis (optional)"
+                            ),
                             value=settings.translation.rpc_doclayout or "",
                             visible=False,
                             interactive=True,
@@ -2213,7 +1599,9 @@ with gr.Blocks(
                         )
 
                         split_short_lines = gr.Checkbox(
-                            label=_("Force split short lines into different paragraphs"),
+                            label=_(
+                                "Force split short lines into different paragraphs"
+                            ),
                             value=settings.pdf.split_short_lines,
                             interactive=True,
                         )
@@ -2339,7 +1727,11 @@ with gr.Blocks(
                         )
 
                     # （已移动到 tab_main 中）这里保留设置页底部的“保存设置”和技术说明
-                    save_btn = gr.Button(_("Save Settings"), variant="secondary", elem_classes=["save-settings-btn"])
+                    save_btn = gr.Button(
+                        _("Save Settings"),
+                        variant="secondary",
+                        elem_classes=["save-settings-btn"],
+                    )
 
                     tech_details = gr.Markdown(
                         tech_details_string,
@@ -2870,19 +2262,30 @@ with gr.Blocks(
                 choices = []
             else:
                 choices = list(state.get("display_map", {}).keys())
-            
+
             # If selected_label is not in choices, reset it
             if selected_label and selected_label not in choices:
                 # Reset to first available choice or None
                 corrected_label = choices[0] if choices else None
                 # Return preview update + selector update
-                preview_results = update_preview(corrected_label, state) if corrected_label else (
-                    None, None, None, None,
-                    gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
+                preview_results = (
+                    update_preview(corrected_label, state)
+                    if corrected_label
+                    else (
+                        None,
+                        None,
+                        None,
+                        None,
+                        gr.update(visible=False),
+                        gr.update(visible=False),
+                        gr.update(visible=False),
+                    )
                 )
                 return (
                     *preview_results,
-                    gr.update(choices=choices, value=corrected_label, visible=bool(choices)),  # Fix selector
+                    gr.update(
+                        choices=choices, value=corrected_label, visible=bool(choices)
+                    ),  # Fix selector
                 )
             else:
                 # Normal case: selected_label is valid
@@ -3186,7 +2589,8 @@ with gr.Blocks(
                         visible = _gui_field_visible(
                             field_name,
                             field,
-                            term_metadata.translate_engine_type == selected_term_service,
+                            term_metadata.translate_engine_type
+                            == selected_term_service,
                             term_field_values,
                         )
                         value = _gui_field_value(field, value)
@@ -3246,175 +2650,7 @@ with gr.Blocks(
 
         # JavaScript: 动态调整 PDF canvas 缩放，确保完全适配容器高度
         # 使用兼容性更好的语法，避免 ES6 特性导致解析错误
-        demo.load(
-            None,
-            None,
-            None,
-            js="""
-            (function() {
-                'use strict';
-
-            // Fix PDF worker URL - replace jsdelivr CDN with GitHub raw URL
-            function fixPDFWorkerURL() {
-                try {
-                    var originalWorkerSrc = 'https://cdn.jsdelivr.net/gh/freddyaboulton/gradio-pdf@main/pdf.worker.min.mjs';
-                    var newWorkerSrc = 'https://raw.githubusercontent.com/freddyaboulton/gradio-pdf/main/pdf.worker.min.mjs';
-                    
-                    // Method 1: Override PDF.js GlobalWorkerOptions if available
-                    if (typeof window !== 'undefined') {
-                        if (window.pdfjsLib && window.pdfjsLib.GlobalWorkerOptions) {
-                            window.pdfjsLib.GlobalWorkerOptions.workerSrc = newWorkerSrc;
-                        }
-                        
-                        // Method 2: Use MutationObserver to intercept script execution
-                        var observer = new MutationObserver(function(mutations) {
-                            mutations.forEach(function(mutation) {
-                                mutation.addedNodes.forEach(function(node) {
-                                    if (node.nodeType === 1) { // Element node
-                                        if (node.tagName === 'SCRIPT') {
-                                            if (node.textContent && node.textContent.indexOf(originalWorkerSrc) !== -1) {
-                                                var escapedUrl = originalWorkerSrc.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');
-                                                node.textContent = node.textContent.replace(new RegExp(escapedUrl, 'g'), newWorkerSrc);
-                                            }
-                                        }
-                                        // Also check for inline scripts in the node
-                                        var scripts = node.querySelectorAll && node.querySelectorAll('script');
-                                        if (scripts) {
-                                            for (var i = 0; i < scripts.length; i++) {
-                                                if (scripts[i].textContent && scripts[i].textContent.indexOf(originalWorkerSrc) !== -1) {
-                                                    var escapedUrl2 = originalWorkerSrc.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');
-                                                    scripts[i].textContent = scripts[i].textContent.replace(new RegExp(escapedUrl2, 'g'), newWorkerSrc);
-                                                }
-                                            }
-                                        }
-                                    }
-                                });
-                            });
-                        });
-                        observer.observe(document.body || document.documentElement, {
-                            childList: true,
-                            subtree: true
-                        });
-                        
-                        // Method 3: Intercept fetch requests for the worker file
-                        var originalFetch = window.fetch;
-                        window.fetch = function() {
-                            var url = arguments[0];
-                            if (typeof url === 'string' && url.indexOf(originalWorkerSrc) !== -1) {
-                                arguments[0] = url.replace(originalWorkerSrc, newWorkerSrc);
-                            }
-                            return originalFetch.apply(this, arguments);
-                        };
-                    }
-                } catch (e) {
-                    console.warn('Failed to fix PDF worker URL:', e);
-                }
-            }
-            
-            // Run fix immediately and also on DOM ready
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', fixPDFWorkerURL);
-            } else {
-                fixPDFWorkerURL();
-            }
-
-            function adjustPDFCanvasScale() {
-                    var previewContainers = document.querySelectorAll('.pdf-preview-fixed');
-                    for (var i = 0; i < previewContainers.length; i++) {
-                        var container = previewContainers[i];
-                        var canvas = container.querySelector('canvas');
-                    if (!canvas) {
-                            continue;
-                    }
-                    
-                        var containerRect = container.getBoundingClientRect();
-                        var containerHeight = containerRect.height - 24;
-                        var containerWidth = containerRect.width - 24;
-                        
-                        var canvasWidth = canvas.naturalWidth || canvas.width || canvas.offsetWidth;
-                        var canvasHeight = canvas.naturalHeight || canvas.height || canvas.offsetHeight;
-                    
-                        if (!canvasWidth || !canvasHeight) {
-                            continue;
-                        }
-                        
-                        var scaleHeight = containerHeight / canvasHeight;
-                        var scaleWidth = containerWidth / canvasWidth;
-                        var scale = Math.min(scaleHeight, scaleWidth);
-                        
-                        var scaledWidth = canvasWidth * scale;
-                        var scaledHeight = canvasHeight * scale;
-                    
-                    canvas.style.width = scaledWidth + 'px';
-                    canvas.style.height = scaledHeight + 'px';
-                    canvas.style.maxWidth = '100%';
-                    canvas.style.maxHeight = '100%';
-                    
-                    // 深色模式下：为 canvas 添加包装器，使背景大小精确匹配 PDF 内容
-                    var bodyStyle = window.getComputedStyle(document.body);
-                    var bgColor = bodyStyle.backgroundColor;
-                    var isDarkMode = document.body.classList.contains('dark') || 
-                                     document.documentElement.getAttribute('data-theme') === 'dark' ||
-                                     document.documentElement.classList.contains('dark') ||
-                                     (bgColor && (bgColor.indexOf('rgb(30') === 0 || 
-                                                  bgColor.indexOf('rgb(31') === 0 || 
-                                                  bgColor.indexOf('rgb(32') === 0 ||
-                                                  bgColor.indexOf('#1') === 0 ||
-                                                  bgColor.indexOf('#2') === 0));
-                    
-                    if (isDarkMode) {
-                        // 检查是否已有包装器
-                        var wrapper = canvas.parentElement;
-                        var needsWrapper = !wrapper.classList || !wrapper.classList.contains('pdf-canvas-wrapper');
-                        
-                        if (needsWrapper && wrapper !== container) {
-                            // 创建包装器
-                            var newWrapper = document.createElement('div');
-                            newWrapper.className = 'pdf-canvas-wrapper';
-                            wrapper.insertBefore(newWrapper, canvas);
-                            newWrapper.appendChild(canvas);
-                            wrapper = newWrapper;
-                        } else if (wrapper === container || !wrapper.classList.contains('pdf-canvas-wrapper')) {
-                            // 如果 canvas 直接是 container 的子元素，创建包装器
-                            var newWrapper = document.createElement('div');
-                            newWrapper.className = 'pdf-canvas-wrapper';
-                            container.insertBefore(newWrapper, canvas);
-                            newWrapper.appendChild(canvas);
-                            wrapper = newWrapper;
-                        }
-                        
-                        // 设置包装器大小，稍微大一点以包含 padding 和阴影
-                        if (wrapper && wrapper.classList.contains('pdf-canvas-wrapper')) {
-                            wrapper.style.width = (scaledWidth + 16) + 'px';  // 8px padding * 2
-                            wrapper.style.height = (scaledHeight + 16) + 'px';
-                            wrapper.style.maxWidth = '100%';
-                            wrapper.style.maxHeight = '100%';
-                            wrapper.style.margin = '0 auto';
-                            wrapper.style.display = 'inline-block';
-                        }
-                        
-                        // 确保 canvas 本身没有额外的背景
-                        canvas.style.background = 'transparent';
-                    } else {
-                        // 浅色模式下移除包装器样式
-                        canvas.style.background = '#ffffff';
-                    }
-                    }
-                }
-                
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', adjustPDFCanvasScale);
-            } else {
-                adjustPDFCanvasScale();
-            }
-            
-                var observer = new MutationObserver(adjustPDFCanvasScale);
-            observer.observe(document.body, { childList: true, subtree: true });
-            
-            window.addEventListener('resize', adjustPDFCanvasScale);
-            })();
-            """
-        )
+        demo.load(None, None, None, js=pdf_preview_js)
 
 
 def parse_user_passwd(file_path: str, welcome_page: str) -> tuple[list, str]:
