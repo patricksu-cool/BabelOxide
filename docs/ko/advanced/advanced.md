@@ -25,7 +25,7 @@
 
 #### 명령줄 인수
 
-명령줄에서 번역 명령을 실행하여 현재 작업 디렉토리에 번역된 문서 `example-mono.pdf` 와 이중 언어 문서 `example-dual.pdf` 를 생성합니다. 기본 번역 서비스로 Google 을 사용합니다. 더 많은 지원 번역 서비스는 [여기](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/blob/main/docs/ADVANCED.md#services) 에서 찾을 수 있습니다.
+명령줄에서 번역 명령을 실행하여 현재 작업 디렉토리에 번역된 문서 `example.zh-CN.mono.pdf` 와 이중 언어 문서 `example.zh-CN.dual.pdf` 를 생성합니다. 기본 번역 서비스로 SiliconFlowFree 을 사용합니다. 더 많은 지원 번역 서비스는 [여기](./Documentation-of-Translation-Services.md) 에서 찾을 수 있습니다.
 
 <img src="./../../images/cmd_light.svg" width="580px"  alt="cmd"/>
 
@@ -108,7 +108,7 @@
 
 #### 속도 제한 구성 가이드
 
-번역 서비스를 사용할 때 적절한 속도 제한 구성은 API 오류를 방지하고 성능을 최적화하는 데 중요합니다. 이 가이드는 다양한 업스트림 서비스 제한에 따라 `--qps` 및 `--pool-max-worker` 매개변수를 구성하는 방법을 설명합니다.
+번역 서비스를 사용할 때 적절한 속도 제한 구성은 API 오류를 방지하고 성능을 최적화하는 데 중요합니다. 이 가이드는 다양한 업스트림 서비스 제한에 따라 `--qps` 및 `--pool-max-workers` 매개변수를 구성하는 방법을 설명합니다.
 
 > [!TIP]
 >
@@ -131,7 +131,7 @@
 - `pool_size = 10 * 10 = 100`
 
 ```bash
-pdf2zh example.pdf --qps 10 --pool-max-worker 100
+pdf2zh example.pdf --qps 10 --pool-max-workers 100
 ```
 
 ##### 동시 연결 제한
@@ -148,7 +148,7 @@ pdf2zh example.pdf --qps 10 --pool-max-worker 100
 - `qps = 45`
 
 ```bash
-pdf2zh example.pdf --qps 45 --pool-max-worker 45
+pdf2zh example.pdf --qps 45 --pool-max-workers 45
 ```
 
 ##### 모범 사례
@@ -209,7 +209,7 @@ pdf2zh_next example.pdf --pages "1,3,10-20,25-"
 
 #### 원본 및 대상 언어 지정
 
-[Google 언어 코드](https://developers.google.com/admin-sdk/directory/v1/languages), [DeepL 언어 코드](https://developers.deepl.com/docs/resources/supported-languages) 참조
+[SiliconFlowFree 언어 코드](https://developers.google.com/admin-sdk/directory/v1/languages), [DeepL 언어 코드](https://developers.deepl.com/docs/resources/supported-languages) 참조
 
 ```bash
 pdf2zh_next example.pdf --lang-in en -lang-out ja

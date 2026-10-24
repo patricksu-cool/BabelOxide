@@ -25,7 +25,7 @@
 
 #### Аргументы командной строки
 
-Выполните команду перевода в командной строке, чтобы сгенерировать переведённый документ `example-mono.pdf` и двуязычный документ `example-dual.pdf` в текущей рабочей директории. Используйте Google в качестве службы перевода по умолчанию. Дополнительные поддерживаемые службы перевода можно найти [ЗДЕСЬ](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/blob/main/docs/ADVANCED.md#services).
+Выполните команду перевода в командной строке, чтобы сгенерировать переведённый документ `example.zh-CN.mono.pdf` и двуязычный документ `example.zh-CN.dual.pdf` в текущей рабочей директории. Используйте SiliconFlowFree в качестве службы перевода по умолчанию. Дополнительные поддерживаемые службы перевода можно найти [ЗДЕСЬ](./Documentation-of-Translation-Services.md).
 
 <img src="./../../images/cmd_light.svg" width="580px"  alt="cmd"/>
 
@@ -108,7 +108,7 @@
 
 #### Руководство по настройке ограничения частоты запросов
 
-При использовании служб перевода правильная настройка ограничения частоты запросов крайне важна для избежания ошибок API и оптимизации производительности. Это руководство объясняет, как настраивать параметры `--qps` и `--pool-max-worker` в зависимости от ограничений различных вышестоящих служб.
+При использовании служб перевода правильная настройка ограничения частоты запросов крайне важна для избежания ошибок API и оптимизации производительности. Это руководство объясняет, как настраивать параметры `--qps` и `--pool-max-workers` в зависимости от ограничений различных вышестоящих служб.
 
 > [!TIP]
 >
@@ -131,7 +131,7 @@
 - `pool_size = 10 * 10 = 100`
 
 ```bash
-pdf2zh example.pdf --qps 10 --pool-max-worker 100
+pdf2zh example.pdf --qps 10 --pool-max-workers 100
 ```
 
 ##### Ограничение одновременных подключений
@@ -148,7 +148,7 @@ pdf2zh example.pdf --qps 10 --pool-max-worker 100
 - `qps = 45`
 
 ```bash
-pdf2zh example.pdf --qps 45 --pool-max-worker 45
+pdf2zh example.pdf --qps 45 --pool-max-workers 45
 ```
 
 ##### Лучшие практики
@@ -209,7 +209,7 @@ pdf2zh_next example.pdf --pages "1,3,10-20,25-"
 
 #### Указание исходного и целевого языков
 
-См. [Google Languages Codes](https://developers.google.com/admin-sdk/directory/v1/languages), [DeepL Languages Codes](https://developers.deepl.com/docs/resources/supported-languages)
+См. [SiliconFlowFree Languages Codes](https://developers.google.com/admin-sdk/directory/v1/languages), [DeepL Languages Codes](https://developers.deepl.com/docs/resources/supported-languages)
 
 ```bash
 pdf2zh_next example.pdf --lang-in en -lang-out ja

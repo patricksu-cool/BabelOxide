@@ -25,7 +25,7 @@
 
 #### 命令行參數
 
-在命令行中執行翻譯命令，以在當前工作目錄中生成翻譯文檔 `example-mono.pdf` 和雙語文檔 `example-dual.pdf`。使用 Google 作為默認翻譯服務。更多支持的翻譯服務可以在 [這裡](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/blob/main/docs/ADVANCED.md#services) 找到。
+在命令行中執行翻譯命令，以在當前工作目錄中生成翻譯文檔 `example.zh-CN.mono.pdf` 和雙語文檔 `example.zh-CN.dual.pdf`。使用 SiliconFlowFree 作為默認翻譯服務。更多支持的翻譯服務可以在 [這裡](./Documentation-of-Translation-Services.md) 找到。
 
 <img src="./../../images/cmd_light.svg" width="580px"  alt="cmd"/>
 
@@ -108,7 +108,7 @@
 
 #### 速率限制配置指南
 
-在使用翻譯服務時，適當的速率限制配置對於避免 API 錯誤和優化效能至關重要。本指南解釋如何根據不同的上游服務限制來配置 `--qps` 和 `--pool-max-worker` 參數。
+在使用翻譯服務時，適當的速率限制配置對於避免 API 錯誤和優化效能至關重要。本指南解釋如何根據不同的上游服務限制來配置 `--qps` 和 `--pool-max-workers` 參數。
 
 > [!TIP]
 >
@@ -131,7 +131,7 @@
 - `pool_size = 10 * 10 = 100`
 
 ```bash
-pdf2zh example.pdf --qps 10 --pool-max-worker 100
+pdf2zh example.pdf --qps 10 --pool-max-workers 100
 ```
 
 ##### 並發連接限制
@@ -148,7 +148,7 @@ pdf2zh example.pdf --qps 10 --pool-max-worker 100
 - `qps = 45`
 
 ```bash
-pdf2zh example.pdf --qps 45 --pool-max-worker 45
+pdf2zh example.pdf --qps 45 --pool-max-workers 45
 ```
 
 ##### 最佳實踐
@@ -209,7 +209,7 @@ pdf2zh_next example.pdf --pages "1,3,10-20,25-"
 
 #### 指定來源與目標語言
 
-請參閱 [Google Languages Codes](https://developers.google.com/admin-sdk/directory/v1/languages)、[DeepL Languages Codes](https://developers.deepl.com/docs/resources/supported-languages)
+請參閱 [SiliconFlowFree Languages Codes](https://developers.google.com/admin-sdk/directory/v1/languages)、[DeepL Languages Codes](https://developers.deepl.com/docs/resources/supported-languages)
 
 ```bash
 pdf2zh_next example.pdf --lang-in en -lang-out ja

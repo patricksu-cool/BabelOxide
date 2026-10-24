@@ -23,7 +23,7 @@
 
 #### Argumentos de línea de comandos
 
-Ejecuta el comando de traducción en la línea de comandos para generar el documento traducido `example-mono.pdf` y el documento bilingüe `example-dual.pdf` en el directorio de trabajo actual. Usa Google como servicio de traducción predeterminado. Más servicios de traducción soportados se pueden encontrar [AQUÍ](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/blob/main/docs/ADVANCED.md#services).
+Ejecuta el comando de traducción en la línea de comandos para generar el documento traducido `example.zh-CN.mono.pdf` y el documento bilingüe `example.zh-CN.dual.pdf` en el directorio de trabajo actual. Usa SiliconFlowFree como servicio de traducción predeterminado. Más servicios de traducción soportados se pueden encontrar [AQUÍ](./Documentation-of-Translation-Services.md).
 
 <img src="./../../images/cmd_light.svg" width="580px"  alt="cmd"/>
 
@@ -106,7 +106,7 @@ En la siguiente tabla, enumeramos todas las opciones avanzadas para referencia:
 
 #### Guía de configuración de límites de tasa
 
-Al usar servicios de traducción, una configuración adecuada de límites de tasa es crucial para evitar errores de API y optimizar el rendimiento. Esta guía explica cómo configurar los parámetros `--qps` y `--pool-max-worker` según las diferentes limitaciones de los servicios ascendentes.
+Al usar servicios de traducción, una configuración adecuada de límites de tasa es crucial para evitar errores de API y optimizar el rendimiento. Esta guía explica cómo configurar los parámetros `--qps` y `--pool-max-workers` según las diferentes limitaciones de los servicios ascendentes.
 
 > [!TIP]
 >
@@ -129,7 +129,7 @@ Si tu servicio de traducción tiene un límite de 600 RPM:
 - `pool_size = 10 * 10 = 100`
 
 ```bash
-pdf2zh example.pdf --qps 10 --pool-max-worker 100
+pdf2zh example.pdf --qps 10 --pool-max-workers 100
 ```
 
 ##### Limitación de conexiones concurrentes
@@ -146,7 +146,7 @@ Si tu servicio de traducción permite 50 conexiones concurrentes:
 - `qps = 45`
 
 ```bash
-pdf2zh example.pdf --qps 45 --pool-max-worker 45
+pdf2zh example.pdf --qps 45 --pool-max-workers 45
 ```
 
 ##### Mejores prácticas
@@ -207,7 +207,7 @@ Este comando traducirá la primera página, la tercera página, las páginas 10-
 
 #### Especificar idiomas de origen y destino
 
-Consulte [Google Languages Codes](https://developers.google.com/admin-sdk/directory/v1/languages), [DeepL Languages Codes](https://developers.deepl.com/docs/resources/supported-languages)
+Consulte [SiliconFlowFree Languages Codes](https://developers.google.com/admin-sdk/directory/v1/languages), [DeepL Languages Codes](https://developers.deepl.com/docs/resources/supported-languages)
 
 ```bash
 pdf2zh_next example.pdf --lang-in en -lang-out ja

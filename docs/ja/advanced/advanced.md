@@ -25,7 +25,7 @@
 
 #### コマンドライン引数
 
-コマンドラインで翻訳コマンドを実行し、現在の作業ディレクトリに翻訳文書 `example-mono.pdf` とバイリンガル文書 `example-dual.pdf` を生成します。デフォルトの翻訳サービスとして Google を使用します。その他のサポート翻訳サービスは [こちら](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/blob/main/docs/ADVANCED.md#services) で確認できます。
+コマンドラインで翻訳コマンドを実行し、現在の作業ディレクトリに翻訳文書 `example.zh-CN.mono.pdf` とバイリンガル文書 `example.zh-CN.dual.pdf` を生成します。デフォルトの翻訳サービスとして SiliconFlowFree を使用します。その他のサポート翻訳サービスは [こちら](./Documentation-of-Translation-Services.md) で確認できます。
 
 <img src="./../../images/cmd_light.svg" width="580px"  alt="cmd"/>
 
@@ -108,7 +108,7 @@
 
 #### レート制限設定ガイド
 
-翻訳サービスを使用する際、適切なレート制限設定は API エラーを回避し、パフォーマンスを最適化するために重要です。このガイドでは、様々な上流サービスの制限に基づいて `--qps` と `--pool-max-worker` パラメータを設定する方法について説明します。
+翻訳サービスを使用する際、適切なレート制限設定は API エラーを回避し、パフォーマンスを最適化するために重要です。このガイドでは、様々な上流サービスの制限に基づいて `--qps` と `--pool-max-workers` パラメータを設定する方法について説明します。
 
 > [!TIP]
 >
@@ -131,7 +131,7 @@
 - `pool_size = 10 * 10 = 100`
 
 ```bash
-pdf2zh example.pdf --qps 10 --pool-max-worker 100
+pdf2zh example.pdf --qps 10 --pool-max-workers 100
 ```
 
 ##### 同時接続制限
@@ -148,7 +148,7 @@ pdf2zh example.pdf --qps 10 --pool-max-worker 100
 - `qps = 45`
 
 ```bash
-pdf2zh example.pdf --qps 45 --pool-max-worker 45
+pdf2zh example.pdf --qps 45 --pool-max-workers 45
 ```
 
 ##### ベストプラクティス
@@ -210,7 +210,7 @@ pdf2zh_next example.pdf --pages "1,3,10-20,25-"
 
 #### ソース言語とターゲット言語を指定する
 
-[Google 言語コード](https://developers.google.com/admin-sdk/directory/v1/languages)、[DeepL 言語コード](https://developers.deepl.com/docs/resources/supported-languages) を参照してください。
+[SiliconFlowFree 言語コード](https://developers.google.com/admin-sdk/directory/v1/languages)、[DeepL 言語コード](https://developers.deepl.com/docs/resources/supported-languages) を参照してください。
 
 ```bash
 pdf2zh_next example.pdf --lang-in en -lang-out ja

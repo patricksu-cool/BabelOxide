@@ -25,7 +25,7 @@
 
 #### Kommandozeilenargumente
 
-Führen Sie den Übersetzungsbefehl in der Kommandozeile aus, um das übersetzte Dokument `example-mono.pdf` und das zweisprachige Dokument `example-dual.pdf` im aktuellen Arbeitsverzeichnis zu generieren. Verwenden Sie Google als Standard-Übersetzungsdienst. Weitere unterstützte Übersetzungsdienste finden Sie [HIER](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/blob/main/docs/ADVANCED.md#services).
+Führen Sie den Übersetzungsbefehl in der Kommandozeile aus, um das übersetzte Dokument `example.zh-CN.mono.pdf` und das zweisprachige Dokument `example.zh-CN.dual.pdf` im aktuellen Arbeitsverzeichnis zu generieren. Verwenden Sie SiliconFlowFree als Standard-Übersetzungsdienst. Weitere unterstützte Übersetzungsdienste finden Sie [HIER](./Documentation-of-Translation-Services.md).
 
 <img src="./../../images/cmd_light.svg" width="580px"  alt="cmd"/>
 
@@ -108,7 +108,7 @@ In der folgenden Tabelle listen wir alle erweiterten Optionen zur Referenz auf:
 
 #### Ratenbegrenzungskonfigurationsleitfaden
 
-Bei der Verwendung von Übersetzungsdiensten ist eine ordnungsgemäße Ratenbegrenzungskonfiguration entscheidend, um API-Fehler zu vermeiden und die Leistung zu optimieren. Dieser Leitfaden erklärt, wie die Parameter `--qps` und `--pool-max-worker` basierend auf den verschiedenen Einschränkungen der Upstream-Dienste konfiguriert werden.
+Bei der Verwendung von Übersetzungsdiensten ist eine ordnungsgemäße Ratenbegrenzungskonfiguration entscheidend, um API-Fehler zu vermeiden und die Leistung zu optimieren. Dieser Leitfaden erklärt, wie die Parameter `--qps` und `--pool-max-workers` basierend auf den verschiedenen Einschränkungen der Upstream-Dienste konfiguriert werden.
 
 > [!TIP]
 >
@@ -131,7 +131,7 @@ Wenn Ihr Übersetzungsdienst ein Limit von 600 RPM hat:
 - `pool_size = 10 * 10 = 100`
 
 ```bash
-pdf2zh example.pdf --qps 10 --pool-max-worker 100
+pdf2zh example.pdf --qps 10 --pool-max-workers 100
 ```
 
 ##### Begrenzung gleichzeitiger Verbindungen
@@ -148,7 +148,7 @@ Wenn Ihr Übersetzungsdienst 50 gleichzeitige Verbindungen erlaubt:
 - `qps = 45`
 
 ```bash
-pdf2zh example.pdf --qps 45 --pool-max-worker 45
+pdf2zh example.pdf --qps 45 --pool-max-workers 45
 ```
 
 ##### Best Practices
@@ -209,7 +209,7 @@ Dieser Befehl übersetzt die erste Seite, die dritte Seite, die Seiten 10-20 und
 
 #### Quell- und Zielsprachen angeben
 
-Siehe [Google Languages Codes](https://developers.google.com/admin-sdk/directory/v1/languages), [DeepL Languages Codes](https://developers.deepl.com/docs/resources/supported-languages)
+Siehe [SiliconFlowFree Languages Codes](https://developers.google.com/admin-sdk/directory/v1/languages), [DeepL Languages Codes](https://developers.deepl.com/docs/resources/supported-languages)
 
 ```bash
 pdf2zh_next example.pdf --lang-in en -lang-out ja

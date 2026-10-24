@@ -23,7 +23,7 @@
 
 #### Argumentos da Linha de Comando
 
-Execute o comando de tradução na linha de comando para gerar o documento traduzido `example-mono.pdf` e o documento bilíngue `example-dual.pdf` no diretório de trabalho atual. Use o Google como o serviço de tradução padrão. Mais serviços de tradução suportados podem ser encontrados [AQUI](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/blob/main/docs/ADVANCED.md#services).
+Execute o comando de tradução na linha de comando para gerar o documento traduzido `example.zh-CN.mono.pdf` e o documento bilíngue `example.zh-CN.dual.pdf` no diretório de trabalho atual. Use o SiliconFlowFree como o serviço de tradução padrão. Mais serviços de tradução suportados podem ser encontrados [AQUI](./Documentation-of-Translation-Services.md).
 
 <img src="./../../images/cmd_light.svg" width="580px"  alt="cmd"/>
 
@@ -106,7 +106,7 @@ Na tabela a seguir, listamos todas as opções avançadas para referência:
 
 #### Guia de configuração de limitação de taxa
 
-Ao usar serviços de tradução, a configuração adequada da limitação de taxa é crucial para evitar erros de API e otimizar o desempenho. Este guia explica como configurar os parâmetros `--qps` e `--pool-max-worker` com base nas diferentes limitações dos serviços upstream.
+Ao usar serviços de tradução, a configuração adequada da limitação de taxa é crucial para evitar erros de API e otimizar o desempenho. Este guia explica como configurar os parâmetros `--qps` e `--pool-max-workers` com base nas diferentes limitações dos serviços upstream.
 
 > [!TIP]
 >
@@ -129,7 +129,7 @@ Se o seu serviço de tradução tiver um limite de 600 RPM:
 - `pool_size = 10 * 10 = 100`
 
 ```bash
-pdf2zh example.pdf --qps 10 --pool-max-worker 100
+pdf2zh example.pdf --qps 10 --pool-max-workers 100
 ```
 
 ##### Limitação de conexões simultâneas
@@ -146,7 +146,7 @@ Se o seu serviço de tradução permite 50 conexões simultâneas:
 - `qps = 45`
 
 ```bash
-pdf2zh example.pdf --qps 45 --pool-max-worker 45
+pdf2zh example.pdf --qps 45 --pool-max-workers 45
 ```
 
 ##### Melhores práticas
@@ -207,7 +207,7 @@ Este comando irá traduzir a primeira página, a terceira página, as páginas 1
 
 #### Especificar idiomas de origem e destino
 
-Veja [Google Languages Codes](https://developers.google.com/admin-sdk/directory/v1/languages), [DeepL Languages Codes](https://developers.deepl.com/docs/resources/supported-languages)
+Veja [SiliconFlowFree Languages Codes](https://developers.google.com/admin-sdk/directory/v1/languages), [DeepL Languages Codes](https://developers.deepl.com/docs/resources/supported-languages)
 
 ```bash
 pdf2zh_next example.pdf --lang-in en -lang-out ja

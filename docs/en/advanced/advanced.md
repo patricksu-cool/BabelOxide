@@ -23,7 +23,7 @@
 
 #### Command Line Args
 
-Execute the translation command in the command line to generate the translated document `example-mono.pdf` and the bilingual document `example-dual.pdf` in the current working directory. Use Google as the default translation service. More support translation services can find [HERE](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/blob/main/docs/ADVANCED.md#services).
+Execute the translation command in the command line to generate the translated document `example.zh-CN.mono.pdf` and the bilingual document `example.zh-CN.dual.pdf` in the current working directory. Use SiliconFlowFree as the default translation service. More support translation services can find [HERE](./Documentation-of-Translation-Services.md).
 
 <img src="./../../images/cmd_light.svg" width="580px"  alt="cmd"/>
 
@@ -106,7 +106,7 @@ In the following table, we list all advanced options for reference:
 
 #### Rate Limiting Configuration Guide
 
-When using translation services, proper rate limiting configuration is crucial to avoid API errors and optimize performance. This guide explains how to configure `--qps` and `--pool-max-worker` parameters based on different upstream service limitations.
+When using translation services, proper rate limiting configuration is crucial to avoid API errors and optimize performance. This guide explains how to configure `--qps` and `--pool-max-workers` parameters based on different upstream service limitations.
 
 > [!TIP]
 >
@@ -129,7 +129,7 @@ If your translation service has a limit of 600 RPM:
 - `pool_size = 10 * 10 = 100`
 
 ```bash
-pdf2zh example.pdf --qps 10 --pool-max-worker 100
+pdf2zh example.pdf --qps 10 --pool-max-workers 100
 ```
 
 ##### Concurrent Connection Limiting
@@ -146,7 +146,7 @@ If your translation service allows 50 concurrent connections:
 - `qps = 45`
 
 ```bash
-pdf2zh example.pdf --qps 45 --pool-max-worker 45
+pdf2zh example.pdf --qps 45 --pool-max-workers 45
 ```
 
 ##### Best Practices
@@ -208,7 +208,7 @@ This command will translate the first page, the third page, pages 10-20, and all
 
 #### Specify source and target languages
 
-See [Google Languages Codes](https://developers.google.com/admin-sdk/directory/v1/languages), [DeepL Languages Codes](https://developers.deepl.com/docs/resources/supported-languages)
+See [SiliconFlowFree Languages Codes](https://developers.google.com/admin-sdk/directory/v1/languages), [DeepL Languages Codes](https://developers.deepl.com/docs/resources/supported-languages)
 
 ```bash
 pdf2zh_next example.pdf --lang-in en -lang-out ja
