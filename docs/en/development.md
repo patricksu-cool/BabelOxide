@@ -63,7 +63,7 @@ standard regression result; do not suppress all warnings.
 
 The release workflow `.github/workflows/exe-build.yml` downloads the official runtime
 and launcher, then calls `script/build_windows.ps1`. It uses PyStand
-1.1.4, embedded Python 3.13.3, and
+1.1.4, embedded Python 3.13.16, and
 `uv sync --locked --no-dev --no-editable`. Copy the installed package and its
 resources, not an editable checkout. The bundle requires `runtime/`,
 `site-packages/`, `pdf2zh.exe` and `_pystand_static.int`.
@@ -79,6 +79,12 @@ overwrite an existing output directory:
 Use `-SkipOfflineAssets` only when intentionally omitting the offline asset ZIP;
 the bundle will then need existing cached assets or network access on first use.
 `BUILD_INFO.json` records the lock hash and this choice.
+
+The main release, rebuild and fork-build workflows also use this script. They
+select `-DirectML`, matching their existing acceleration profile through the
+locked `directml` extra. The plain EXE workflow keeps the CPU profile.
+Release staging excludes package tests, bytecode caches, editable provenance and
+virtual-environment hooks, and includes license notices and a SHA256 manifest.
 
 Test the EXE from another working directory, verify `--version` and failure exit
 codes, then exercise upload, settings, translation, page navigation and downloads

@@ -9,7 +9,7 @@ env:
   REGISTRY: ghcr.io
   REPO_LOWER: ${{ github.repository_owner }}/${{ github.event.repository.name }}
   GHCR_REPO: ghcr.io/${{ github.repository }}
-  WIN_EXE_PYTHON_VERSION: 3.13.3
+  WIN_EXE_PYTHON_VERSION: 3.13.16
 jobs:
   check-repository:
     name: Check if running in main repository
@@ -165,70 +165,28 @@ jobs:
         with:
           python-version: ${{ env.WIN_EXE_PYTHON_VERSION }}
           enable-cache: true
-          cache-dependency-glob: "pyproject.toml"
+          cache-dependency-glob: |
+            pyproject.toml
+            uv.lock
           activate-environment: true
 
-      - name: 执行所有任务（创建目录、下载、解压、复制文件、安装依赖）
+      - name: Download official runtime and launcher
         shell: pwsh
         run: |
-          Write-Host "==== 创建必要的目录 ===="
-          New-Item -Path "./build" -ItemType Directory -Force
-          New-Item -Path "./build/runtime" -ItemType Directory -Force
-          New-Item -Path "./dep_build" -ItemType Directory -Force
+          $ErrorActionPreference = 'Stop'
+          New-Item -Path './dep_build' -ItemType Directory -Force | Out-Null
+          $pythonVersion = $env:WIN_EXE_PYTHON_VERSION
+          Invoke-WebRequest -Uri "https://www.python.org/ftp/python/$pythonVersion/python-$pythonVersion-embed-amd64.zip" -OutFile './dep_build/python.zip'
+          Expand-Archive -LiteralPath './dep_build/python.zip' -DestinationPath './dep_build/runtime'
+          Invoke-WebRequest -Uri 'https://github.com/skywind3000/PyStand/releases/download/1.1.4/PyStand-v1.1.4-exe.zip' -OutFile './dep_build/PyStand.zip'
+          Expand-Archive -LiteralPath './dep_build/PyStand.zip' -DestinationPath './dep_build/PyStand'
 
-          Write-Host "==== 复制代码到 dep_build ===="
-          Get-ChildItem -Path "./" -Exclude "dep_build", "build" | Copy-Item -Destination "./dep_build" -Recurse -Force
-
-          Write-Host "==== 下载并解压 Python ${{ env.WIN_EXE_PYTHON_VERSION }} ===="
-          Write-Host "pythonUrl: https://www.python.org/ftp/python/${{ env.WIN_EXE_PYTHON_VERSION }}/python-${{ env.WIN_EXE_PYTHON_VERSION }}-embed-amd64.zip"
-          $pythonUrl = "https://www.python.org/ftp/python/${{ env.WIN_EXE_PYTHON_VERSION }}/python-${{ env.WIN_EXE_PYTHON_VERSION }}-embed-amd64.zip"
-          $pythonZip = "./dep_build/python.zip"
-          Invoke-WebRequest -Uri $pythonUrl -OutFile $pythonZip
-          Expand-Archive -Path $pythonZip -DestinationPath "./build/runtime" -Force
-
-          Write-Host "==== 下载 Visual C++ Redistributable 安装程序 ===="
-          $vcRedistUrl = "https://aka.ms/vs/17/release/vc_redist.x64.exe"
-          $vcRedistPath = "./build/无法运行请安装vc_redist.x64.exe"
-          Invoke-WebRequest -Uri $vcRedistUrl -OutFile $vcRedistPath
-          Write-Host "已下载 Visual C++ Redistributable 安装程序到: $vcRedistPath"
-
-          Write-Host "==== 下载并解压 PyStand ===="
-          $pystandUrl = "https://github.com/skywind3000/PyStand/releases/download/1.1.4/PyStand-v1.1.4-exe.zip"
-          $pystandZip = "./dep_build/PyStand.zip"
-          Invoke-WebRequest -Uri $pystandUrl -OutFile $pystandZip
-          Expand-Archive -Path $pystandZip -DestinationPath "./dep_build/PyStand" -Force
-
-          Write-Host "==== 复制 PyStand.exe 到 build 并重命名 ===="
-          $pystandExe = "./dep_build/PyStand/PyStand-x64-CLI/PyStand.exe"
-          $destExe = "./build/pdf2zh.exe"
-          if (Test-Path $pystandExe) {
-              Copy-Item -Path $pystandExe -Destination $destExe -Force
-          } else {
-              Write-Host "错误: PyStand.exe 未找到！"
-              exit 1
-          }
-          Write-Host "==== 创建 Python venv 在 dep_build ===="
-          uv venv ./dep_build/venv
-
-          ./dep_build/venv/Scripts/activate
-
-          Write-Host "==== 在 venv 环境中安装项目依赖 ===="
-          uv pip install .
-          uv pip install BabelDOC[directml]
-          uv run pdf2zh --help
-
-          Write-Host "==== 复制 venv/Lib/site-packages 到 build/ ===="
-          Copy-Item -Path "./dep_build/venv/Lib/site-packages" -Destination "./build/site-packages" -Recurse -Force
-
-          Write-Host "==== 复制 script/_pystand_static.int 到 build/ ===="
-          $staticFile = "./script/_pystand_static.int"
-          $destStatic = "./build/_pystand_static.int"
-          if (Test-Path $staticFile) {
-              Copy-Item -Path $staticFile -Destination $destStatic -Force
-          } else {
-              Write-Host "错误: script/_pystand_static.int 未找到！"
-              exit 1
-          }
+      - name: Build locked portable application with DirectML
+        shell: pwsh
+        run: |
+          ./script/build_windows.ps1 -RuntimeDirectory './dep_build/runtime' -LauncherPath './dep_build/PyStand/PyStand-x64-CLI/PyStand.exe' -Python $env:WIN_EXE_PYTHON_VERSION -DirectML -SkipOfflineAssets
+          Invoke-WebRequest -Uri 'https://aka.ms/vs/17/release/vc_redist.x64.exe' -OutFile './build/无法运行请安装vc_redist.x64.exe'
+          & './dep_build/venv/Scripts/python.exe' ./script/package_windows.py --bundle ./build --finalize
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v5
@@ -283,14 +241,21 @@ jobs:
         with:
           python-version: ${{ env.WIN_EXE_PYTHON_VERSION }}
           enable-cache: true
-          cache-dependency-glob: "pyproject.toml"
+          cache-dependency-glob: |
+            pyproject.toml
+            uv.lock
           activate-environment: true
 
       - name: Generate offline assets
         shell: pwsh
         run: |
           Write-Host "==== 生成离线资源包 ===="
-          uv run --active babeldoc --generate-offline-assets ./build
+          uv run --active --locked --no-dev --extra directml babeldoc --generate-offline-assets ./build
+          if (Test-Path -LiteralPath './build/config') {
+            New-Item -Path './test/file/generated-runtime-state' -ItemType Directory -Force | Out-Null
+            Move-Item -LiteralPath './build/config' -Destination './test/file/generated-runtime-state/config'
+          }
+          uv run --active --locked --no-dev --extra directml python ./script/package_windows.py --bundle ./build --finalize
 
       - name: Delete cache
         shell: pwsh

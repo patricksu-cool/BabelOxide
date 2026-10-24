@@ -51,6 +51,10 @@ dependencies = [
     "pyyaml>=6.0.2",
 ]
 
+[project.optional-dependencies]
+# Preserve the existing Windows release acceleration profile in the lockfile.
+directml = ["babeldoc[directml]==0.6.3; sys_platform == 'win32'"]
+
 [dependency-groups]
 dev = [
     "pre-commit",
