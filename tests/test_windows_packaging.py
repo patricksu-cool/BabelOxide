@@ -19,6 +19,9 @@ def test_runtime_staging_keeps_resources_and_omits_environment_state(tmp_path):
         "package/config/default.yaml",
         "package/resources/gui.css",
         "package/tests/test_example.py",
+        "package/test_example.py",
+        "package/_tests/example.py",
+        "package/stats/_bws_test.py",
         "package/__pycache__/module.pyc",
         "package-1.dist-info/licenses/LICENSE.txt",
         "package-1.dist-info/direct_url.json",
@@ -34,6 +37,9 @@ def test_runtime_staging_keeps_resources_and_omits_environment_state(tmp_path):
     assert (target / "package/resources/gui.css").is_file()
     assert (target / "package-1.dist-info/licenses/LICENSE.txt").is_file()
     assert not (target / "package/tests").exists()
+    assert not (target / "package/test_example.py").exists()
+    assert not (target / "package/_tests").exists()
+    assert (target / "package/stats/_bws_test.py").exists()
     assert not (target / "package/__pycache__").exists()
     assert not list(target.rglob("direct_url.json"))
     assert not (target / "_virtualenv.pth").exists()
