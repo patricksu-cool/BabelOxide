@@ -33,3 +33,7 @@ warnings-as-errors 額外檢查：223 passed、1 failed，Gradio 元件建立時
 ## 重構期間發現的既有錯誤
 
 GUI 的 structured TranslationError handler 讀取不存在的 .message，讓 TranslationError／BabeldocError 原始診斷被 AttributeError 覆蓋。兩項新增測試在修復前失敗，改為保留可選 .message 並回退 str(error) 後通過；成功與取消契約一併通過。這是獨立功能修復，不是宣稱所有搬移均零語意差異。
+
+## 最終套件匯出檢查
+
+新增公開星號匯入契約測試，先重現 AttributeError：根套件 __all__ 包含 ClaudeCodeSettings 卻未綁定名稱。補上既有 config 匯出的一行匯入，保留原 API 清單。此修復不觸及翻譯、重試或 IPC；重新建立 wheel 與 EXE。
