@@ -37,3 +37,7 @@ config/cli.py 專責由 Pydantic 設定模型建立 argparse；MagicDefault 與�
 ## 6f 元件宣告去重
 
 ui/components.py 集中主／術語服務欄位的 Dropdown、Textbox、password、Checkbox 宣告，外層仍保留服務選擇、敏感欄位政策、欄位順序、相依事件與索引；未合併翻譯服務策略。既有完整控制值契約與 DeepSeek visibility 測試保護兩條路徑，完整回歸通過。
+
+## 6g. Windows 組包流程
+
+新增 `script/build_windows.ps1`，集中鎖定環境、非 editable 安裝、相容性檢查、資源複製與 BUILD_INFO，工作流程只負責取得官方 runtime/launcher 並呼叫腳本。輸出限定專案內且拒絕覆寫。以既有官方 Python 3.13.3/PyStand 1.1.4 本機資產實際組包成功，134 套件相容；本機明確省略離線資產 ZIP，使用既有模型快取進行後續測試。CI 遠端執行與重新下載完整離線模型未執行。

@@ -40,65 +40,22 @@ jobs:
             pyproject.toml
             uv.lock
 
-      - name: 执行所有任务（创建目录、下载、解压、复制文件、安装依赖）
+      - name: Download official runtime and launcher
         shell: pwsh
         run: |
-          Write-Host "==== 删除 babeldoctemp1234567 文件夹 ===="
-          if (Test-Path "./babeldoctemp1234567") {
-              Remove-Item -Path "./babeldoctemp1234567" -Recurse -Force
-              Write-Host "babeldoctemp1234567 文件夹已成功删除"
-          } else {
-              Write-Host "babeldoctemp1234567 文件夹不存在，无需删除"
-          }
-          Write-Host "==== 创建必要的目录 ===="
-          New-Item -Path "./build" -ItemType Directory -Force
-          New-Item -Path "./build/runtime" -ItemType Directory -Force
-          New-Item -Path "./dep_build" -ItemType Directory -Force
+          $ErrorActionPreference = 'Stop'
+          New-Item -Path './dep_build' -ItemType Directory -Force | Out-Null
+          $pythonVersion = $env:WIN_EXE_PYTHON_VERSION
+          $runtimeUrl = "https://www.python.org/ftp/python/$pythonVersion/python-$pythonVersion-embed-amd64.zip"
+          Invoke-WebRequest -Uri $runtimeUrl -OutFile './dep_build/python.zip'
+          Expand-Archive -LiteralPath './dep_build/python.zip' -DestinationPath './dep_build/runtime'
+          Invoke-WebRequest -Uri 'https://github.com/skywind3000/PyStand/releases/download/1.1.4/PyStand-v1.1.4-exe.zip' -OutFile './dep_build/PyStand.zip'
+          Expand-Archive -LiteralPath './dep_build/PyStand.zip' -DestinationPath './dep_build/PyStand'
 
-          Write-Host "==== 下载并解压 Python ${{ env.WIN_EXE_PYTHON_VERSION }} ===="
-          Write-Host "pythonUrl: https://www.python.org/ftp/python/${{ env.WIN_EXE_PYTHON_VERSION }}/python-${{ env.WIN_EXE_PYTHON_VERSION }}-embed-amd64.zip"
-          $pythonUrl = "https://www.python.org/ftp/python/${{ env.WIN_EXE_PYTHON_VERSION }}/python-${{ env.WIN_EXE_PYTHON_VERSION }}-embed-amd64.zip"
-          $pythonZip = "./dep_build/python.zip"
-          Invoke-WebRequest -Uri $pythonUrl -OutFile $pythonZip
-          Expand-Archive -Path $pythonZip -DestinationPath "./build/runtime" -Force
-
-          Write-Host "==== 下载并解压 PyStand ===="
-          $pystandUrl = "https://github.com/skywind3000/PyStand/releases/download/1.1.4/PyStand-v1.1.4-exe.zip"
-          $pystandZip = "./dep_build/PyStand.zip"
-          Invoke-WebRequest -Uri $pystandUrl -OutFile $pystandZip
-          Expand-Archive -Path $pystandZip -DestinationPath "./dep_build/PyStand" -Force
-
-          Write-Host "==== 复制 PyStand.exe 到 build 并重命名 ===="
-          $pystandExe = "./dep_build/PyStand/PyStand-x64-CLI/PyStand.exe"
-          $destExe = "./build/pdf2zh.exe"
-          if (Test-Path $pystandExe) {
-              Copy-Item -Path $pystandExe -Destination $destExe -Force
-          } else {
-              Write-Host "错误: PyStand.exe 未找到！"
-              exit 1
-          }
-          Write-Host "==== 使用锁文件安装非 editable 运行环境 ===="
-          $env:UV_PROJECT_ENVIRONMENT = Join-Path (Get-Location) "dep_build/venv"
-          uv sync --locked --no-dev --no-editable --python ${{ env.WIN_EXE_PYTHON_VERSION }}
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          uv pip check --python ./dep_build/venv/Scripts/python.exe
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-          Write-Host "==== 复制 venv/Lib/site-packages 到 build/ ===="
-          Copy-Item -Path "./dep_build/venv/Lib/site-packages" -Destination "./build/site-packages" -Recurse -Force
-
-          Write-Host "==== 复制 script/_pystand_static.int 到 build/ ===="
-          $staticFile = "./script/_pystand_static.int"
-          $destStatic = "./build/_pystand_static.int"
-          if (Test-Path $staticFile) {
-              Copy-Item -Path $staticFile -Destination $destStatic -Force
-          } else {
-              Write-Host "错误: script/_pystand_static.int 未找到！"
-              exit 1
-          }
-
-          uv run --no-sync babeldoc --generate-offline-assets ./build
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build locked portable application
+        shell: pwsh
+        run: |
+          ./script/build_windows.ps1 -RuntimeDirectory './dep_build/runtime' -LauncherPath './dep_build/PyStand/PyStand-x64-CLI/PyStand.exe' -Python $env:WIN_EXE_PYTHON_VERSION
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v5

@@ -49,10 +49,10 @@ standard regression result; do not suppress all warnings.
 | --- | --- |
 | `pdf2zh_next/main.py` | CLI startup, logging and exit status |
 | `pdf2zh_next/gui.py` | GUI entry points, components and event wiring |
-| `pdf2zh_next/ui/` | GUI settings, sessions, file callbacks and native PDF preview |
+| `pdf2zh_next/ui/` | Input preparation, task control, result/download projection, settings, sessions and native preview |
 | `pdf2zh_next/high_level.py` | Public translation API and process lifecycle |
-| `pdf2zh_next/translation/` | BabelDOC configuration and completion data adapters |
-| `pdf2zh_next/config/` | Typed settings, CLI/env mapping and atomic TOML storage |
+| `pdf2zh_next/translation/` | CLI batch coordination, BabelDOC configuration and completion data adapters |
+| `pdf2zh_next/config/` | Typed models, CLI parser, environment mapping and atomic TOML storage |
 | `pdf2zh_next/translator/` | Provider clients, caches and service-specific retry/rate limits |
 | `pdf2zh_next/utils/asynchronize/` | Cross-process streaming and cancellation |
 | `script/` | Supported launcher and PDF regression tools |
@@ -61,11 +61,24 @@ standard regression result; do not suppress all warnings.
 
 ## Windows EXE
 
-The supported packaging flow is `.github/workflows/exe-build.yml`: PyStand
+The release workflow `.github/workflows/exe-build.yml` downloads the official runtime
+and launcher, then calls `script/build_windows.ps1`. It uses PyStand
 1.1.4, embedded Python 3.13.3, and
 `uv sync --locked --no-dev --no-editable`. Copy the installed package and its
 resources, not an editable checkout. The bundle requires `runtime/`,
 `site-packages/`, `pdf2zh.exe` and `_pystand_static.int`.
+
+For a local build, supply an extracted embedded runtime and the PyStand CLI
+executable. The script creates a locked, non-editable environment and refuses to
+overwrite an existing output directory:
+
+```powershell
+./script/build_windows.ps1 -RuntimeDirectory ./dep_build/runtime -LauncherPath ./dep_build/PyStand/PyStand-x64-CLI/PyStand.exe
+```
+
+Use `-SkipOfflineAssets` only when intentionally omitting the offline asset ZIP;
+the bundle will then need existing cached assets or network access on first use.
+`BUILD_INFO.json` records the lock hash and this choice.
 
 Test the EXE from another working directory, verify `--version` and failure exit
 codes, then exercise upload, settings, translation, page navigation and downloads
