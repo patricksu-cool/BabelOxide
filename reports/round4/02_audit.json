@@ -237,7 +237,7 @@
       ],
       "windows_release": "version affected",
       "classification": "indirect risk / reachability pending",
-      "evidence": "BabelDOC bundles pdfminer ImageWriter JPEG/JP2/raw conversion. Inspected translation path uses PDFConverterEx without ImageWriter; no blanket claim for every option, malformed embedded stream or API consumer."
+      "evidence": "BabelDOC bundles pdfminer ImageWriter JPEG/JP2/raw conversion. Inspected production translation uses new_parser.native_parse; legacy PDFConverterEx also has no ImageWriter; no blanket claim for every option, malformed embedded stream or API consumer."
     },
     {
       "dependency": {
@@ -273,7 +273,7 @@
       ],
       "windows_release": "version affected",
       "classification": "indirect risk / reachability pending",
-      "evidence": "BabelDOC bundles pdfminer ImageWriter JPEG/JP2/raw conversion. Inspected translation path uses PDFConverterEx without ImageWriter; no blanket claim for every option, malformed embedded stream or API consumer."
+      "evidence": "BabelDOC bundles pdfminer ImageWriter JPEG/JP2/raw conversion. Inspected production translation uses new_parser.native_parse; legacy PDFConverterEx also has no ImageWriter; no blanket claim for every option, malformed embedded stream or API consumer."
     },
     {
       "dependency": {
@@ -415,7 +415,7 @@
       ],
       "windows_release": "version affected",
       "classification": "indirect risk / reachability pending",
-      "evidence": "BabelDOC bundles pdfminer ImageWriter JPEG/JP2/raw conversion. Inspected translation path uses PDFConverterEx without ImageWriter; no blanket claim for every option, malformed embedded stream or API consumer."
+      "evidence": "BabelDOC bundles pdfminer ImageWriter JPEG/JP2/raw conversion. Inspected production translation uses new_parser.native_parse; legacy PDFConverterEx also has no ImageWriter; no blanket claim for every option, malformed embedded stream or API consumer."
     },
     {
       "dependency": {
@@ -451,7 +451,7 @@
       ],
       "windows_release": "version affected",
       "classification": "indirect risk / reachability pending",
-      "evidence": "BabelDOC bundles pdfminer ImageWriter JPEG/JP2/raw conversion. Inspected translation path uses PDFConverterEx without ImageWriter; no blanket claim for every option, malformed embedded stream or API consumer."
+      "evidence": "BabelDOC bundles pdfminer ImageWriter JPEG/JP2/raw conversion. Inspected production translation uses new_parser.native_parse; legacy PDFConverterEx also has no ImageWriter; no blanket claim for every option, malformed embedded stream or API consumer."
     },
     {
       "dependency": {

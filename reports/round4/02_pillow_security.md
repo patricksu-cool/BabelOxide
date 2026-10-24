@@ -17,7 +17,7 @@
 ## 各項實際風險
 
 - **直接風險**：沒有在本輪可信 PDF／GUI 流程中證明 Pillow 漏洞可被直接觸發；這不代表套件安全。GUI 僅供本人處理可信文件的使用前提很重要。
-- **間接風險／待確認**：BabelDOC 的 vendored pdfminer `image.py` 確實包含 CMYK JPEG、JPEG2000 的 `Image.open`，以及 raw `Image.frombytes`。目前翻譯使用 `PDFConverterEx`，不是有 ImageWriter 的 HTML/XML 圖片匯出器；仍保守保留 JPEG decoder、bundled OpenJPEG、native integer 與 raw unpack 四項待確認風險，不以單一樣本證明所有可選路徑都安全。
+- **間接風險／待確認**：BabelDOC 的 vendored pdfminer `image.py` 確實包含 CMYK JPEG、JPEG2000 的 `Image.open`，以及 raw `Image.frombytes`。目前正式翻譯由 `format/pdf/high_level.py` 呼叫 `new_parser.native_parse`；保留的 legacy `PDFConverterEx` 也不是有 ImageWriter 的 HTML/XML 圖片匯出器。仍保守保留 JPEG decoder、bundled OpenJPEG、native integer 與 raw unpack 四項待確認風險，不以單一樣本證明所有可選路徑都安全。
 - **目前安裝不可觸發的前提**：[FPX 公告](https://github.com/python-pillow/Pillow/security/advisories/GHSA-5x8w-8jj5-q52h) 及 MIC 解析需 olefile，本機 stock 發行包未安裝。額外安裝此套件會改變結論。
 - **受檢應用路徑沒有對應操作**：其餘 35 項涉及 GIF／TIFF／EPS／WMF／BMP／PNG EXIF／SPIDER／MPO／DCX 等格式或 rank、morph、Arrow、FreeType stroker、PDF append/save_all 等特殊操作。專案預覽 `ui/preview.py` 由 PyMuPDF 開 PDF，再以 RGB `Image.frombytes` 建立最大邊 1600px 的單頁影像；Gradio 輸出儲存 WebP／PNG。實際 GUI config 沒有互動圖片輸入。這是受檢流程的呼叫前提分析，並非整個相依樹的不可利用證明。逐項 ID 分類見 JSON。
 
