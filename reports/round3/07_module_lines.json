@@ -1,0 +1,52 @@
+[
+  {
+    "path": "pdf2zh_next/gui.py",
+    "before": 2803,
+    "after": 2100
+  },
+  {
+    "path": "pdf2zh_next/high_level.py",
+    "before": 646,
+    "after": 564
+  },
+  {
+    "path": "pdf2zh_next/config/main.py",
+    "before": 659,
+    "after": 561
+  },
+  {
+    "path": "pdf2zh_next/config/cli.py",
+    "before": null,
+    "after": 113
+  },
+  {
+    "path": "pdf2zh_next/ui/inputs.py",
+    "before": null,
+    "after": 140
+  },
+  {
+    "path": "pdf2zh_next/ui/tasks.py",
+    "before": null,
+    "after": 394
+  },
+  {
+    "path": "pdf2zh_next/ui/results.py",
+    "before": null,
+    "after": 77
+  },
+  {
+    "path": "pdf2zh_next/ui/components.py",
+    "before": null,
+    "after": 38
+  },
+  {
+    "path": "pdf2zh_next/ui/preview.py",
+    "before": null,
+    "after": 73
+  },
+  {
+    "path": "pdf2zh_next/translation/batch.py",
+    "before": null,
+    "after": 111
+  }
+]

@@ -1,0 +1,59 @@
+{
+  "baseline": {
+    "passed": 211,
+    "failed": 1,
+    "warnings": 67,
+    "seconds": 12.25
+  },
+  "final": {
+    "passed": 237,
+    "failed": 0,
+    "seconds": 12.16,
+    "standard_warning_summary": false
+  },
+  "retry": {
+    "passed": 34,
+    "failed": 0,
+    "seconds": 3.4
+  },
+  "lint": "passed",
+  "format": {
+    "status": "passed",
+    "files": 323
+  },
+  "docs": {
+    "normal": {
+      "status": "passed",
+      "seconds": 136.77
+    },
+    "strict": {
+      "status": "passed",
+      "seconds": 138.69
+    }
+  },
+  "audit": {
+    "status": "failed",
+    "exit_code": 1,
+    "lockfile_unique": 47,
+    "installed_exe_version_matching": 41
+  },
+  "package": {
+    "status": "passed",
+    "files": 59,
+    "packages": 134
+  },
+  "pdf": {
+    "input_pages": 4,
+    "mono_pages": 4,
+    "dual_pages": 4,
+    "requests": 107,
+    "batch_requests": 36,
+    "render_comparisons": 16,
+    "changed_pixel_fraction": 0
+  },
+  "notes": [
+    "Identity services only; no paid API",
+    "Warnings-as-errors diagnostic failed in stage 4; see 04_repairs.md",
+    "Final GUI synthetic settings archived outside delivery bundle"
+  ]
+}

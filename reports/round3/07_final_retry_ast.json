@@ -1,0 +1,106 @@
+[
+  {
+    "path": "pdf2zh_next/translator/base_rate_limiter.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/base_translator.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/cache.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/utils.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/__init__.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/rate_limiter/qps_rate_limiter.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/translator_impl/anythingllm.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/translator_impl/azure.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/translator_impl/azureopenai.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/translator_impl/bing.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/translator_impl/claudecode.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/translator_impl/clitranslator.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/translator_impl/deepl.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/translator_impl/dify.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/translator_impl/google.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/translator_impl/ollama.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/translator_impl/openai.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/translator_impl/qwenmt.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/translator_impl/siliconflow.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/translator_impl/siliconflowfree.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/translator_impl/tencentmechinetranslation.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/translator/translator_impl/xinference.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/utils/asynchronize/__init__.py",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/high_level.py:_translate_wrapper",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/high_level.py:_translate_in_subprocess",
+    "ast_equal": true
+  },
+  {
+    "path": "pdf2zh_next/high_level.py:do_translate_async_stream",
+    "ast_equal": true
+  }
+]

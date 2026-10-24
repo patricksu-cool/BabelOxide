@@ -26,4 +26,4 @@ loopback 限制縮小遠端暴露面；只處理可信 PDF。預覽從 PyMuPDF R
 
 ## 最終掃描補充（2026-10-24）
 
-最終回歸掃描資料庫增加公告，升級前再次掃到 48 筆原始紀錄（包含 filelock 4.1.0、virtualenv 21.14.12），保留 `07_pre_final_audit.json`。官方 [filelock 公告](https://github.com/tox-dev/filelock/security/advisories/GHSA-2g95-wg33-c5x2) 與 [virtualenv 公告](https://github.com/pypa/virtualenv/security/advisories/GHSA-cx6f-vjhg-g3cc) 分別提供 4.2.1、21.14.13 修正，採相容鎖檔更新，不強制覆寫限制；最終數字以 07/08 報告為準。
+最終回歸掃描資料庫增加公告，升級前再次掃到 48 筆原始紀錄（包含 filelock 4.1.0、virtualenv 21.14.12），保留 `07_pre_final_audit.json`。官方 [filelock 公告](https://github.com/tox-dev/filelock/security/advisories/GHSA-2g95-wg33-c5x2) 與 [virtualenv 公告](https://github.com/pypa/virtualenv/security/advisories/GHSA-cx6f-vjhg-g3cc) 分別提供 4.2.1、21.14.13 修正，virtualenv 已升至 21.14.13；filelock 在實際 Python 3.13 為既有已修補的 4.2.4，Python 3.10 分支因新線的 Python 版本要求仍停在 4.1.0。未強制覆寫限制；最終 47 項公告與適用範圍以 07/08 報告為準。

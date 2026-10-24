@@ -1,0 +1,318 @@
+{
+  "mono": {
+    "metrics": {
+      "baseline": {
+        "file": "High_speed_buffer_latch_ISCAS03.no_watermark.zh-CN.mono.pdf",
+        "bytes": 471435,
+        "sha256": "1dc70064451327b1de7e76dbfbb539588e71bd919ede43142b41e6605f40549c",
+        "page_count": 4,
+        "pages": [
+          {
+            "text_characters": 14458,
+            "words": 966,
+            "text_sha256": "c0212fe8511f29b6dca88cf57d37a180241735915d8f2078b7a187f5f294a979",
+            "formula_symbols": 10,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 14945,
+            "words": 1144,
+            "text_sha256": "96cbb32aa4dac22491bd083a789c29e319212f195f50d650965df9090ec9e34d",
+            "formula_symbols": 26,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 19171,
+            "words": 1024,
+            "text_sha256": "ce0701827d7f2d1a5fff07392a8b0526fa4f0ce475fa59a07461fba46c1f9e01",
+            "formula_symbols": 11,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 5970,
+            "words": 657,
+            "text_sha256": "a007d8ec477bafc3c66c5740cf1c56a7dded1b4e24a9611a1f35c565ff92b91b",
+            "formula_symbols": 1,
+            "embedded_images": 23998
+          }
+        ]
+      },
+      "python": {
+        "file": "High_speed_buffer_latch_ISCAS03.no_watermark.zh-CN.mono.pdf",
+        "bytes": 471435,
+        "sha256": "983ec71308330df2612d37ef0d9251687ad53d2c492594aca7a96386bf5f512f",
+        "page_count": 4,
+        "pages": [
+          {
+            "text_characters": 14458,
+            "words": 966,
+            "text_sha256": "c0212fe8511f29b6dca88cf57d37a180241735915d8f2078b7a187f5f294a979",
+            "formula_symbols": 10,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 14945,
+            "words": 1144,
+            "text_sha256": "96cbb32aa4dac22491bd083a789c29e319212f195f50d650965df9090ec9e34d",
+            "formula_symbols": 26,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 19171,
+            "words": 1024,
+            "text_sha256": "ce0701827d7f2d1a5fff07392a8b0526fa4f0ce475fa59a07461fba46c1f9e01",
+            "formula_symbols": 11,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 5970,
+            "words": 657,
+            "text_sha256": "a007d8ec477bafc3c66c5740cf1c56a7dded1b4e24a9611a1f35c565ff92b91b",
+            "formula_symbols": 1,
+            "embedded_images": 23998
+          }
+        ]
+      },
+      "exe": {
+        "file": "High_speed_buffer_latch_ISCAS03.no_watermark.zh-CN.mono.pdf",
+        "bytes": 471434,
+        "sha256": "e2baa53de76eaf191bfeb01df86e05c85a35bd12e3b5df79c4bf779db9ac78dc",
+        "page_count": 4,
+        "pages": [
+          {
+            "text_characters": 14458,
+            "words": 966,
+            "text_sha256": "c0212fe8511f29b6dca88cf57d37a180241735915d8f2078b7a187f5f294a979",
+            "formula_symbols": 10,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 14945,
+            "words": 1144,
+            "text_sha256": "96cbb32aa4dac22491bd083a789c29e319212f195f50d650965df9090ec9e34d",
+            "formula_symbols": 26,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 19171,
+            "words": 1024,
+            "text_sha256": "ce0701827d7f2d1a5fff07392a8b0526fa4f0ce475fa59a07461fba46c1f9e01",
+            "formula_symbols": 11,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 5970,
+            "words": 657,
+            "text_sha256": "a007d8ec477bafc3c66c5740cf1c56a7dded1b4e24a9611a1f35c565ff92b91b",
+            "formula_symbols": 1,
+            "embedded_images": 23998
+          }
+        ]
+      }
+    },
+    "python_structure_equal": true,
+    "exe_structure_equal": true,
+    "python_render": [
+      {
+        "page": 1,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "page": 2,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "page": 3,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "page": 4,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      }
+    ],
+    "exe_render": [
+      {
+        "page": 1,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "page": 2,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "page": 3,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "page": 4,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      }
+    ]
+  },
+  "dual": {
+    "metrics": {
+      "baseline": {
+        "file": "High_speed_buffer_latch_ISCAS03.no_watermark.zh-CN.dual.pdf",
+        "bytes": 771107,
+        "sha256": "20ebab22e76a698ed198f760c86b8734bf8a77febbbb7558927088e37423427a",
+        "page_count": 4,
+        "pages": [
+          {
+            "text_characters": 41497,
+            "words": 1952,
+            "text_sha256": "1f2a963e46bc93a43a1ef44cf871eaf1e8239aebf6f26b9bd242c187cce547a5",
+            "formula_symbols": 22,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 38749,
+            "words": 2304,
+            "text_sha256": "ee89b0037d74b8456355da98b254e4c6bd8b057c9b3da19fc6bf7056fa2617c8",
+            "formula_symbols": 52,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 53742,
+            "words": 2066,
+            "text_sha256": "2e8d407ff49d0bcdcda3b51993801400a3a308d60c9c28841d26a66ce7fc9c02",
+            "formula_symbols": 22,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 16555,
+            "words": 1318,
+            "text_sha256": "38e0c4f617adbe710e8f006cbe20637f310ba188d74f0c4236a12118bf979815",
+            "formula_symbols": 2,
+            "embedded_images": 47996
+          }
+        ]
+      },
+      "python": {
+        "file": "High_speed_buffer_latch_ISCAS03.no_watermark.zh-CN.dual.pdf",
+        "bytes": 771107,
+        "sha256": "ae435c502e8edddb728a41a770831d72221f3526d6a743f18645dae9b717b09f",
+        "page_count": 4,
+        "pages": [
+          {
+            "text_characters": 41497,
+            "words": 1952,
+            "text_sha256": "1f2a963e46bc93a43a1ef44cf871eaf1e8239aebf6f26b9bd242c187cce547a5",
+            "formula_symbols": 22,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 38749,
+            "words": 2304,
+            "text_sha256": "ee89b0037d74b8456355da98b254e4c6bd8b057c9b3da19fc6bf7056fa2617c8",
+            "formula_symbols": 52,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 53742,
+            "words": 2066,
+            "text_sha256": "2e8d407ff49d0bcdcda3b51993801400a3a308d60c9c28841d26a66ce7fc9c02",
+            "formula_symbols": 22,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 16555,
+            "words": 1318,
+            "text_sha256": "38e0c4f617adbe710e8f006cbe20637f310ba188d74f0c4236a12118bf979815",
+            "formula_symbols": 2,
+            "embedded_images": 47996
+          }
+        ]
+      },
+      "exe": {
+        "file": "High_speed_buffer_latch_ISCAS03.no_watermark.zh-CN.dual.pdf",
+        "bytes": 771107,
+        "sha256": "23290f41c89f320cf4c4deb857da977d89b8bf2b790b7de85eaa856631c0bc54",
+        "page_count": 4,
+        "pages": [
+          {
+            "text_characters": 41497,
+            "words": 1952,
+            "text_sha256": "1f2a963e46bc93a43a1ef44cf871eaf1e8239aebf6f26b9bd242c187cce547a5",
+            "formula_symbols": 22,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 38749,
+            "words": 2304,
+            "text_sha256": "ee89b0037d74b8456355da98b254e4c6bd8b057c9b3da19fc6bf7056fa2617c8",
+            "formula_symbols": 52,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 53742,
+            "words": 2066,
+            "text_sha256": "2e8d407ff49d0bcdcda3b51993801400a3a308d60c9c28841d26a66ce7fc9c02",
+            "formula_symbols": 22,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 16555,
+            "words": 1318,
+            "text_sha256": "38e0c4f617adbe710e8f006cbe20637f310ba188d74f0c4236a12118bf979815",
+            "formula_symbols": 2,
+            "embedded_images": 47996
+          }
+        ]
+      }
+    },
+    "python_structure_equal": true,
+    "exe_structure_equal": true,
+    "python_render": [
+      {
+        "page": 1,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "page": 2,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "page": 3,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "page": 4,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      }
+    ],
+    "exe_render": [
+      {
+        "page": 1,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "page": 2,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "page": 3,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "page": 4,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      }
+    ]
+  }
+}
