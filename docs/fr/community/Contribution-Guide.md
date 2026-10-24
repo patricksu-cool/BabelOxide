@@ -63,12 +63,12 @@ Pour les types de PR suivants, il est recommandé de discuter d'abord avec les m
 
 <h4 id="dev&test">2. Développement et Tests</h4>
 
-   - Utilisez la commande `pip install -e .` pour le développement et les tests.
+   - Utilisez la commande `uv sync --locked` pour le développement et les tests.
 
 
 <h4 id="format">3. Formatage du code</h4>
 
-   - Configurer l'outil `pre-commit` et activer `black` et `flake8` pour le formatage du code.
+   - Configurer l'outil `pre-commit` et activer `ruff format` et `ruff check` pour le formatage du code.
 
 
 <h4 id="requpdate">4. Mises à jour des dépendances</h4>

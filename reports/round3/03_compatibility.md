@@ -23,3 +23,7 @@
 完整鎖檔由 214 個受稽核套件、98 筆原始公告，降為 213 個套件、39 筆原始公告；剩餘皆 Pillow 12.3.0。不是全部通過；exit 1。資料庫重複 aliases 需去重後另列，不能以原始筆數當漏洞數。
 
 loopback 限制縮小遠端暴露面；只處理可信 PDF。預覽從 PyMuPDF RGB 像素建立影像，避免直接對上傳檔呼叫 Pillow Image.open；這不是對其他 BabelDOC 影像路徑安全的完整證明。待 Gradio 支援 Pillow 13 與對應 Python 版本後再升級。
+
+## 最終掃描補充（2026-10-24）
+
+最終回歸掃描資料庫增加公告，升級前再次掃到 48 筆原始紀錄（包含 filelock 4.1.0、virtualenv 21.14.12），保留 `07_pre_final_audit.json`。官方 [filelock 公告](https://github.com/tox-dev/filelock/security/advisories/GHSA-2g95-wg33-c5x2) 與 [virtualenv 公告](https://github.com/pypa/virtualenv/security/advisories/GHSA-cx6f-vjhg-g3cc) 分別提供 4.2.1、21.14.13 修正，採相容鎖檔更新，不強制覆寫限制；最終數字以 07/08 報告為準。

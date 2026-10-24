@@ -63,12 +63,12 @@
 
 <h4 id="dev&test">2. 개발 및 테스트</h4>
 
-   - 개발 및 테스트를 위해 `pip install -e .` 명령을 사용하세요.
+   - 개발 및 테스트를 위해 `uv sync --locked` 명령을 사용하세요.
 
 
 <h4 id="format">3. 코드 포맷팅</h4>
 
-   - `pre-commit` 도구를 구성하고 코드 서식을 위해 `black` 과 `flake8` 을 활성화합니다.
+   - `pre-commit` 도구를 구성하고 코드 서식을 위해 `ruff format` 과 `ruff check` 을 활성화합니다.
 
 
 <h4 id="requpdate">4. 종속성 업데이트</h4>

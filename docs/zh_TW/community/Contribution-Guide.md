@@ -63,12 +63,12 @@
 
 <h4 id="dev&test">2. 開發與測試</h4>
 
-   - 使用命令 `pip install -e .` 進行開發和測試。
+   - 使用命令 `uv sync --locked` 進行開發和測試。
 
 
 <h4 id="format">3. 程式碼格式化</h4>
 
-   - 配置 `pre-commit` 工具並啟用 `black` 和 `flake8` 進行代碼格式化。
+   - 配置 `pre-commit` 工具並啟用 `ruff format` 和 `ruff check` 進行代碼格式化。
 
 
 <h4 id="requpdate">4. 依賴更新</h4>

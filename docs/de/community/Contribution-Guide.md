@@ -63,12 +63,12 @@ Für die folgenden Arten von PRs wird empfohlen, vor der Einreichung zunächst m
 
 <h4 id="dev&test">2. Entwicklung und Test</h4>
 
-   - Verwenden Sie den Befehl `pip install -e .` für Entwicklung und Tests.
+   - Verwenden Sie den Befehl `uv sync --locked` für Entwicklung und Tests.
 
 
 <h4 id="format">3. Code-Formatierung</h4>
 
-   - Konfigurieren Sie das `pre-commit`-Tool und aktivieren Sie `black` und `flake8` für die Codeformatierung.
+   - Konfigurieren Sie das `pre-commit`-Tool und aktivieren Sie `ruff format` und `ruff check` für die Codeformatierung.
 
 
 <h4 id="requpdate">4. Abhängigkeitsaktualisierungen</h4>
