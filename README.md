@@ -151,4 +151,3 @@ We welcome the active participation of contributors to make pdf2zh better. Befor
 <!-- Developer and maintenance documentation is kept in one canonical guide. -->
 
 [Development, testing and Windows packaging](docs/en/development.md) · [Maintenance reports](reports/README.md)
-
