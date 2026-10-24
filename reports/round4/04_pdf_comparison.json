@@ -1,0 +1,628 @@
+{
+  "renderer": "Poppler pdftoppm 96 DPI RGB, same Windows host",
+  "service": "same loopback identity responses; no paid API",
+  "input": {
+    "file": "High_speed_buffer_latch_ISCAS03.pdf",
+    "bytes": 307450,
+    "sha256": "d0a8367aa014b52929af86f42b5164ade3bb551c69717734a975ba122369498f",
+    "page_count": 4,
+    "pages": [
+      {
+        "text_characters": 12107,
+        "words": 986,
+        "text_sha256": "1f9aed53a6bbbbf8965d5711acae09bee8d6d49f54be82f06e1d265f1472a2ed",
+        "formula_symbols": 12,
+        "embedded_images": 0
+      },
+      {
+        "text_characters": 10874,
+        "words": 1159,
+        "text_sha256": "a0a2233e0b9afbf51026d046481db6e1ee60e3cf6599b75c0066f672337bc924",
+        "formula_symbols": 26,
+        "embedded_images": 0
+      },
+      {
+        "text_characters": 17105,
+        "words": 1042,
+        "text_sha256": "48a5dca698f487a2cae6aea366a3b8cd1b3a1ed541bce0056131c576b2bd01b2",
+        "formula_symbols": 11,
+        "embedded_images": 0
+      },
+      {
+        "text_characters": 5672,
+        "words": 661,
+        "text_sha256": "b2018e050513de4a746febd4e0ed418d311d379884dce770065859f8948d6f2f",
+        "formula_symbols": 1,
+        "embedded_images": 23998
+      }
+    ]
+  },
+  "runs": {
+    "original": {
+      "mono": {
+        "file": "High_speed_buffer_latch_ISCAS03.no_watermark.zh-CN.mono.pdf",
+        "bytes": 469630,
+        "sha256": "d1102d348997af30755fcb872085a14cf7f0e11dd491515f62c27c238e41bab2",
+        "page_count": 4,
+        "pages": [
+          {
+            "text_characters": 14458,
+            "words": 966,
+            "text_sha256": "c0212fe8511f29b6dca88cf57d37a180241735915d8f2078b7a187f5f294a979",
+            "formula_symbols": 10,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 14945,
+            "words": 1144,
+            "text_sha256": "96cbb32aa4dac22491bd083a789c29e319212f195f50d650965df9090ec9e34d",
+            "formula_symbols": 26,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 19171,
+            "words": 1024,
+            "text_sha256": "ce0701827d7f2d1a5fff07392a8b0526fa4f0ce475fa59a07461fba46c1f9e01",
+            "formula_symbols": 11,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 5970,
+            "words": 657,
+            "text_sha256": "a007d8ec477bafc3c66c5740cf1c56a7dded1b4e24a9611a1f35c565ff92b91b",
+            "formula_symbols": 1,
+            "embedded_images": 23998
+          }
+        ]
+      },
+      "dual": {
+        "file": "High_speed_buffer_latch_ISCAS03.no_watermark.zh-CN.dual.pdf",
+        "bytes": 769572,
+        "sha256": "cc2c13cc89d91bc38f92f030e6b7c7e5683d18a1128caabe7108daf36d319e83",
+        "page_count": 4,
+        "pages": [
+          {
+            "text_characters": 41497,
+            "words": 1952,
+            "text_sha256": "1f2a963e46bc93a43a1ef44cf871eaf1e8239aebf6f26b9bd242c187cce547a5",
+            "formula_symbols": 22,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 38749,
+            "words": 2304,
+            "text_sha256": "ee89b0037d74b8456355da98b254e4c6bd8b057c9b3da19fc6bf7056fa2617c8",
+            "formula_symbols": 52,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 53742,
+            "words": 2066,
+            "text_sha256": "2e8d407ff49d0bcdcda3b51993801400a3a308d60c9c28841d26a66ce7fc9c02",
+            "formula_symbols": 22,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 16555,
+            "words": 1318,
+            "text_sha256": "38e0c4f617adbe710e8f006cbe20637f310ba188d74f0c4236a12118bf979815",
+            "formula_symbols": 2,
+            "embedded_images": 47996
+          }
+        ]
+      }
+    },
+    "round3": {
+      "mono": {
+        "file": "High_speed_buffer_latch_ISCAS03.no_watermark.zh-CN.mono.pdf",
+        "bytes": 471435,
+        "sha256": "a2cfeac7ef286c0943d5683e04813e5ef8b3f72745146a6c0473b91d32ae5dce",
+        "page_count": 4,
+        "pages": [
+          {
+            "text_characters": 14458,
+            "words": 966,
+            "text_sha256": "c0212fe8511f29b6dca88cf57d37a180241735915d8f2078b7a187f5f294a979",
+            "formula_symbols": 10,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 14945,
+            "words": 1144,
+            "text_sha256": "96cbb32aa4dac22491bd083a789c29e319212f195f50d650965df9090ec9e34d",
+            "formula_symbols": 26,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 19171,
+            "words": 1024,
+            "text_sha256": "ce0701827d7f2d1a5fff07392a8b0526fa4f0ce475fa59a07461fba46c1f9e01",
+            "formula_symbols": 11,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 5970,
+            "words": 657,
+            "text_sha256": "a007d8ec477bafc3c66c5740cf1c56a7dded1b4e24a9611a1f35c565ff92b91b",
+            "formula_symbols": 1,
+            "embedded_images": 23998
+          }
+        ]
+      },
+      "dual": {
+        "file": "High_speed_buffer_latch_ISCAS03.no_watermark.zh-CN.dual.pdf",
+        "bytes": 771107,
+        "sha256": "fb8c19a195fc52465ab614c6cdf961b1cb8456582b99f172102057b0edb55a9d",
+        "page_count": 4,
+        "pages": [
+          {
+            "text_characters": 41497,
+            "words": 1952,
+            "text_sha256": "1f2a963e46bc93a43a1ef44cf871eaf1e8239aebf6f26b9bd242c187cce547a5",
+            "formula_symbols": 22,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 38749,
+            "words": 2304,
+            "text_sha256": "ee89b0037d74b8456355da98b254e4c6bd8b057c9b3da19fc6bf7056fa2617c8",
+            "formula_symbols": 52,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 53742,
+            "words": 2066,
+            "text_sha256": "2e8d407ff49d0bcdcda3b51993801400a3a308d60c9c28841d26a66ce7fc9c02",
+            "formula_symbols": 22,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 16555,
+            "words": 1318,
+            "text_sha256": "38e0c4f617adbe710e8f006cbe20637f310ba188d74f0c4236a12118bf979815",
+            "formula_symbols": 2,
+            "embedded_images": 47996
+          }
+        ]
+      }
+    },
+    "round4": {
+      "mono": {
+        "file": "High_speed_buffer_latch_ISCAS03.no_watermark.zh-CN.mono.pdf",
+        "bytes": 471435,
+        "sha256": "c3c6e88113eb13338b4595503526cc0382ae9e0043cdde879db43f83f7bc4275",
+        "page_count": 4,
+        "pages": [
+          {
+            "text_characters": 14458,
+            "words": 966,
+            "text_sha256": "c0212fe8511f29b6dca88cf57d37a180241735915d8f2078b7a187f5f294a979",
+            "formula_symbols": 10,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 14945,
+            "words": 1144,
+            "text_sha256": "96cbb32aa4dac22491bd083a789c29e319212f195f50d650965df9090ec9e34d",
+            "formula_symbols": 26,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 19171,
+            "words": 1024,
+            "text_sha256": "ce0701827d7f2d1a5fff07392a8b0526fa4f0ce475fa59a07461fba46c1f9e01",
+            "formula_symbols": 11,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 5970,
+            "words": 657,
+            "text_sha256": "a007d8ec477bafc3c66c5740cf1c56a7dded1b4e24a9611a1f35c565ff92b91b",
+            "formula_symbols": 1,
+            "embedded_images": 23998
+          }
+        ]
+      },
+      "dual": {
+        "file": "High_speed_buffer_latch_ISCAS03.no_watermark.zh-CN.dual.pdf",
+        "bytes": 771107,
+        "sha256": "424ad920027b0f989267634d04bafb302656c0bee95da28a84f714e8c10e2437",
+        "page_count": 4,
+        "pages": [
+          {
+            "text_characters": 41497,
+            "words": 1952,
+            "text_sha256": "1f2a963e46bc93a43a1ef44cf871eaf1e8239aebf6f26b9bd242c187cce547a5",
+            "formula_symbols": 22,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 38749,
+            "words": 2304,
+            "text_sha256": "ee89b0037d74b8456355da98b254e4c6bd8b057c9b3da19fc6bf7056fa2617c8",
+            "formula_symbols": 52,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 53742,
+            "words": 2066,
+            "text_sha256": "2e8d407ff49d0bcdcda3b51993801400a3a308d60c9c28841d26a66ce7fc9c02",
+            "formula_symbols": 22,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 16555,
+            "words": 1318,
+            "text_sha256": "38e0c4f617adbe710e8f006cbe20637f310ba188d74f0c4236a12118bf979815",
+            "formula_symbols": 2,
+            "embedded_images": 47996
+          }
+        ]
+      }
+    },
+    "original-current-stack": {
+      "mono": {
+        "file": "High_speed_buffer_latch_ISCAS03.no_watermark.zh-CN.mono.pdf",
+        "bytes": 471435,
+        "sha256": "43e3106da002d7f0e23c6e343021671320668c4e139ff5ab27147eaa9e09054e",
+        "page_count": 4,
+        "pages": [
+          {
+            "text_characters": 14458,
+            "words": 966,
+            "text_sha256": "c0212fe8511f29b6dca88cf57d37a180241735915d8f2078b7a187f5f294a979",
+            "formula_symbols": 10,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 14945,
+            "words": 1144,
+            "text_sha256": "96cbb32aa4dac22491bd083a789c29e319212f195f50d650965df9090ec9e34d",
+            "formula_symbols": 26,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 19171,
+            "words": 1024,
+            "text_sha256": "ce0701827d7f2d1a5fff07392a8b0526fa4f0ce475fa59a07461fba46c1f9e01",
+            "formula_symbols": 11,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 5970,
+            "words": 657,
+            "text_sha256": "a007d8ec477bafc3c66c5740cf1c56a7dded1b4e24a9611a1f35c565ff92b91b",
+            "formula_symbols": 1,
+            "embedded_images": 23998
+          }
+        ]
+      },
+      "dual": {
+        "file": "High_speed_buffer_latch_ISCAS03.no_watermark.zh-CN.dual.pdf",
+        "bytes": 771107,
+        "sha256": "58c9347f05da20eb743e8de79dbe3a7bba4119618599c1310d80a84db6300b08",
+        "page_count": 4,
+        "pages": [
+          {
+            "text_characters": 41497,
+            "words": 1952,
+            "text_sha256": "1f2a963e46bc93a43a1ef44cf871eaf1e8239aebf6f26b9bd242c187cce547a5",
+            "formula_symbols": 22,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 38749,
+            "words": 2304,
+            "text_sha256": "ee89b0037d74b8456355da98b254e4c6bd8b057c9b3da19fc6bf7056fa2617c8",
+            "formula_symbols": 52,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 53742,
+            "words": 2066,
+            "text_sha256": "2e8d407ff49d0bcdcda3b51993801400a3a308d60c9c28841d26a66ce7fc9c02",
+            "formula_symbols": 22,
+            "embedded_images": 0
+          },
+          {
+            "text_characters": 16555,
+            "words": 1318,
+            "text_sha256": "38e0c4f617adbe710e8f006cbe20637f310ba188d74f0c4236a12118bf979815",
+            "formula_symbols": 2,
+            "embedded_images": 47996
+          }
+        ]
+      }
+    }
+  },
+  "comparisons": {
+    "original vs round3": [
+      {
+        "mode": "mono",
+        "page": 1,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "mono",
+        "page": 2,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "mono",
+        "page": 3,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "mono",
+        "page": 4,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "dual",
+        "page": 1,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "dual",
+        "page": 2,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "dual",
+        "page": 3,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "dual",
+        "page": 4,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      }
+    ],
+    "round3 vs round4": [
+      {
+        "mode": "mono",
+        "page": 1,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "mono",
+        "page": 2,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "mono",
+        "page": 3,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "mono",
+        "page": 4,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "dual",
+        "page": 1,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "dual",
+        "page": 2,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "dual",
+        "page": 3,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "dual",
+        "page": 4,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      }
+    ],
+    "original-current-stack vs round4": [
+      {
+        "mode": "mono",
+        "page": 1,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "mono",
+        "page": 2,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "mono",
+        "page": 3,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "mono",
+        "page": 4,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "dual",
+        "page": 1,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "dual",
+        "page": 2,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "dual",
+        "page": 3,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      },
+      {
+        "mode": "dual",
+        "page": 4,
+        "changed_pixel_fraction": 0.0,
+        "mean_channel_difference": 0.0
+      }
+    ]
+  },
+  "shared_font_inventory": [
+    {
+      "name": "GoNotoKurrent-Bold.ttf",
+      "sha256": "6f5ab7b16acedeac76625f75159d9d303be85b291d47376760a1c9f87802853e"
+    },
+    {
+      "name": "GoNotoKurrent-Regular.ttf",
+      "sha256": "2f2cee5fbb2403df352ca2005247f6c4faa70f3086ebd31b6c62308b5f2f9865"
+    },
+    {
+      "name": "KleeOne-Regular.ttf",
+      "sha256": "74cb0a6523cc22b221ceaa7b78b56cea66512ec14b4145fd0102ffe27c30d084"
+    },
+    {
+      "name": "LXGWWenKaiGB-Regular.1.520.ttf",
+      "sha256": "252cde5857f7ce57ce76f7e2e1d2e91c1f912f1f4c13c7e4fb295b5fdf5923ed"
+    },
+    {
+      "name": "LXGWWenKaiTC-Regular.1.520.ttf",
+      "sha256": "a36b11f231a923ad12a9bc045e54e6b1987dad5a6a201b6ea9e1093f9968e348"
+    },
+    {
+      "name": "MaruBuri-Regular.ttf",
+      "sha256": "803429881927c79dbb49497274244e72b672c56e0503f28262503f77524cba7a"
+    },
+    {
+      "name": "NotoSans-Bold.ttf",
+      "sha256": "379bda1de5ceb6c81a6e0b7f8346d36e12b3202757fcba90a42dc5a7f8d5df38"
+    },
+    {
+      "name": "NotoSans-BoldItalic.ttf",
+      "sha256": "7c53c6334c7f7847201ba6ed93e4e00088b2ffae613aef69fb581153f347cac2"
+    },
+    {
+      "name": "NotoSans-Italic.ttf",
+      "sha256": "feb3e57888ce3acb604f270c278cfb304c674306518771619ddbdefca42a066b"
+    },
+    {
+      "name": "NotoSans-Regular.ttf",
+      "sha256": "fe8c022f48d8dd29f17b744d16f9346f4357e16f7d4f7be58b000ae7c291b614"
+    },
+    {
+      "name": "NotoSerif-Bold.ttf",
+      "sha256": "2015eba9ca7ca5cf7320bd5e6740439f84b55eefad7208e63b9b6d32e8c82410"
+    },
+    {
+      "name": "NotoSerif-BoldItalic.ttf",
+      "sha256": "c49e9f86cc43e05e8e5e8da53a7e00568fac08e2afb93b0d7979a2ea94fd6171"
+    },
+    {
+      "name": "NotoSerif-Italic.ttf",
+      "sha256": "be429bb62448b615f62cf7817d6a801fbc209e6cd2c11ffa15801f6d7dfac7cf"
+    },
+    {
+      "name": "NotoSerif-Regular.ttf",
+      "sha256": "76b746ed54a2f83fa41db9a85a43b4b39900dbdb8ae40ec3d93950b0b00c4bd7"
+    },
+    {
+      "name": "SourceHanSansCN-Bold.ttf",
+      "sha256": "2dcaecc0dcba896fdc48e32617633123d91fa80c7eb9f7ae7c836da70e45ce88"
+    },
+    {
+      "name": "SourceHanSansCN-Regular.ttf",
+      "sha256": "dd4ae04ab7d33f43202750cf755b2ba47a2122ba41412954e562da459337bbf6"
+    },
+    {
+      "name": "SourceHanSansHK-Bold.ttf",
+      "sha256": "34fa1add2c9e7e8ee3fbb205a6ef5e8cb97f0393bbfe57c709273040cf10f48c"
+    },
+    {
+      "name": "SourceHanSansHK-Regular.ttf",
+      "sha256": "b5a170508f5c3441b183d1eae39ec0f99545cab64918d07260492783bd5fa297"
+    },
+    {
+      "name": "SourceHanSansJP-Bold.ttf",
+      "sha256": "e35443f4e468d7a038191c4bc5fc51bf7242bc12052eb427c07f00a1c3cec0fd"
+    },
+    {
+      "name": "SourceHanSansJP-Regular.ttf",
+      "sha256": "4fb6ea21d30d3fe1751e590786950e9153bfc31e2669ac3528bd2f641b791d76"
+    },
+    {
+      "name": "SourceHanSansKR-Bold.ttf",
+      "sha256": "51997e299785a2bc10806d95ff4fae0b1363caddea63c4e9fb43ee7d1dc899e0"
+    },
+    {
+      "name": "SourceHanSansKR-Regular.ttf",
+      "sha256": "061c9a55b6b731af2a4667f06efb82ed7c80ba99d5350c1bba76f80472ea304f"
+    },
+    {
+      "name": "SourceHanSansTW-Bold.ttf",
+      "sha256": "4cb4a8b665ef687fbfa15f4e5d551296d820183c68a324fb2432c88fa441c1e4"
+    },
+    {
+      "name": "SourceHanSansTW-Regular.ttf",
+      "sha256": "e081fa19f3e92668c441c0e925ddc9ca35ed743d7c5d3308231a3c9a71302967"
+    },
+    {
+      "name": "SourceHanSerifCN-Bold.ttf",
+      "sha256": "fafd6dc09a0ba3be1ac224aec3ff0befab97964c4ffba6b16f789702106577aa"
+    },
+    {
+      "name": "SourceHanSerifCN-Regular.ttf",
+      "sha256": "8ba5ec09db04b1d1599edeff3fb5627ca11eaaf85e339e5c32684cb94e806993"
+    },
+    {
+      "name": "SourceHanSerifHK-Bold.ttf",
+      "sha256": "52698377eb509bb60271fec92a26045f055958af7ace4c332eee2dfe1754776d"
+    },
+    {
+      "name": "SourceHanSerifHK-Regular.ttf",
+      "sha256": "cf43b8a00e3e7e35c5e3d7d8d05dd2d21aeaaa386f0c4fa6665c29a11ea01b73"
+    },
+    {
+      "name": "SourceHanSerifJP-Bold.ttf",
+      "sha256": "cbd7e67a0bc51b2da1d962a0de9a7745ad99a40a22febf6c56666119d21bfabe"
+    },
+    {
+      "name": "SourceHanSerifJP-Regular.ttf",
+      "sha256": "3f3ecec06d2cfa6a9eb57469f75c7f551c4281741465e8eb1d6953f22abe453c"
+    },
+    {
+      "name": "SourceHanSerifKR-Bold.ttf",
+      "sha256": "1e04d390823d458fc850f48d8fe6da19b55525249a5e63dded5690c288e138e1"
+    },
+    {
+      "name": "SourceHanSerifKR-Regular.ttf",
+      "sha256": "140861eba42585f3280a47d4c5199449386b0f986c7ab2c67fd5aa1615bb15d7"
+    },
+    {
+      "name": "SourceHanSerifTW-Bold.ttf",
+      "sha256": "a4d7ad443bccb130decc358cfbf3fea92d66cae22113cc9ac26c0200ed91b7cb"
+    },
+    {
+      "name": "SourceHanSerifTW-Regular.ttf",
+      "sha256": "53b849ebd349db18bf574e3cbb1307c903cc036b98ff009e3f445632b7e09a7f"
+    }
+  ]
+}
