@@ -1,0 +1,52 @@
+{
+  "gradio": "6.30.0",
+  "replaces_loop": true,
+  "first_loop_closed_after_replacement": false,
+  "second_loop_closed": false,
+  "warnings": [
+    {
+      "category": "ResourceWarning",
+      "message": "unclosed event loop <ProactorEventLoop running=False closed=False debug=False>"
+    },
+    {
+      "category": "ResourceWarning",
+      "message": "unclosed event loop <ProactorEventLoop running=False closed=False debug=False>"
+    },
+    {
+      "category": "ResourceWarning",
+      "message": "unclosed event loop <ProactorEventLoop running=False closed=False debug=False>"
+    },
+    {
+      "category": "ResourceWarning",
+      "message": "unclosed event loop <ProactorEventLoop running=False closed=False debug=False>"
+    },
+    {
+      "category": "ResourceWarning",
+      "message": "unclosed event loop <ProactorEventLoop running=False closed=False debug=False>"
+    },
+    {
+      "category": "ResourceWarning",
+      "message": "unclosed event loop <ProactorEventLoop running=False closed=False debug=False>"
+    },
+    {
+      "category": "ResourceWarning",
+      "message": "unclosed event loop <ProactorEventLoop running=False closed=False debug=False>"
+    },
+    {
+      "category": "ResourceWarning",
+      "message": "unclosed event loop <ProactorEventLoop running=False closed=False debug=False>"
+    },
+    {
+      "category": "ResourceWarning",
+      "message": "unclosed event loop <ProactorEventLoop running=False closed=False debug=False>"
+    },
+    {
+      "category": "ResourceWarning",
+      "message": "unclosed event loop <ProactorEventLoop running=False closed=False debug=False>"
+    },
+    {
+      "category": "ResourceWarning",
+      "message": "unclosed event loop <ProactorEventLoop running=False closed=False debug=False>"
+    }
+  ]
+}
