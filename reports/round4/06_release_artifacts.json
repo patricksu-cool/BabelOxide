@@ -1,0 +1,41 @@
+{
+  "zip_crc_test": "passed",
+  "runtime_source_ref": "fa48998",
+  "files": [
+    {
+      "file": "dist/pdf2zh-next-2.9.0-round4-rc-win64.zip",
+      "bytes": 264486713,
+      "sha256": "75dbed11f8f06e7e6e9315f4a287c350d700a854a10a734766f6cfb21c95b411"
+    },
+    {
+      "file": "dist/source/pdf2zh-next-round4-source-fa48998.zip",
+      "bytes": 9881296,
+      "sha256": "cd4a8e605458e72037d2a6312e0601d54067e18be73a6f6753478701b4986267"
+    },
+    {
+      "file": "dist/source/README_zh_TW.md",
+      "bytes": 900,
+      "sha256": "a6596613ccf47f1be9fb1e6f48337bdb4347191879bdc49f95b8994fa78d064a"
+    },
+    {
+      "file": "dist/source/third-party/babeldoc-0.6.3.tar.gz",
+      "bytes": 16409047,
+      "sha256": "46b7aa2f0ac224b51206b1b16c12515e347831c9c07cea10088fa200e05e0b1c"
+    },
+    {
+      "file": "dist/source/third-party/levenshtein-0.27.5.tar.gz",
+      "bytes": 402914,
+      "sha256": "22021caf5867a46fae5ab927bbdcb430599d7e5ee3898449cbbe430ff07b7d08"
+    },
+    {
+      "file": "dist/source/third-party/pymupdf-1.26.7.tar.gz",
+      "bytes": 84327033,
+      "sha256": "71add8bdc8eb1aaa207c69a13400693f06ad9b927bea976f5d5ab9df0bb489c3"
+    },
+    {
+      "file": "dist/source/THIRD_PARTY_SOURCES.json",
+      "bytes": 1074,
+      "sha256": "f07e912784668a8c0db2b61fde87c53722b2d9dca5d591e825dd7ed2829b83b9"
+    }
+  ]
+}

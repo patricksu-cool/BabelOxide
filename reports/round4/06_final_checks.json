@@ -1,0 +1,27 @@
+{
+  "normal": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "0",
+    "tests": "253",
+    "time": "18.776",
+    "timestamp": "2026-10-25T10:35:42.286120+08:00",
+    "hostname": "i6dswa",
+    "reported_seconds": "18.80"
+  },
+  "strict": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "2",
+    "skipped": "0",
+    "tests": "253",
+    "time": "75.521",
+    "timestamp": "2026-10-25T10:39:10.763628+08:00",
+    "hostname": "i6dswa",
+    "reported_seconds": "75.61"
+  },
+  "ruff_lint": "passed",
+  "ruff_format": "336 files already formatted",
+  "retry_characterization_cases": 34
+}

@@ -26,4 +26,6 @@ CPython `BaseEventLoop.__del__` 先發 ResourceWarning 再 close；`-W error` �
 
 標準完整回歸 **242 passed、0 failed**，嚴格模式仍未通過。這是如實保留的 upstream 問題，沒有把測試降低標準或把相關測試刪除。長時壓力、瀏覽器斷線後的長工作、硬關視窗全部時序未驗證；只關瀏覽器分頁不等於停止 Gradio 伺服器。Windows EXE 啟動／退出與新包測試列於下一階段。
 
-第六階段另確認本專案 PyStand 啟動器未捕捉 KeyboardInterrupt：兩次 Ctrl+C 都先關閉伺服器、釋放程序，隨後印出 traceback 並 exit 1。已在 asyncio.run 返回清理之後加入專門的中斷處理，沒有強殺或跳過清理。原先使用 sys.exit(130) 的實機結果沒有 traceback，但 PyStand native launcher 實際映射為 1。因此 GUI 主動關閉改回傳 0；CLI 中斷仍保持非零，避免把未完成的 PDF 當成功。回歸測試建立真正 pending asyncio task，驗證 finally 被執行、兩種退出碼及沒有 fatal traceback。這項啟動器修復不能當成 Gradio 上游 ResourceWarning 已修好。
+第六階段另確認本專案 PyStand 啟動器未捕捉 KeyboardInterrupt：兩次 Ctrl+C 都先關閉伺服器、釋放程序，隨後印出 traceback。已在 asyncio.run 返回清理之後加入專門的中斷處理，沒有強殺或跳過清理。GUI 主動關閉回傳 0；CLI 中斷仍保持非零，避免把未完成的 PDF 當成功。回歸測試建立真正 pending asyncio task，驗證 finally 被執行、兩種退出碼及沒有 fatal traceback。最終以獨立觀察程序持有 EXE process handle，確認原生退出碼 **0**，見 `06_native_gui_exit.json`；PTY 所回傳的 1 受到 PowerShell Ctrl+C 影響，不能當作 EXE 原生退出碼。GUI 的同步 Gradio 迴圈在 asyncio.run 中，實測需兩次中斷才結束；保留此操作限制，未改全域 signal 行為。
+
+最終完整標準回歸 **253 passed，18.80 秒**；最終 `-W error`／tracemalloc 完整檢查為 **251 passed、2 failed，75.61 秒**，並有退出時 unraisable ExceptionGroup。失敗仍為 Gradio 分配的 event loop／socket 警告；沒有新增全域過濾。啟動器修復不能當成 Gradio 上游 ResourceWarning 已修好。

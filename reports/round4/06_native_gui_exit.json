@@ -1,0 +1,7 @@
+{
+  "pid": 27076,
+  "observed_at": "2026-10-25T10:42:03.4335259+08:00",
+  "native_exit_code": 0,
+  "observation": "Process handle retained by an independent PowerShell process",
+  "port": 17890
+}
