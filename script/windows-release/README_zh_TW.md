@@ -1,7 +1,8 @@
 # PDFMathTranslate-next 2.9.0 第四輪 Windows 候選版
 
 這是待驗證候選版，尚未核准正式對外發行。仍有 Pillow 安全公告與 Gradio
-資源警告；只供本人處理可信 PDF。真實翻譯 API 與乾淨 Windows VM 尚未驗收。
+資源警告；只供本人處理可信 PDF。SiliconFlowFree 已通過短句及第一頁 GUI／CLI
+翻譯測試，完整文件品質與獨立乾淨 Windows VM 尚未驗收。
 
 將整個資料夾解壓到本人可寫的目錄。保留 runtime、site-packages 與 launcher
 檔案在一起；不需要另外安裝 Python 或 uv。執行 pdf2zh.exe 開啟 GUI，瀏覽器

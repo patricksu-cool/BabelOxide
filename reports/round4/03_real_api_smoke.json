@@ -1,0 +1,62 @@
+{
+  "service": "SiliconFlowFree",
+  "authorized_by_user": true,
+  "estimated_charge": 0,
+  "api_key_required": false,
+  "input": "A high-speed buffer latch reduces propagation delay.",
+  "success": true,
+  "translation": "\n高速緩衝鎖存器可減少傳播延遲。",
+  "selected_endpoint": "https://api1.pdf2zh-next.com/chatproxy",
+  "client_closed": true,
+  "seconds": 5.7029876000015065,
+  "http_responses": [
+    {
+      "method": "POST",
+      "host": "api1.pdf2zh-next.com",
+      "path": "/chatproxy/check",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "host": "api1.pdf2zh-next.com",
+      "path": "/chatproxy/check",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "host": "api1.pdf2zh-next.com",
+      "path": "/chatproxy/check",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "host": "api2.pdf2zh-next.com",
+      "path": "/chatproxy/check",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "host": "api2.pdf2zh-next.com",
+      "path": "/chatproxy/check",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "host": "api2.pdf2zh-next.com",
+      "path": "/chatproxy/check",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "api1.pdf2zh-next.com",
+      "path": "/chatproxy/config",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "host": "api1.pdf2zh-next.com",
+      "path": "/chatproxy",
+      "status": 200
+    }
+  ]
+}
