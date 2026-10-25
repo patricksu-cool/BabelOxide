@@ -34,5 +34,7 @@ CLI 範例：
 
 授權：主程式 LICENSE；Python runtime/LICENSE.txt；PyStand-LICENSE.txt；各
 第三方套件 dist-info 內的 licenses 與 THIRD_PARTY_COMPONENTS.json。原始碼
+部分 wheel 未附獨立授權文字，另補 flatbuffers、Gradio client、PyMuPDF 及
+TencentCloud 授權檔；ADDITIONAL_LICENSES.json 記錄官方來源與 SHA256。原始碼
 另外提供於同次候選交付的 dist/source/，不混入可執行資料夾。對外發行時須
 一併提供相對應版本原始碼及第三方通知；目前只完成本機候選交付。

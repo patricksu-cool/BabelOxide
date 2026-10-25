@@ -1,0 +1,39 @@
+[
+  {
+    "packages": [
+      "flatbuffers"
+    ],
+    "file": "flatbuffers-LICENSE.txt",
+    "source": "https://raw.githubusercontent.com/google/flatbuffers/master/LICENSE",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "downloaded": "2026-10-25"
+  },
+  {
+    "packages": [
+      "gradio_client"
+    ],
+    "file": "gradio-client-LICENSE.txt",
+    "source": "https://raw.githubusercontent.com/gradio-app/gradio/main/LICENSE",
+    "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+    "downloaded": "2026-10-25"
+  },
+  {
+    "packages": [
+      "PyMuPDF"
+    ],
+    "file": "PyMuPDF-COPYING.txt",
+    "source": "https://raw.githubusercontent.com/pymupdf/PyMuPDF/1.26.7/COPYING",
+    "sha256": "57c8ff33c9c0cfc3ef00e650a1cc910d7ee479a8bc509f6c9209a7c2a11399d6",
+    "downloaded": "2026-10-25"
+  },
+  {
+    "packages": [
+      "tencentcloud-sdk-python-common",
+      "tencentcloud-sdk-python-tmt"
+    ],
+    "file": "tencentcloud-LICENSE.txt",
+    "source": "https://raw.githubusercontent.com/TencentCloud/tencentcloud-sdk-python/master/LICENSE",
+    "sha256": "009c8843a98fcd3a6c167ea2d1c1ba38f55d849f3997f99f768391ec9e039d1c",
+    "downloaded": "2026-10-25"
+  }
+]

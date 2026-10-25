@@ -25,4 +25,4 @@ mono 圖片物件計數合計 23,998、dual 47,996，各組相同；這是 Poppl
 
 在本次固定回應情境 **沒有發現後續應用修改或安全依賴升級引入的視覺 regression**，因此依要求不改核心排版演算法。既有問題是原始程式／BabelDOC 處理及來源字型的相互作用；尚未逐一證明每個缺陷的單一根因，不聲稱所有 PDF 或真實中文譯文都不會退化。
 
-Identity 會觸發 same-as-input／simple translation fallback；此比較能隔離回應差異並檢查回歸，**不能當作真實中文翻譯品質驗收**。真實 API 尚缺授權，故中文排版與品質仍待確認，未為了這個限制擅自調整排版。
+Identity 會觸發 same-as-input／simple translation fallback；此比較能隔離回應差異並檢查回歸，**不能當作真實中文翻譯品質驗收**。取得 SiliconFlowFree 授權後，另完成 GUI／CLI 第一頁真實中文 smoke test，見 `03_api_validation.md`；仍可見公式附近重疊與斷句，未據不同真實回應擅自調整核心排版。完整中文文件品質仍未驗收。
