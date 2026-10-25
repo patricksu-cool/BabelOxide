@@ -25,3 +25,5 @@ CPython `BaseEventLoop.__del__` 先發 ResourceWarning 再 close；`-W error` �
 另啟動真正 Windows multiprocessing 翻譯 worker，確認已到達受控 loopback API 後取消上層 task；server／thread 正常關閉、**新殘留子行程 0**。該 fixture 同時回傳合成 400，取消與失敗競爭時記錄既有 closed-pipe WinError 232 診斷；沒有憑此宣稱所有取消時序零錯誤日誌。既有 GUI cancel 與 IPC 關閉 characterization 亦通過。
 
 標準完整回歸 **242 passed、0 failed**，嚴格模式仍未通過。這是如實保留的 upstream 問題，沒有把測試降低標準或把相關測試刪除。長時壓力、瀏覽器斷線後的長工作、硬關視窗全部時序未驗證；只關瀏覽器分頁不等於停止 Gradio 伺服器。Windows EXE 啟動／退出與新包測試列於下一階段。
+
+第六階段另確認本專案 PyStand 啟動器未捕捉 KeyboardInterrupt：兩次 Ctrl+C 都先關閉伺服器、釋放程序，隨後印出 traceback 並 exit 1。已在 asyncio.run 返回清理之後加入專門的中斷處理，以標準中斷碼 130 結束，沒有強殺或跳過清理。新增回歸測試建立真正 pending asyncio task，驗證 finally 被執行、退出碼及沒有 fatal traceback；3 個 launcher 測試通過。這項啟動器修復不能當成 Gradio 上游 ResourceWarning 已修好。

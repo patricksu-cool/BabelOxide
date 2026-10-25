@@ -43,6 +43,11 @@ try:
     if WAIT_FOR_INPUT:
         input("Press Enter to continue...")
     sys.exit(code)
+except KeyboardInterrupt:
+    # asyncio.run has already cancelled pending tasks and closed its loop.
+    # Keep an intentional console interruption out of the fatal-error path.
+    print("Interrupted by user.", file=sys.stderr)
+    sys.exit(130)
 except Exception as exc:
     import traceback
     print(
