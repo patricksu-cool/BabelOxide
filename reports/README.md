@@ -5,6 +5,10 @@
   baseline, PDF comparisons, Windows packaging and known limitations.
 - [Round 3 final report](round3/08_final_report.md) includes the final regression,
   architecture, cleanup, security limitations and stage commits.
+- [Round 4 final report](round4/07_final_report.md) records authorized SiliconFlowFree
+  tests, original-version PDF comparisons, Gradio resource diagnostics, and the
+  Windows release candidate. Standard tests pass; strict resource checks, Pillow
+  findings and independent clean-Windows acceptance remain release limitations.
 - [Round 3 baseline](round3/01_baseline.md), [network security](round3/02_network_security.md),
   [Gradio compatibility](round3/03_compatibility.md), [remaining repairs](round3/04_repairs.md)
   and [deletion manifest](round3/05_deletion_manifest.json) cover the current work.
