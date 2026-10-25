@@ -17,6 +17,13 @@
 使用者設定，也不含離線資產 ZIP；沒有網路的首次啟動不能完成 PDF 處理。
 翻譯服務一般仍需網路。可用 `pdf2zh.exe --warmup` 預先下載並驗證資源。
 
+系統需求：Windows 10／11 x64，並需要 Microsoft Visual C++ v14 x64 runtime。
+部分必要 DLL（例如 msvcp140_1.dll）依賴此系統元件。本候選未內附安裝器；
+若電腦缺少元件，請使用 Microsoft 官方下載，依其指示安裝：
+https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist
+https://aka.ms/vc14/vc_redist.x64.exe
+不要從非官方 DLL 網站下載單一檔案。獨立乾淨 Windows 測試尚未完成。
+
 設定儲存在 EXE 旁的 config 資料夾。程式不以 ~/.config/pdf2zh 為新設定輸出
 位置；既有舊設定可能被唯讀遷移，因此乾淨測試使用空白使用者環境。
 config.example.toml 只是無金鑰範本，不會自動覆寫設定。
@@ -33,7 +40,7 @@ CLI 範例：
 啟動失敗時保留錯誤訊息；不要刪除 config 或停用系統安全防護來嘗試修復。
 
 授權：主程式 LICENSE；Python runtime/LICENSE.txt；PyStand-LICENSE.txt；各
-第三方套件 dist-info 內的 licenses 與 THIRD_PARTY_COMPONENTS.json。原始碼
+第三方套件 dist-info 內的 licenses 與 THIRD_PARTY_COMPONENTS.json。
 部分 wheel 未附獨立授權文字，另補 flatbuffers、Gradio client、PyMuPDF 及
 TencentCloud 授權檔；ADDITIONAL_LICENSES.json 記錄官方來源與 SHA256。原始碼
 另外提供於同次候選交付的 dist/source/，不混入可執行資料夾。對外發行時須
