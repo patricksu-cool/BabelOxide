@@ -37,8 +37,11 @@ def test_pystand_redacts_early_exception(monkeypatch, capsys, inline):
     assert "RuntimeError" in captured.err
 
 
+@pytest.mark.parametrize(
+    ("argument", "exit_code"), [("--gui", 0), ("document.pdf", 130)]
+)
 def test_pystand_interrupt_closes_pending_tasks_without_fatal_traceback(
-    monkeypatch, capsys
+    monkeypatch, capsys, argument, exit_code
 ):
     released = []
 
@@ -54,7 +57,7 @@ def test_pystand_interrupt_closes_pending_tasks_without_fatal_traceback(
         assert not task.done()
         raise KeyboardInterrupt
 
-    monkeypatch.setattr(sys, "argv", ["pdf2zh.exe", "--gui"])
+    monkeypatch.setattr(sys, "argv", ["pdf2zh.exe", argument])
     monkeypatch.setattr(main, "main", interrupt_with_pending_work)
     monkeypatch.setattr(multiprocessing, "set_executable", lambda _path: None)
     launcher = Path(__file__).resolve().parents[1] / "script/_pystand_static.int"
@@ -63,7 +66,7 @@ def test_pystand_interrupt_closes_pending_tasks_without_fatal_traceback(
         runpy.run_path(str(launcher))
 
     captured = capsys.readouterr()
-    assert result.value.code == 130
+    assert result.value.code == exit_code
     assert released == [True]
     assert "Interrupted by user." in captured.err
     assert "Traceback" not in captured.err

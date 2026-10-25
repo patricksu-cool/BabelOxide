@@ -47,7 +47,7 @@ except KeyboardInterrupt:
     # asyncio.run has already cancelled pending tasks and closed its loop.
     # Keep an intentional console interruption out of the fatal-error path.
     print("Interrupted by user.", file=sys.stderr)
-    sys.exit(130)
+    sys.exit(0 if "--gui" in sys.argv else 130)
 except Exception as exc:
     import traceback
     print(

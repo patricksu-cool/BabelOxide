@@ -26,4 +26,4 @@ CPython `BaseEventLoop.__del__` 先發 ResourceWarning 再 close；`-W error` �
 
 標準完整回歸 **242 passed、0 failed**，嚴格模式仍未通過。這是如實保留的 upstream 問題，沒有把測試降低標準或把相關測試刪除。長時壓力、瀏覽器斷線後的長工作、硬關視窗全部時序未驗證；只關瀏覽器分頁不等於停止 Gradio 伺服器。Windows EXE 啟動／退出與新包測試列於下一階段。
 
-第六階段另確認本專案 PyStand 啟動器未捕捉 KeyboardInterrupt：兩次 Ctrl+C 都先關閉伺服器、釋放程序，隨後印出 traceback 並 exit 1。已在 asyncio.run 返回清理之後加入專門的中斷處理，以標準中斷碼 130 結束，沒有強殺或跳過清理。新增回歸測試建立真正 pending asyncio task，驗證 finally 被執行、退出碼及沒有 fatal traceback；3 個 launcher 測試通過。這項啟動器修復不能當成 Gradio 上游 ResourceWarning 已修好。
+第六階段另確認本專案 PyStand 啟動器未捕捉 KeyboardInterrupt：兩次 Ctrl+C 都先關閉伺服器、釋放程序，隨後印出 traceback 並 exit 1。已在 asyncio.run 返回清理之後加入專門的中斷處理，沒有強殺或跳過清理。原先使用 sys.exit(130) 的實機結果沒有 traceback，但 PyStand native launcher 實際映射為 1。因此 GUI 主動關閉改回傳 0；CLI 中斷仍保持非零，避免把未完成的 PDF 當成功。回歸測試建立真正 pending asyncio task，驗證 finally 被執行、兩種退出碼及沒有 fatal traceback。這項啟動器修復不能當成 Gradio 上游 ResourceWarning 已修好。
