@@ -1,0 +1,5 @@
+# Use the GNU runtime shipped with Rust; LLVM-MinGW does not ship libgcc.
+# Scoped to this project and target. No global PATH or toolchain override.
+[target.x86_64-pc-windows-gnu]
+linker = "rust-lld"
+rustflags = ["-C", "link-self-contained=yes", "-C", "linker-flavor=ld.lld"]

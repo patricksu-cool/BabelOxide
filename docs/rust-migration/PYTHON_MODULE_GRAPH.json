@@ -1,0 +1,867 @@
+{
+  "scope": "all pdf2zh_next Python source; static imports, not runtime execution",
+  "modules": {
+    "pdf2zh_next": "pdf2zh_next/__init__.py",
+    "pdf2zh_next.config": "pdf2zh_next/config/__init__.py",
+    "pdf2zh_next.config.cli": "pdf2zh_next/config/cli.py",
+    "pdf2zh_next.config.cli_env_model": "pdf2zh_next/config/cli_env_model.py",
+    "pdf2zh_next.config.main": "pdf2zh_next/config/main.py",
+    "pdf2zh_next.config.model": "pdf2zh_next/config/model.py",
+    "pdf2zh_next.config.storage": "pdf2zh_next/config/storage.py",
+    "pdf2zh_next.config.translate_engine_model": "pdf2zh_next/config/translate_engine_model.py",
+    "pdf2zh_next.const": "pdf2zh_next/const.py",
+    "pdf2zh_next.gui": "pdf2zh_next/gui.py",
+    "pdf2zh_next.high_level": "pdf2zh_next/high_level.py",
+    "pdf2zh_next.http_api": "pdf2zh_next/http_api.py",
+    "pdf2zh_next.i18n": "pdf2zh_next/i18n.py",
+    "pdf2zh_next.main": "pdf2zh_next/main.py",
+    "pdf2zh_next.security_logging": "pdf2zh_next/security_logging.py",
+    "pdf2zh_next.translation": "pdf2zh_next/translation/__init__.py",
+    "pdf2zh_next.translation.batch": "pdf2zh_next/translation/batch.py",
+    "pdf2zh_next.translation.configuration": "pdf2zh_next/translation/configuration.py",
+    "pdf2zh_next.translation.usage": "pdf2zh_next/translation/usage.py",
+    "pdf2zh_next.translator": "pdf2zh_next/translator/__init__.py",
+    "pdf2zh_next.translator.base_rate_limiter": "pdf2zh_next/translator/base_rate_limiter.py",
+    "pdf2zh_next.translator.base_translator": "pdf2zh_next/translator/base_translator.py",
+    "pdf2zh_next.translator.cache": "pdf2zh_next/translator/cache.py",
+    "pdf2zh_next.translator.rate_limiter.qps_rate_limiter": "pdf2zh_next/translator/rate_limiter/qps_rate_limiter.py",
+    "pdf2zh_next.translator.translator_impl.anythingllm": "pdf2zh_next/translator/translator_impl/anythingllm.py",
+    "pdf2zh_next.translator.translator_impl.azure": "pdf2zh_next/translator/translator_impl/azure.py",
+    "pdf2zh_next.translator.translator_impl.azureopenai": "pdf2zh_next/translator/translator_impl/azureopenai.py",
+    "pdf2zh_next.translator.translator_impl.bing": "pdf2zh_next/translator/translator_impl/bing.py",
+    "pdf2zh_next.translator.translator_impl.claudecode": "pdf2zh_next/translator/translator_impl/claudecode.py",
+    "pdf2zh_next.translator.translator_impl.clitranslator": "pdf2zh_next/translator/translator_impl/clitranslator.py",
+    "pdf2zh_next.translator.translator_impl.deepl": "pdf2zh_next/translator/translator_impl/deepl.py",
+    "pdf2zh_next.translator.translator_impl.dify": "pdf2zh_next/translator/translator_impl/dify.py",
+    "pdf2zh_next.translator.translator_impl.google": "pdf2zh_next/translator/translator_impl/google.py",
+    "pdf2zh_next.translator.translator_impl.ollama": "pdf2zh_next/translator/translator_impl/ollama.py",
+    "pdf2zh_next.translator.translator_impl.openai": "pdf2zh_next/translator/translator_impl/openai.py",
+    "pdf2zh_next.translator.translator_impl.qwenmt": "pdf2zh_next/translator/translator_impl/qwenmt.py",
+    "pdf2zh_next.translator.translator_impl.siliconflow": "pdf2zh_next/translator/translator_impl/siliconflow.py",
+    "pdf2zh_next.translator.translator_impl.siliconflowfree": "pdf2zh_next/translator/translator_impl/siliconflowfree.py",
+    "pdf2zh_next.translator.translator_impl.tencentmechinetranslation": "pdf2zh_next/translator/translator_impl/tencentmechinetranslation.py",
+    "pdf2zh_next.translator.translator_impl.xinference": "pdf2zh_next/translator/translator_impl/xinference.py",
+    "pdf2zh_next.translator.utils": "pdf2zh_next/translator/utils.py",
+    "pdf2zh_next.ui": "pdf2zh_next/ui/__init__.py",
+    "pdf2zh_next.ui.components": "pdf2zh_next/ui/components.py",
+    "pdf2zh_next.ui.fields": "pdf2zh_next/ui/fields.py",
+    "pdf2zh_next.ui.files": "pdf2zh_next/ui/files.py",
+    "pdf2zh_next.ui.inputs": "pdf2zh_next/ui/inputs.py",
+    "pdf2zh_next.ui.languages": "pdf2zh_next/ui/languages.py",
+    "pdf2zh_next.ui.preview": "pdf2zh_next/ui/preview.py",
+    "pdf2zh_next.ui.rate_options": "pdf2zh_next/ui/rate_options.py",
+    "pdf2zh_next.ui.resources": "pdf2zh_next/ui/resources/__init__.py",
+    "pdf2zh_next.ui.results": "pdf2zh_next/ui/results.py",
+    "pdf2zh_next.ui.session": "pdf2zh_next/ui/session.py",
+    "pdf2zh_next.ui.settings": "pdf2zh_next/ui/settings.py",
+    "pdf2zh_next.ui.tasks": "pdf2zh_next/ui/tasks.py",
+    "pdf2zh_next.utils.asynchronize": "pdf2zh_next/utils/asynchronize/__init__.py"
+  },
+  "edges": [
+    {
+      "from": "pdf2zh_next",
+      "to": "pdf2zh_next.config"
+    },
+    {
+      "from": "pdf2zh_next",
+      "to": "pdf2zh_next.config.main"
+    },
+    {
+      "from": "pdf2zh_next",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next",
+      "to": "pdf2zh_next.high_level"
+    },
+    {
+      "from": "pdf2zh_next.config",
+      "to": "pdf2zh_next.config.main"
+    },
+    {
+      "from": "pdf2zh_next.config",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.config",
+      "to": "pdf2zh_next.config.translate_engine_model"
+    },
+    {
+      "from": "pdf2zh_next.config.cli",
+      "to": "pdf2zh_next.config.cli_env_model"
+    },
+    {
+      "from": "pdf2zh_next.config.cli_env_model",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.config.cli_env_model",
+      "to": "pdf2zh_next.config.translate_engine_model"
+    },
+    {
+      "from": "pdf2zh_next.config.main",
+      "to": "pdf2zh_next.config.cli"
+    },
+    {
+      "from": "pdf2zh_next.config.main",
+      "to": "pdf2zh_next.config.cli_env_model"
+    },
+    {
+      "from": "pdf2zh_next.config.main",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.config.main",
+      "to": "pdf2zh_next.config.storage"
+    },
+    {
+      "from": "pdf2zh_next.config.main",
+      "to": "pdf2zh_next.config.translate_engine_model"
+    },
+    {
+      "from": "pdf2zh_next.config.main",
+      "to": "pdf2zh_next.const"
+    },
+    {
+      "from": "pdf2zh_next.config.main",
+      "to": "pdf2zh_next.security_logging"
+    },
+    {
+      "from": "pdf2zh_next.config.model",
+      "to": "pdf2zh_next.config.translate_engine_model"
+    },
+    {
+      "from": "pdf2zh_next.gui",
+      "to": "pdf2zh_next"
+    },
+    {
+      "from": "pdf2zh_next.gui",
+      "to": "pdf2zh_next.config"
+    },
+    {
+      "from": "pdf2zh_next.gui",
+      "to": "pdf2zh_next.config.cli_env_model"
+    },
+    {
+      "from": "pdf2zh_next.gui",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.gui",
+      "to": "pdf2zh_next.config.translate_engine_model"
+    },
+    {
+      "from": "pdf2zh_next.gui",
+      "to": "pdf2zh_next.const"
+    },
+    {
+      "from": "pdf2zh_next.gui",
+      "to": "pdf2zh_next.high_level"
+    },
+    {
+      "from": "pdf2zh_next.gui",
+      "to": "pdf2zh_next.i18n"
+    },
+    {
+      "from": "pdf2zh_next.gui",
+      "to": "pdf2zh_next.security_logging"
+    },
+    {
+      "from": "pdf2zh_next.gui",
+      "to": "pdf2zh_next.ui.components"
+    },
+    {
+      "from": "pdf2zh_next.gui",
+      "to": "pdf2zh_next.ui.fields"
+    },
+    {
+      "from": "pdf2zh_next.gui",
+      "to": "pdf2zh_next.ui.files"
+    },
+    {
+      "from": "pdf2zh_next.gui",
+      "to": "pdf2zh_next.ui.inputs"
+    },
+    {
+      "from": "pdf2zh_next.gui",
+      "to": "pdf2zh_next.ui.languages"
+    },
+    {
+      "from": "pdf2zh_next.gui",
+      "to": "pdf2zh_next.ui.preview"
+    },
+    {
+      "from": "pdf2zh_next.gui",
+      "to": "pdf2zh_next.ui.rate_options"
+    },
+    {
+      "from": "pdf2zh_next.gui",
+      "to": "pdf2zh_next.ui.resources"
+    },
+    {
+      "from": "pdf2zh_next.gui",
+      "to": "pdf2zh_next.ui.session"
+    },
+    {
+      "from": "pdf2zh_next.gui",
+      "to": "pdf2zh_next.ui.settings"
+    },
+    {
+      "from": "pdf2zh_next.gui",
+      "to": "pdf2zh_next.ui.tasks"
+    },
+    {
+      "from": "pdf2zh_next.high_level",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.high_level",
+      "to": "pdf2zh_next.security_logging"
+    },
+    {
+      "from": "pdf2zh_next.high_level",
+      "to": "pdf2zh_next.translation.batch"
+    },
+    {
+      "from": "pdf2zh_next.high_level",
+      "to": "pdf2zh_next.translation.configuration"
+    },
+    {
+      "from": "pdf2zh_next.high_level",
+      "to": "pdf2zh_next.translation.usage"
+    },
+    {
+      "from": "pdf2zh_next.high_level",
+      "to": "pdf2zh_next.translator"
+    },
+    {
+      "from": "pdf2zh_next.high_level",
+      "to": "pdf2zh_next.utils.asynchronize"
+    },
+    {
+      "from": "pdf2zh_next.main",
+      "to": "pdf2zh_next.config"
+    },
+    {
+      "from": "pdf2zh_next.main",
+      "to": "pdf2zh_next.gui"
+    },
+    {
+      "from": "pdf2zh_next.main",
+      "to": "pdf2zh_next.high_level"
+    },
+    {
+      "from": "pdf2zh_next.main",
+      "to": "pdf2zh_next.security_logging"
+    },
+    {
+      "from": "pdf2zh_next.translation.batch",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.translation.configuration",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.translator",
+      "to": "pdf2zh_next.translator.base_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator",
+      "to": "pdf2zh_next.translator.base_translator"
+    },
+    {
+      "from": "pdf2zh_next.translator",
+      "to": "pdf2zh_next.translator.rate_limiter.qps_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator",
+      "to": "pdf2zh_next.translator.utils"
+    },
+    {
+      "from": "pdf2zh_next.translator.base_translator",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.translator.base_translator",
+      "to": "pdf2zh_next.translator.base_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator.base_translator",
+      "to": "pdf2zh_next.translator.cache"
+    },
+    {
+      "from": "pdf2zh_next.translator.rate_limiter.qps_rate_limiter",
+      "to": "pdf2zh_next.translator.base_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.anythingllm",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.anythingllm",
+      "to": "pdf2zh_next.translator.base_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.anythingllm",
+      "to": "pdf2zh_next.translator.base_translator"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.azure",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.azure",
+      "to": "pdf2zh_next.translator.base_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.azure",
+      "to": "pdf2zh_next.translator.base_translator"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.azureopenai",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.azureopenai",
+      "to": "pdf2zh_next.translator.base_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.azureopenai",
+      "to": "pdf2zh_next.translator.base_translator"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.bing",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.bing",
+      "to": "pdf2zh_next.translator.base_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.bing",
+      "to": "pdf2zh_next.translator.base_translator"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.claudecode",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.claudecode",
+      "to": "pdf2zh_next.translator.base_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.claudecode",
+      "to": "pdf2zh_next.translator.base_translator"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.clitranslator",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.clitranslator",
+      "to": "pdf2zh_next.translator.base_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.clitranslator",
+      "to": "pdf2zh_next.translator.base_translator"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.deepl",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.deepl",
+      "to": "pdf2zh_next.translator.base_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.deepl",
+      "to": "pdf2zh_next.translator.base_translator"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.dify",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.dify",
+      "to": "pdf2zh_next.translator.base_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.dify",
+      "to": "pdf2zh_next.translator.base_translator"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.google",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.google",
+      "to": "pdf2zh_next.translator.base_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.google",
+      "to": "pdf2zh_next.translator.base_translator"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.ollama",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.ollama",
+      "to": "pdf2zh_next.translator.base_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.ollama",
+      "to": "pdf2zh_next.translator.base_translator"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.openai",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.openai",
+      "to": "pdf2zh_next.translator.base_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.openai",
+      "to": "pdf2zh_next.translator.base_translator"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.qwenmt",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.qwenmt",
+      "to": "pdf2zh_next.translator.base_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.qwenmt",
+      "to": "pdf2zh_next.translator.base_translator"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.siliconflow",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.siliconflow",
+      "to": "pdf2zh_next.translator.base_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.siliconflow",
+      "to": "pdf2zh_next.translator.base_translator"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.siliconflowfree",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.siliconflowfree",
+      "to": "pdf2zh_next.translator.base_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.siliconflowfree",
+      "to": "pdf2zh_next.translator.base_translator"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.siliconflowfree",
+      "to": "pdf2zh_next.translator.rate_limiter.qps_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.tencentmechinetranslation",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.tencentmechinetranslation",
+      "to": "pdf2zh_next.translator.base_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.tencentmechinetranslation",
+      "to": "pdf2zh_next.translator.base_translator"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.xinference",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.xinference",
+      "to": "pdf2zh_next.translator.base_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator.translator_impl.xinference",
+      "to": "pdf2zh_next.translator.base_translator"
+    },
+    {
+      "from": "pdf2zh_next.translator.utils",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.translator.utils",
+      "to": "pdf2zh_next.config.translate_engine_model"
+    },
+    {
+      "from": "pdf2zh_next.translator.utils",
+      "to": "pdf2zh_next.translator.base_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.translator.utils",
+      "to": "pdf2zh_next.translator.base_translator"
+    },
+    {
+      "from": "pdf2zh_next.translator.utils",
+      "to": "pdf2zh_next.translator.rate_limiter.qps_rate_limiter"
+    },
+    {
+      "from": "pdf2zh_next.ui.components",
+      "to": "pdf2zh_next.ui.fields"
+    },
+    {
+      "from": "pdf2zh_next.ui.files",
+      "to": "pdf2zh_next.ui.session"
+    },
+    {
+      "from": "pdf2zh_next.ui.settings",
+      "to": "pdf2zh_next.config"
+    },
+    {
+      "from": "pdf2zh_next.ui.settings",
+      "to": "pdf2zh_next.config.cli_env_model"
+    },
+    {
+      "from": "pdf2zh_next.ui.settings",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.ui.settings",
+      "to": "pdf2zh_next.config.translate_engine_model"
+    },
+    {
+      "from": "pdf2zh_next.ui.settings",
+      "to": "pdf2zh_next.ui.fields"
+    },
+    {
+      "from": "pdf2zh_next.ui.settings",
+      "to": "pdf2zh_next.ui.rate_options"
+    },
+    {
+      "from": "pdf2zh_next.ui.tasks",
+      "to": "pdf2zh_next.config.model"
+    },
+    {
+      "from": "pdf2zh_next.ui.tasks",
+      "to": "pdf2zh_next.i18n"
+    },
+    {
+      "from": "pdf2zh_next.ui.tasks",
+      "to": "pdf2zh_next.ui.results"
+    },
+    {
+      "from": "pdf2zh_next.ui.tasks",
+      "to": "pdf2zh_next.ui.settings"
+    }
+  ],
+  "external_import_roots": {
+    "pdf2zh_next.config.cli": [
+      "argparse",
+      "inspect",
+      "logging",
+      "pydantic",
+      "types",
+      "typing"
+    ],
+    "pdf2zh_next.config.cli_env_model": [
+      "__future__",
+      "logging",
+      "pydantic"
+    ],
+    "pdf2zh_next.config.main": [
+      "__future__",
+      "ast",
+      "copy",
+      "logging",
+      "os",
+      "pathlib",
+      "pydantic",
+      "threading",
+      "tomlkit",
+      "types",
+      "typing"
+    ],
+    "pdf2zh_next.config.model": [
+      "__future__",
+      "enum",
+      "json",
+      "logging",
+      "pathlib",
+      "pydantic",
+      "re"
+    ],
+    "pdf2zh_next.config.storage": [
+      "os",
+      "pathlib",
+      "tempfile",
+      "time",
+      "tomlkit"
+    ],
+    "pdf2zh_next.config.translate_engine_model": [
+      "dataclasses",
+      "inspect",
+      "logging",
+      "pydantic",
+      "re",
+      "shlex",
+      "types",
+      "typing"
+    ],
+    "pdf2zh_next.const": [
+      "os",
+      "pathlib",
+      "sys"
+    ],
+    "pdf2zh_next.gui": [
+      "babeldoc",
+      "chardet",
+      "csv",
+      "gradio",
+      "gradio_i18n",
+      "io",
+      "logging",
+      "pathlib",
+      "rich",
+      "tempfile",
+      "yaml"
+    ],
+    "pdf2zh_next.high_level": [
+      "asyncio",
+      "babeldoc",
+      "collections",
+      "functools",
+      "joblib",
+      "logging",
+      "multiprocessing",
+      "os",
+      "pathlib",
+      "queue",
+      "rich",
+      "sys",
+      "threading",
+      "traceback"
+    ],
+    "pdf2zh_next.i18n": [
+      "gradio_i18n"
+    ],
+    "pdf2zh_next.main": [
+      "__future__",
+      "asyncio",
+      "babeldoc",
+      "logging",
+      "os",
+      "pathlib",
+      "rich",
+      "sys"
+    ],
+    "pdf2zh_next.security_logging": [
+      "__future__",
+      "collections",
+      "logging",
+      "pydantic",
+      "re",
+      "shlex",
+      "threading",
+      "traceback",
+      "typing"
+    ],
+    "pdf2zh_next.translation.configuration": [
+      "babeldoc",
+      "collections",
+      "logging",
+      "pathlib"
+    ],
+    "pdf2zh_next.translator.base_translator": [
+      "abc",
+      "contextlib",
+      "logging",
+      "re"
+    ],
+    "pdf2zh_next.translator.cache": [
+      "json",
+      "logging",
+      "os",
+      "pathlib",
+      "peewee",
+      "tempfile"
+    ],
+    "pdf2zh_next.translator.rate_limiter.qps_rate_limiter": [
+      "threading",
+      "time"
+    ],
+    "pdf2zh_next.translator.translator_impl.anythingllm": [
+      "json",
+      "logging",
+      "requests",
+      "tenacity"
+    ],
+    "pdf2zh_next.translator.translator_impl.azure": [
+      "azure",
+      "logging",
+      "tenacity"
+    ],
+    "pdf2zh_next.translator.translator_impl.azureopenai": [
+      "babeldoc",
+      "logging",
+      "openai",
+      "tenacity"
+    ],
+    "pdf2zh_next.translator.translator_impl.bing": [
+      "logging",
+      "re",
+      "requests",
+      "tenacity"
+    ],
+    "pdf2zh_next.translator.translator_impl.claudecode": [
+      "json",
+      "logging",
+      "os",
+      "subprocess",
+      "tenacity"
+    ],
+    "pdf2zh_next.translator.translator_impl.clitranslator": [
+      "logging",
+      "os",
+      "pathlib",
+      "shlex",
+      "shutil",
+      "subprocess",
+      "tenacity"
+    ],
+    "pdf2zh_next.translator.translator_impl.deepl": [
+      "deepl",
+      "logging",
+      "tenacity"
+    ],
+    "pdf2zh_next.translator.translator_impl.dify": [
+      "json",
+      "logging",
+      "requests",
+      "tenacity"
+    ],
+    "pdf2zh_next.translator.translator_impl.google": [
+      "html",
+      "logging",
+      "re",
+      "requests",
+      "tenacity",
+      "unicodedata"
+    ],
+    "pdf2zh_next.translator.translator_impl.ollama": [
+      "babeldoc",
+      "logging",
+      "ollama",
+      "tenacity"
+    ],
+    "pdf2zh_next.translator.translator_impl.openai": [
+      "babeldoc",
+      "httpx",
+      "logging",
+      "openai",
+      "tenacity"
+    ],
+    "pdf2zh_next.translator.translator_impl.qwenmt": [
+      "babeldoc",
+      "logging",
+      "openai",
+      "tenacity"
+    ],
+    "pdf2zh_next.translator.translator_impl.siliconflow": [
+      "babeldoc",
+      "logging",
+      "openai",
+      "tenacity"
+    ],
+    "pdf2zh_next.translator.translator_impl.siliconflowfree": [
+      "concurrent",
+      "httpx",
+      "logging",
+      "tenacity",
+      "time"
+    ],
+    "pdf2zh_next.translator.translator_impl.tencentmechinetranslation": [
+      "logging",
+      "tenacity",
+      "tencentcloud"
+    ],
+    "pdf2zh_next.translator.translator_impl.xinference": [
+      "logging",
+      "tenacity",
+      "xinference_client"
+    ],
+    "pdf2zh_next.translator.utils": [
+      "importlib",
+      "logging"
+    ],
+    "pdf2zh_next.ui.components": [
+      "gradio",
+      "typing"
+    ],
+    "pdf2zh_next.ui.fields": [
+      "gradio",
+      "typing"
+    ],
+    "pdf2zh_next.ui.files": [
+      "gradio",
+      "logging",
+      "pathlib"
+    ],
+    "pdf2zh_next.ui.inputs": [
+      "cgi",
+      "gradio",
+      "pathlib",
+      "requests",
+      "shutil"
+    ],
+    "pdf2zh_next.ui.preview": [
+      "PIL",
+      "gradio",
+      "pymupdf"
+    ],
+    "pdf2zh_next.ui.rate_options": [
+      "logging"
+    ],
+    "pdf2zh_next.ui.resources": [
+      "pathlib"
+    ],
+    "pdf2zh_next.ui.results": [
+      "gradio",
+      "pathlib",
+      "zipfile"
+    ],
+    "pdf2zh_next.ui.settings": [
+      "collections",
+      "dataclasses",
+      "enum",
+      "gradio",
+      "pathlib",
+      "string",
+      "typing"
+    ],
+    "pdf2zh_next.ui.tasks": [
+      "asyncio",
+      "collections",
+      "dataclasses",
+      "gradio",
+      "logging",
+      "pathlib",
+      "uuid"
+    ],
+    "pdf2zh_next.utils.asynchronize": [
+      "asyncio",
+      "time"
+    ]
+  },
+  "dynamic_import_sites": [
+    {
+      "module": "pdf2zh_next.translator.utils",
+      "line": 48,
+      "literal": null
+    }
+  ]
+}

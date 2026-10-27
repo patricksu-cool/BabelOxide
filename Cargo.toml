@@ -1,0 +1,26 @@
+[workspace]
+members = ["crates/core", "crates/babeldoc-bridge", "crates/cli"]
+resolver = "2"
+
+[workspace.package]
+version = "2.9.0"
+edition = "2024"
+rust-version = "1.88"
+license = "AGPL-3.0-only"
+
+[workspace.dependencies]
+anyhow = "1.0.104"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+tokio = { version = "1.54.1", features = ["full", "test-util"] }
+tokio-util = { version = "0.7.20", features = ["rt"] }
+reqwest = { version = "0.13.5", default-features = false, features = ["json", "rustls-no-provider", "query", "form"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+clap = { version = "4.6.7", features = ["derive", "env"] }
+tracing = "0.1.44"
+thiserror = "2.0.21"
+tempfile = "3.27.0"
+
+[profile.release]
+lto = "thin"
+strip = "debuginfo"
