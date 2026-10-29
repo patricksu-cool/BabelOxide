@@ -1,38 +1,46 @@
-//! Rust-owned translation requests for the BabelDOC bridge proof of concept.
-//!
-//! Only OpenAI-compatible chat completions are implemented. Persistent caches,
-//! token accounting, provider-specific retries, and other providers are deferred.
+//! Rust-owned provider execution, HTTP transport, retry policies and accounting.
 
-use std::collections::BTreeMap;
-use std::fmt;
-use std::path::PathBuf;
-use std::time::Duration;
-
-use anyhow::{Result, anyhow, bail};
-use reqwest::{Client, Url};
+use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
-use serde_json::{Map, Value, json};
-use tokio::sync::{Mutex, Semaphore};
-use tokio::time::Instant;
+use serde_json::Value;
+use std::{
+    collections::BTreeMap,
+    fmt,
+    path::PathBuf,
+    sync::atomic::{AtomicU32, AtomicU64, Ordering},
+    time::Duration,
+};
+use tokio::sync::{Mutex, OnceCell, Semaphore};
 use tokio_util::sync::CancellationToken;
 
-const MAX_RESPONSE_BYTES: usize = 4 * 1024 * 1024;
+pub mod error;
+pub mod limiter;
+pub mod metrics;
+pub mod process;
+pub mod providers;
+pub mod retry;
+pub mod transport;
 
-/// Provider configuration remains in Rust and is never sent to the PDF worker.
+pub use error::{ErrorKind, ProviderError, ProviderResult};
+pub use limiter::RateLimiter;
+pub use metrics::{MetricsSnapshot, Usage};
+pub use providers::{ProviderContext, ProviderOutput};
+pub use retry::{Clock, RandomSource, RetryPolicy, RetryRuntime, RetrySelector, WaitPolicy};
+pub use transport::{
+    HttpBody, HttpExecutor, HttpRequest, HttpResponse, HttpTransport, MAX_RESPONSE_BYTES,
+};
+
+/// Provider configuration stays in Rust and never enters the PDF worker.
 #[derive(Clone)]
 pub struct TranslatorConfig {
     pub provider: String,
-    /// OpenAI-compatible base URL, for example `https://api.openai.com/v1`.
     pub endpoint: String,
     pub api_key: String,
     pub model: String,
     pub timeout_seconds: f64,
     pub lang_out: String,
-    /// Operational options: `qps`, `max_concurrency`, `enable_json_mode`.
-    /// Request options: `temperature`, `reasoning_effort`, `extra_body`.
     pub options: Value,
 }
-
 impl fmt::Debug for TranslatorConfig {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("TranslatorConfig")
@@ -46,7 +54,6 @@ impl fmt::Debug for TranslatorConfig {
             .finish()
     }
 }
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PdfJob {
     pub input_file: PathBuf,
@@ -61,8 +68,7 @@ pub struct PdfJob {
     #[serde(flatten)]
     pub extra: BTreeMap<String, Value>,
 }
-
-/// Text is deliberately excluded from Debug output.
+/// Source text deliberately has no Debug implementation.
 #[derive(Clone, Deserialize)]
 pub struct TranslationRequest {
     pub id: String,
@@ -73,228 +79,269 @@ pub struct TranslationRequest {
     pub translator: String,
 }
 
-struct RateLimiter {
-    next_start: Mutex<Instant>,
-    interval: Duration,
-}
-
-impl RateLimiter {
-    fn new(qps: u32) -> Self {
-        Self {
-            next_start: Mutex::new(Instant::now()),
-            interval: Duration::from_secs_f64(1.0 / f64::from(qps)),
-        }
-    }
-
-    async fn wait(&self, cancel: &CancellationToken) -> Result<()> {
-        let start = {
-            let mut next = tokio::select! {
-                biased;
-                _ = cancel.cancelled() => bail!("translation cancelled"),
-                guard = self.next_start.lock() => guard,
-            };
-            let start = (*next).max(Instant::now());
-            *next = start + self.interval;
-            start
-        };
-        tokio::select! {
-            biased;
-            _ = cancel.cancelled() => bail!("translation cancelled"),
-            _ = tokio::time::sleep_until(start) => Ok(()),
-        }
-    }
-}
-
-/// Shared by all PDF-worker callbacks; HTTP, concurrency and QPS stay in Rust.
 pub struct TranslationService {
     config: TranslatorConfig,
-    endpoint: Url,
-    client: Client,
-    timeout: Duration,
-    concurrency: Semaphore,
+    http: HttpTransport,
+    runtime: RetryRuntime,
     rate_limiter: RateLimiter,
+    concurrency: Option<Semaphore>,
+    preflight: OnceCell<ProviderResult<()>>,
+    preflight_lock: Mutex<()>,
+    num_predict: AtomicU64,
+    recommended_qps: AtomicU32,
+    recommended_workers: AtomicU32,
 }
-
 impl TranslationService {
     pub fn new(config: TranslatorConfig) -> Result<Self> {
-        let _ = rustls::crypto::ring::default_provider().install_default();
-        if !matches!(config.provider.as_str(), "openai" | "openai-compatible") {
-            bail!("the Rust proof of concept supports only OpenAI-compatible translation");
-        }
-        if config.api_key.trim().is_empty() {
-            bail!("an OpenAI-compatible API key is required");
-        }
-        if config.model.trim().is_empty() {
-            bail!("an OpenAI-compatible model is required");
+        Self::new_with_runtime(config, RetryRuntime::default())
+    }
+    pub fn new_with_runtime(mut config: TranslatorConfig, runtime: RetryRuntime) -> Result<Self> {
+        config.provider = match config.provider.to_ascii_lowercase().as_str() {
+            "openai-compatible" => "openai".into(),
+            "azureopenai" => "azure-openai".into(),
+            "qwenmt" => "qwen-mt".into(),
+            "siliconflow-free" => "siliconflowfree".into(),
+            provider => provider.to_owned(),
+        };
+        if !providers::supports(&config.provider) {
+            return Err(anyhow!(ProviderError::new(
+                ErrorKind::InvalidConfiguration,
+                "unsupported translation provider"
+            )));
         }
         if !config.options.is_null() && !config.options.is_object() {
-            bail!("translator options must be an object");
+            return Err(anyhow!(ProviderError::new(
+                ErrorKind::InvalidConfiguration,
+                "translator options must be an object"
+            )));
         }
-        let timeout = Duration::try_from_secs_f64(config.timeout_seconds)
-            .ok()
-            .filter(|value| !value.is_zero())
-            .ok_or_else(|| anyhow!("translation timeout must be finite and positive"))?;
-        let qps = positive_option(&config.options, "qps", 4)?;
-        let max_concurrency = positive_option(&config.options, "max_concurrency", qps)?;
-        if max_concurrency as usize > Semaphore::MAX_PERMITS {
-            bail!("max_concurrency exceeds the supported limit");
-        }
-        let mut endpoint = Url::parse(&config.endpoint)
-            .map_err(|_| anyhow!("invalid OpenAI-compatible base URL"))?;
-        if !matches!(endpoint.scheme(), "http" | "https")
-            || endpoint.host_str().is_none()
-            || !endpoint.username().is_empty()
-            || endpoint.password().is_some()
-            || endpoint.query().is_some()
-            || endpoint.fragment().is_some()
+        providers::openai::validate(&config)?;
+        if matches!(config.provider.as_str(), "ollama" | "xinference")
+            && config.model.trim().is_empty()
         {
-            bail!(
-                "OpenAI-compatible base URL must be HTTP(S) without credentials, query or fragment"
-            );
+            return Err(anyhow!(ProviderError::new(
+                ErrorKind::InvalidConfiguration,
+                "a model is required"
+            )));
         }
-        let path = endpoint.path().trim_end_matches('/');
-        if !path.ends_with("/chat/completions") {
-            endpoint.set_path(&format!("{path}/chat/completions"));
+        let qps = positive_option(&config.options, "qps", 4)?;
+        let concurrency = config
+            .options
+            .get("max_concurrency")
+            .map(|_| positive_option(&config.options, "max_concurrency", qps))
+            .transpose()?;
+        if concurrency.is_some_and(|value| value as usize > Semaphore::MAX_PERMITS) {
+            return Err(anyhow!(ProviderError::new(
+                ErrorKind::InvalidConfiguration,
+                "max_concurrency exceeds the supported limit"
+            )));
         }
-        let client = Client::builder()
-            .redirect(reqwest::redirect::Policy::none())
-            .timeout(timeout)
-            .build()
-            .map_err(|_| anyhow!("could not initialize the translation HTTP client"))?;
+        let num_predict = config
+            .options
+            .get("num_predict")
+            .and_then(Value::as_u64)
+            .unwrap_or(2000);
+        let connect_timeout = if config.provider == "openai"
+            && config
+                .options
+                .get("timeout_explicit")
+                .and_then(Value::as_bool)
+                != Some(false)
+        {
+            Some(duration(config.timeout_seconds)?)
+        } else if matches!(
+            config.provider.as_str(),
+            "openai" | "azure-openai" | "qwen-mt" | "siliconflow"
+        ) {
+            Some(Duration::from_secs(5))
+        } else {
+            None
+        };
+        let redirect_limit = match config.provider.as_str() {
+            "openai" | "azure-openai" | "qwen-mt" | "siliconflow" | "ollama" => 20,
+            "siliconflowfree" | "azure" => 0,
+            _ => 30,
+        };
+        let http = HttpTransport::new(runtime.clone(), connect_timeout)
+            .with_redirect_limit(redirect_limit);
         Ok(Self {
+            rate_limiter: RateLimiter::with_now(qps, runtime.now()),
             config,
-            endpoint,
-            client,
-            timeout,
-            concurrency: Semaphore::new(max_concurrency as usize),
-            rate_limiter: RateLimiter::new(qps),
+            http,
+            runtime,
+            concurrency: concurrency.map(|value| Semaphore::new(value as usize)),
+            preflight: OnceCell::new(),
+            preflight_lock: Mutex::new(()),
+            num_predict: AtomicU64::new(num_predict),
+            recommended_qps: AtomicU32::new(0),
+            recommended_workers: AtomicU32::new(0),
         })
     }
-
+    pub fn new_with_transport(
+        config: TranslatorConfig,
+        runtime: RetryRuntime,
+        http: HttpTransport,
+    ) -> Result<Self> {
+        let mut service = Self::new_with_runtime(config, runtime)?;
+        service.http = http;
+        Ok(service)
+    }
     pub fn name(&self) -> &str {
-        "openai"
+        &self.config.provider
     }
-
     pub fn is_llm(&self) -> bool {
-        true
+        providers::is_llm(&self.config.provider)
     }
-
+    pub fn requires_reap(&self) -> bool {
+        matches!(
+            self.config
+                .provider
+                .to_ascii_lowercase()
+                .replace(['-', '_', ' '], "")
+                .as_str(),
+            "clitranslator" | "claudecode"
+        )
+    }
+    pub fn owns_process(&self) -> bool {
+        self.requires_reap()
+    }
     pub fn lang_out(&self) -> &str {
         &self.config.lang_out
     }
-
-    /// No cache or retry is performed in this proof of concept. `ignore_cache`
-    /// is carried by the protocol for the later cache implementation.
+    pub fn metrics(&self) -> MetricsSnapshot {
+        self.runtime.metrics().snapshot()
+    }
+    pub fn recommendations(&self) -> (Option<u32>, Option<u32>) {
+        let qps = self.recommended_qps.load(Ordering::Relaxed);
+        let workers = self.recommended_workers.load(Ordering::Relaxed);
+        ((qps > 0).then_some(qps), (workers > 0).then_some(workers))
+    }
+    pub async fn prepare(&self, cancel: &CancellationToken) -> ProviderResult<()> {
+        let request = TranslationRequest {
+            id: "prepare".into(),
+            text: String::new(),
+            method: "translate".into(),
+            ignore_cache: true,
+            rate_limit_params: Value::Null,
+            translator: self.name().into(),
+        };
+        let ctx = ProviderContext {
+            config: &self.config,
+            request: &request,
+            http: &self.http,
+            runtime: &self.runtime,
+            cancel,
+        };
+        self.ensure_prepared(&ctx).await
+    }
+    pub async fn set_max_qps(&self, qps: u32) -> ProviderResult<()> {
+        self.rate_limiter.set_max_qps(qps).await
+    }
     pub async fn translate(
         &self,
         request: &TranslationRequest,
         cancel: &CancellationToken,
     ) -> Result<String> {
-        let _permit = tokio::select! {
-            biased;
-            _ = cancel.cancelled() => bail!("translation cancelled"),
-            permit = self.concurrency.acquire() => {
-                permit.map_err(|_| anyhow!("translation service closed"))?
-            }
-        };
-        self.rate_limiter.wait(cancel).await?;
-        tokio::select! {
-            biased;
-            _ = cancel.cancelled() => bail!("translation cancelled"),
-            result = tokio::time::timeout(self.timeout, self.execute(request)) => {
-                result.map_err(|_| anyhow!("translation request timed out"))?
-            }
-        }
-    }
-
-    async fn execute(&self, request: &TranslationRequest) -> Result<String> {
-        let content = match request.method.as_str() {
-            "translate" | "do_translate" => legacy_prompt(&request.text, &self.config.lang_out),
-            "llm_translate" | "do_llm_translate" => request.text.clone(),
-            _ => bail!("unsupported translation request method"),
-        };
-        let mut body = Map::new();
-        body.insert("model".into(), json!(self.config.model));
-        body.insert(
-            "messages".into(),
-            json!([{ "role": "user", "content": content }]),
-        );
-        for key in ["temperature", "reasoning_effort"] {
-            if let Some(value) = self.config.options.get(key) {
-                body.insert(key.into(), value.clone());
-            }
-        }
-        if let Some(extra) = self.config.options.get("extra_body") {
-            let extra = extra
-                .as_object()
-                .ok_or_else(|| anyhow!("extra_body must be an object"))?;
-            for (key, value) in extra {
-                if matches!(
-                    key.as_str(),
-                    "model" | "messages" | "stream" | "response_format"
-                ) {
-                    bail!("extra_body cannot replace reserved chat completion fields");
-                }
-                body.insert(key.clone(), value.clone());
-            }
-        }
-        if self
-            .config
-            .options
-            .get("enable_json_mode")
-            .and_then(Value::as_bool)
-            == Some(true)
-            && request
-                .rate_limit_params
-                .get("request_json_mode")
-                .and_then(Value::as_bool)
-                == Some(true)
-        {
-            body.insert("response_format".into(), json!({ "type": "json_object" }));
-        }
-        let mut response = self
-            .client
-            .post(self.endpoint.clone())
-            .bearer_auth(&self.config.api_key)
-            .json(&body)
-            .send()
+        self.translate_typed(request, cancel)
             .await
-            .map_err(safe_http_error)?;
-        if !response.status().is_success() {
-            // Provider bodies and reqwest errors may contain URLs, keys or input.
-            bail!(
-                "translation provider returned HTTP {}",
-                response.status().as_u16()
-            );
+            .map(|output| output.text)
+            .map_err(anyhow::Error::new)
+    }
+    pub async fn translate_typed(
+        &self,
+        request: &TranslationRequest,
+        cancel: &CancellationToken,
+    ) -> ProviderResult<ProviderOutput> {
+        self.runtime.metrics().call();
+        if cancel.is_cancelled() {
+            return Err(ProviderError::cancelled());
         }
-        if response
-            .content_length()
-            .is_some_and(|size| size > MAX_RESPONSE_BYTES as u64)
-        {
-            bail!("translation response exceeded the 4 MiB limit");
+        if !matches!(
+            request.method.as_str(),
+            "translate" | "do_translate" | "llm_translate" | "do_llm_translate"
+        ) {
+            return Err(ProviderError::new(
+                ErrorKind::Value,
+                "unsupported translation request method",
+            ));
         }
-        let mut bytes = Vec::new();
-        while let Some(chunk) = response.chunk().await.map_err(safe_http_error)? {
-            if chunk.len() > MAX_RESPONSE_BYTES - bytes.len() {
-                bail!("translation response exceeded the 4 MiB limit");
+        let ctx = ProviderContext {
+            config: &self.config,
+            request,
+            http: &self.http,
+            runtime: &self.runtime,
+            cancel,
+        };
+        self.ensure_prepared(&ctx).await?;
+        let _permit = if let Some(concurrency) = &self.concurrency {
+            Some(tokio::select! {
+                biased;
+                _ = cancel.cancelled() => return Err(ProviderError::cancelled()),
+                permit = concurrency.acquire() => permit.map_err(|_| ProviderError::new(ErrorKind::Runtime, "translation service closed"))?,
+            })
+        } else {
+            None
+        };
+        self.rate_limiter
+            .wait_with_runtime(&self.runtime, cancel)
+            .await?;
+        self.runtime.metrics().admit();
+        let _inflight = self.runtime.metrics().enter();
+        // Cooperative provider cancellation permits process-tree kill and reap.
+        providers::dispatch(&ctx, &self.num_predict).await
+    }
+    async fn ensure_prepared(&self, ctx: &ProviderContext<'_>) -> ProviderResult<()> {
+        let cancel = ctx.cancel;
+        if cancel.is_cancelled() {
+            return Err(ProviderError::cancelled());
+        }
+        // A waiting caller can cancel without dropping another caller's
+        // cooperative process initializer.
+        if self.preflight.get().is_none() {
+            let _initializing = tokio::select! {
+                biased;
+                _ = cancel.cancelled() => return Err(ProviderError::cancelled()),
+                guard = self.preflight_lock.lock() => guard,
+            };
+            if self.preflight.get().is_none() {
+                let result = providers::preflight(ctx).await;
+                if result.as_ref().is_err_and(|error| error.is_cancelled()) {
+                    return Err(ProviderError::cancelled());
+                }
+                if result.is_ok() && self.config.provider == "siliconflowfree" {
+                    let (qps, workers, apply_qps) = {
+                        let state = self.http.state.lock().await;
+                        (
+                            state
+                                .get("free.qps")
+                                .and_then(Value::as_u64)
+                                .and_then(|value| u32::try_from(value).ok()),
+                            state
+                                .get("free.max_pool_size")
+                                .and_then(Value::as_u64)
+                                .and_then(|value| u32::try_from(value).ok()),
+                            state.get("free.apply_qps").and_then(Value::as_bool) == Some(true),
+                        )
+                    };
+                    if let Some(qps) = qps {
+                        if apply_qps {
+                            self.rate_limiter.set_max_qps(qps).await?;
+                        }
+                        self.recommended_qps.store(qps, Ordering::Relaxed);
+                    }
+                    if let Some(workers) = workers {
+                        self.recommended_workers.store(workers, Ordering::Relaxed);
+                    }
+                }
+                let _ = self.preflight.set(result);
             }
-            bytes.extend_from_slice(&chunk);
         }
-        let response: ChatCompletion = serde_json::from_slice(&bytes)
-            .map_err(|_| anyhow!("translation provider returned invalid chat completion JSON"))?;
-        let content = response
-            .choices
-            .into_iter()
-            .next()
-            .and_then(|choice| choice.message.content)
-            .ok_or_else(|| anyhow!("translation provider returned no message content"))?;
-        let content = content.trim_matches(|character: char| {
-            character.is_whitespace() || matches!(character, '\u{001c}'..='\u{001f}')
-        });
-        Ok(remove_think(content).to_owned())
+        self.preflight
+            .get()
+            .expect("completed preflight initializes its outcome")
+            .clone()
     }
 }
-
 fn positive_option(options: &Value, key: &str, default: u32) -> Result<u32> {
     match options.get(key) {
         None => Ok(default),
@@ -302,27 +349,37 @@ fn positive_option(options: &Value, key: &str, default: u32) -> Result<u32> {
             .as_u64()
             .and_then(|value| u32::try_from(value).ok())
             .filter(|value| *value > 0)
-            .ok_or_else(|| anyhow!("{key} must be a positive 32-bit integer")),
+            .ok_or_else(|| {
+                anyhow!(ProviderError::new(
+                    ErrorKind::InvalidConfiguration,
+                    format!("{key} must be a positive 32-bit integer")
+                ))
+            }),
     }
 }
-
-fn safe_http_error(error: reqwest::Error) -> anyhow::Error {
-    if error.is_timeout() {
-        anyhow!("translation request timed out")
-    } else {
-        anyhow!("translation HTTP request failed")
-    }
+pub(crate) fn duration(seconds: f64) -> ProviderResult<Duration> {
+    Duration::try_from_secs_f64(seconds)
+        .ok()
+        .filter(|value| !value.is_zero())
+        .ok_or_else(|| {
+            ProviderError::new(
+                ErrorKind::InvalidConfiguration,
+                "translation timeout must be finite and positive",
+            )
+        })
 }
-
-fn legacy_prompt(text: &str, lang_out: &str) -> String {
+pub(crate) fn legacy_prompt(text: &str, lang_out: &str) -> String {
     format!(
         "You are a professional,authentic machine translation engine.\n\n;; Treat next line as plain text input and translate it into {lang_out}, output translation ONLY. If translation is unnecessary (e.g. proper nouns, codes, {{{{1}}}}, etc. ), return the original text. NO explanations. NO notes. Input:\n\n{text}"
     )
 }
-
-fn remove_think(content: &str) -> &str {
+pub(crate) fn legacy_strip(content: &str) -> &str {
+    content.trim_matches(|character: char| {
+        character.is_whitespace() || matches!(character, '\u{001c}'..='\u{001f}')
+    })
+}
+pub(crate) fn remove_think(content: &str) -> &str {
     if let Some(rest) = content.strip_prefix("<think>") {
-        // Python's ^<think>.+?</think> requires a nonempty thought.
         let mut offset = 0;
         while let Some(index) = rest[offset..].find("</think>") {
             let index = offset + index;
@@ -334,328 +391,37 @@ fn remove_think(content: &str) -> &str {
     }
     content
 }
-
-#[derive(Deserialize)]
-struct ChatCompletion {
-    choices: Vec<ChatChoice>,
-}
-
-#[derive(Deserialize)]
-struct ChatChoice {
-    message: ChatMessage,
-}
-
-#[derive(Deserialize)]
-struct ChatMessage {
-    content: Option<String>,
-}
+#[cfg(test)]
+mod poc_tests;
 
 #[cfg(test)]
-mod tests {
+mod service_unit_tests {
     use super::*;
-    use tokio::io::{AsyncReadExt, AsyncWriteExt};
-    use tokio::net::{TcpListener, TcpStream};
-    use tokio::sync::oneshot;
-
-    fn config(endpoint: String) -> TranslatorConfig {
-        TranslatorConfig {
-            provider: "openai".into(),
-            endpoint,
-            api_key: "synthetic-private-key".into(),
-            model: "synthetic-model".into(),
-            timeout_seconds: 2.0,
-            lang_out: "zh-TW".into(),
-            options: json!({ "qps": 1000, "max_concurrency": 2 }),
-        }
-    }
-
-    fn request(method: &str) -> TranslationRequest {
-        TranslationRequest {
-            id: "request-1".into(),
-            text: "A formula {v0} and <style id='1'>text</style>.".into(),
-            method: method.into(),
-            ignore_cache: true,
-            rate_limit_params: Value::Null,
-            translator: "openai".into(),
-        }
-    }
-
-    async fn read_request(stream: &mut TcpStream) -> (String, Value) {
-        let mut data = Vec::new();
-        let header_end = loop {
-            let mut chunk = [0; 1024];
-            let count = stream.read(&mut chunk).await.unwrap();
-            assert!(count > 0, "client closed before request headers");
-            data.extend_from_slice(&chunk[..count]);
-            if let Some(index) = data.windows(4).position(|part| part == b"\r\n\r\n") {
-                break index + 4;
-            }
-        };
-        let headers = String::from_utf8(data[..header_end].to_vec()).unwrap();
-        let length = headers
-            .lines()
-            .find_map(|line| {
-                let (key, value) = line.split_once(':')?;
-                key.eq_ignore_ascii_case("content-length")
-                    .then(|| value.trim().parse::<usize>().unwrap())
-            })
-            .unwrap();
-        while data.len() < header_end + length {
-            let mut chunk = [0; 1024];
-            let count = stream.read(&mut chunk).await.unwrap();
-            assert!(count > 0, "client closed before request body");
-            data.extend_from_slice(&chunk[..count]);
-        }
-        let body = serde_json::from_slice(&data[header_end..header_end + length]).unwrap();
-        (headers, body)
-    }
-
-    async fn server(status: &str, body: String) -> (String, oneshot::Receiver<(String, Value)>) {
-        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let endpoint = format!("http://{}/v1", listener.local_addr().unwrap());
-        let (send, receive) = oneshot::channel();
-        let status = status.to_owned();
-        tokio::spawn(async move {
-            let (mut stream, _) = listener.accept().await.unwrap();
-            let request = read_request(&mut stream).await;
-            let response = format!(
-                "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                body.len()
-            );
-            stream.write_all(response.as_bytes()).await.unwrap();
-            let _ = send.send(request);
-        });
-        (endpoint, receive)
-    }
-
-    #[tokio::test]
-    async fn translate_posts_legacy_prompt_and_removes_only_the_initial_thought() {
-        let (endpoint, received) = server("200 OK", json!({"choices":[{"message":{"content":"  <think>private reasoning</think>\n譯文  "}}]}).to_string()).await;
-        let service = TranslationService::new(config(endpoint)).unwrap();
-        let request = request("translate");
-        assert_eq!(
-            service
-                .translate(&request, &CancellationToken::new())
-                .await
-                .unwrap(),
-            "\n譯文"
-        );
-        let (headers, body) = received.await.unwrap();
-        assert!(headers.starts_with("POST /v1/chat/completions HTTP/1.1"));
-        assert!(
-            headers
-                .to_lowercase()
-                .contains("authorization: bearer synthetic-private-key")
-        );
-        assert_eq!(body["model"], "synthetic-model");
-        assert_eq!(
-            body["messages"],
-            json!([{ "role": "user", "content": format!("You are a professional,authentic machine translation engine.\n\n;; Treat next line as plain text input and translate it into zh-TW, output translation ONLY. If translation is unnecessary (e.g. proper nouns, codes, {{{{1}}}}, etc. ), return the original text. NO explanations. NO notes. Input:\n\n{}", request.text) }])
-        );
-        assert!(body.get("response_format").is_none());
-    }
-
-    #[tokio::test]
-    async fn llm_translation_preserves_raw_prompt_and_requests_json_when_enabled() {
-        let (endpoint, received) = server(
-            "200 OK",
-            json!({"choices":[{"message":{"content":"{\"result\":true}"}}]}).to_string(),
-        )
-        .await;
-        let mut config = config(endpoint);
-        config.options["enable_json_mode"] = json!(true);
-        config.options["temperature"] = json!(0.0);
-        config.options["extra_body"] = json!({ "seed": 7 });
-        let service = TranslationService::new(config).unwrap();
-        let mut request = request("llm_translate");
-        request.rate_limit_params = json!({ "request_json_mode": true });
-        assert_eq!(
-            service
-                .translate(&request, &CancellationToken::new())
-                .await
-                .unwrap(),
-            "{\"result\":true}"
-        );
-        let (_, body) = received.await.unwrap();
-        assert_eq!(
-            body["messages"],
-            json!([{ "role": "user", "content": request.text }])
-        );
-        assert_eq!(body["response_format"], json!({"type":"json_object"}));
-        assert_eq!(body["temperature"], 0.0);
-        assert_eq!(body["seed"], 7);
-    }
-
-    #[tokio::test]
-    async fn errors_do_not_expose_provider_body_or_credentials() {
-        let (endpoint, received) = server(
-            "401 Unauthorized",
-            "synthetic-private-key private-source-text endpoint-secret".into(),
-        )
-        .await;
-        let service = TranslationService::new(config(endpoint)).unwrap();
-        let error = service
-            .translate(&request("translate"), &CancellationToken::new())
-            .await
-            .unwrap_err();
-        assert_eq!(
-            format!("{error:#}"),
-            "translation provider returned HTTP 401"
-        );
-        received.await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn malformed_empty_and_null_responses_fail_without_echoing_content() {
-        for body in [
-            "private-source-text".into(),
-            json!({"choices":[]}).to_string(),
-            json!({"choices":[{"message":{"content":null}}]}).to_string(),
-            json!({"choices":[{"message":{}}]}).to_string(),
-        ] {
-            let (endpoint, received) = server("200 OK", body).await;
-            let service = TranslationService::new(config(endpoint)).unwrap();
-            let error = service
-                .translate(&request("translate"), &CancellationToken::new())
-                .await
-                .unwrap_err();
-            assert!(!format!("{error:#}").contains("private-source-text"));
-            received.await.unwrap();
-        }
-    }
-
-    #[tokio::test]
-    async fn oversized_response_is_rejected() {
-        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let endpoint = format!("http://{}", listener.local_addr().unwrap());
-        let task = tokio::spawn(async move {
-            let (mut stream, _) = listener.accept().await.unwrap();
-            read_request(&mut stream).await;
-            stream
-                .write_all(
-                    format!(
-                        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n",
-                        MAX_RESPONSE_BYTES + 1
-                    )
-                    .as_bytes(),
-                )
-                .await
-                .unwrap();
-        });
-        let service = TranslationService::new(config(endpoint)).unwrap();
-        let error = service
-            .translate(&request("translate"), &CancellationToken::new())
-            .await
-            .unwrap_err();
-        assert_eq!(
-            error.to_string(),
-            "translation response exceeded the 4 MiB limit"
-        );
-        task.await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn oversized_body_without_content_length_is_also_rejected() {
-        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let endpoint = format!("http://{}", listener.local_addr().unwrap());
-        let task = tokio::spawn(async move {
-            let (mut stream, _) = listener.accept().await.unwrap();
-            read_request(&mut stream).await;
-            stream
-                .write_all(b"HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n")
-                .await
-                .unwrap();
-            // The client is allowed to close the connection as soon as the cap is reached.
-            let _ = stream.write_all(&vec![b'x'; MAX_RESPONSE_BYTES + 1]).await;
-        });
-        let service = TranslationService::new(config(endpoint)).unwrap();
-        let error = service
-            .translate(&request("translate"), &CancellationToken::new())
-            .await
-            .unwrap_err();
-        assert_eq!(
-            error.to_string(),
-            "translation response exceeded the 4 MiB limit"
-        );
-        task.await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn cancellation_interrupts_in_flight_http() {
-        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let endpoint = format!("http://{}", listener.local_addr().unwrap());
-        let (started, received) = oneshot::channel();
-        let task = tokio::spawn(async move {
-            let (mut stream, _) = listener.accept().await.unwrap();
-            read_request(&mut stream).await;
-            let _ = started.send(());
-            std::future::pending::<()>().await;
-        });
-        let service = TranslationService::new(config(endpoint)).unwrap();
-        let cancel = CancellationToken::new();
-        let request = request("translate");
-        let translation = service.translate(&request, &cancel);
-        tokio::pin!(translation);
-        tokio::select! {
-            result = &mut translation => panic!("request completed before cancellation: {}", result.is_ok()),
-            _ = received => {},
-        }
-        cancel.cancel();
-        let error = tokio::time::timeout(Duration::from_millis(200), translation)
-            .await
-            .unwrap()
-            .unwrap_err();
-        assert_eq!(error.to_string(), "translation cancelled");
-        task.abort();
-    }
-
-    #[tokio::test]
-    async fn request_timeout_is_bounded_and_safe() {
-        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let endpoint = format!("http://{}", listener.local_addr().unwrap());
-        let task = tokio::spawn(async move {
-            let (mut stream, _) = listener.accept().await.unwrap();
-            read_request(&mut stream).await;
-            std::future::pending::<()>().await;
-        });
-        let mut config = config(endpoint);
-        config.timeout_seconds = 0.05;
-        let service = TranslationService::new(config).unwrap();
-        let error = service
-            .translate(&request("translate"), &CancellationToken::new())
-            .await
-            .unwrap_err();
-        assert_eq!(error.to_string(), "translation request timed out");
-        task.abort();
-    }
-
-    #[tokio::test(start_paused = true)]
-    async fn rate_limit_waits_in_rust_and_can_be_cancelled() {
-        let limiter = RateLimiter::new(2);
-        let cancel = CancellationToken::new();
-        let start = Instant::now();
-        limiter.wait(&cancel).await.unwrap();
-        limiter.wait(&cancel).await.unwrap();
-        assert_eq!(Instant::now() - start, Duration::from_millis(500));
-        cancel.cancel();
-        assert_eq!(
-            limiter.wait(&cancel).await.unwrap_err().to_string(),
-            "translation cancelled"
-        );
-        assert_eq!(Instant::now() - start, Duration::from_millis(500));
-    }
+    use serde_json::json;
 
     #[test]
-    fn thought_removal_matches_the_legacy_nonempty_anchored_pattern() {
-        assert_eq!(
-            remove_think("<think></think>answer"),
-            "<think></think>answer"
-        );
-        assert_eq!(remove_think("<think></think>x</think>answer"), "answer");
-        assert_eq!(
-            remove_think("prefix<think>x</think>answer"),
-            "prefix<think>x</think>answer"
-        );
-        assert_eq!(remove_think("<think>one\ntwo</think>\nanswer"), "\nanswer");
+    fn p05_service_factory_preserves_sdk_default_connect_and_explicit_timeout() {
+        for (provider, explicit, seconds) in [
+            ("openai", false, 5),
+            ("openai", true, 7),
+            ("azure-openai", false, 5),
+            ("qwen-mt", false, 5),
+            ("siliconflow", false, 5),
+        ] {
+            let service = TranslationService::new(TranslatorConfig {
+                provider: provider.into(),
+                endpoint: "http://127.0.0.1:1".into(),
+                api_key: "synthetic-key".into(),
+                model: "qwen-mt-fixture".into(),
+                timeout_seconds: 7.0,
+                lang_out: "zh-TW".into(),
+                options: json!({"timeout_explicit":explicit}),
+            })
+            .unwrap();
+            assert_eq!(
+                service.http.configured_connect_timeout(),
+                Some(Duration::from_secs(seconds))
+            );
+        }
     }
 }
