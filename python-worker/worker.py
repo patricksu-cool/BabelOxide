@@ -43,6 +43,7 @@ ENGINE_OPTIONS = frozenset(
         "figure_table_protection_threshold",
         "skip_formula_offset_calculation",
         "term_pool_max_workers",
+        "save_auto_extracted_glossary",
     }
 )
 
@@ -139,6 +140,7 @@ class EngineBoundary:
         self.task = None
         self.started = False
         self.terminal = False
+        self.capacity = MAX_OUTSTANDING
 
     def send(self, kind, **fields):
         message = {"v": VERSION, "type": kind, "session": self.session, **fields}
@@ -178,7 +180,7 @@ class EngineBoundary:
         with self.pending_lock:
             if self.cancelled.is_set():
                 raise concurrent.futures.CancelledError()
-            if len(self.pending) >= MAX_OUTSTANDING:
+            if len(self.pending) >= self.capacity:
                 self.failed.set()
                 raise ProtocolError("Translation request capacity exceeded")
             self.next_id += 1
@@ -221,7 +223,7 @@ class EngineBoundary:
             else:
                 raise ProtocolError("Missing translation text")
 
-    async def run_engine(self, job, translator_options):
+    async def run_engine(self, job, translator_options, term_translator_options=None):
         self.send(
             "progress",
             event={
@@ -253,12 +255,32 @@ class EngineBoundary:
             "pool_max_workers",
             "no_auto_extract_glossary",
             "watermark_output_mode",
+            "glossary_files",
+            "max_pages_per_part",
         }
         unknown = set(job) - required - ENGINE_OPTIONS
         if unknown:
             raise ProtocolError("Unsupported engine option")
         options = {key: value for key, value in job.items() if key in ENGINE_OPTIONS}
+        if job.get("glossary_files"):
+            from babeldoc.glossary import Glossary
+
+            options["glossaries"] = [
+                Glossary.from_csv(Path(path), target_lang_out=job["lang_out"])
+                for path in job["glossary_files"]
+            ]
+        if job.get("max_pages_per_part"):
+            options["split_strategy"] = (
+                TranslationConfig.create_max_pages_per_part_split_strategy(
+                    job["max_pages_per_part"]
+                )
+            )
         adapter = RustTranslatorAdapter(self, translator_options, job)
+        term_adapter = (
+            RustTranslatorAdapter(self, term_translator_options, job, role="term")
+            if term_translator_options
+            else adapter
+        )
         init()
         self.config = TranslationConfig(
             input_file=input_file,
@@ -266,7 +288,7 @@ class EngineBoundary:
             font=None,
             doc_layout_model=None,
             translator=adapter,
-            term_extraction_translator=adapter,
+            term_extraction_translator=term_adapter,
             lang_in=job["lang_in"],
             lang_out=job["lang_out"],
             pages=job.get("pages"),
@@ -302,6 +324,15 @@ class EngineBoundary:
                             "auto_extracted_glossary_path",
                         )
                     }
+                    for key in (
+                        "total_seconds",
+                        "peak_memory_usage",
+                        "total_valid_character_count",
+                        "total_valid_text_token_count",
+                    ):
+                        metric = getattr(value, key, None)
+                        if isinstance(metric, (int, float)):
+                            result[key] = metric
                     break
                 if kind == "error":
                     raise RuntimeError("BabelDOC processing failed")
@@ -337,6 +368,10 @@ class EngineBoundary:
             raise ProtocolError("Only one job is allowed per worker")
         if message.get("task_id") != "job-1":
             raise ProtocolError("Invalid task ID")
+        capacity = message.get("max_outstanding", MAX_OUTSTANDING)
+        if type(capacity) is not int or not 1 <= capacity <= 1_000_000:
+            raise ProtocolError("Invalid outstanding request capacity")
+        self.capacity = capacity
         self.started = True
 
         def execute():
@@ -354,7 +389,11 @@ class EngineBoundary:
                     },
                 )
                 result = asyncio.run(
-                    self.run_engine(message["job"], message["translator"])
+                    self.run_engine(
+                        message["job"],
+                        message["translator"],
+                        message.get("term_translator"),
+                    )
                 )
                 self.send("finished", result=result)
             except BaseException as exc:
@@ -397,22 +436,23 @@ class EngineBoundary:
 
 
 class RustTranslatorAdapter:
-    def __init__(self, boundary, translator, job):
+    def __init__(self, boundary, translator, job, role="main"):
         self.boundary = boundary
         self.name = translator["name"]
         self.llm = translator["llm"]
         self.lang_in = job["lang_in"]
         self.lang_out = job["lang_out"]
         self.model = "rust-host"
+        self.role = role
 
     def translate(self, text, ignore_cache=False, rate_limit_params=None):
         return self.boundary.request(
-            "main", "translate", text, ignore_cache, rate_limit_params
+            self.role, "translate", text, ignore_cache, rate_limit_params
         )
 
     def llm_translate(self, text, ignore_cache=False, rate_limit_params=None):
         return self.boundary.request(
-            "main", "llm_translate", text, ignore_cache, rate_limit_params
+            self.role, "llm_translate", text, ignore_cache, rate_limit_params
         )
 
     def do_llm_translate(self, text, rate_limit_params=None):

@@ -52,7 +52,7 @@ def spawn_descendant():
     wait_for_file(ROOT / "descendant.pid")
 
 
-def finish(job, scenario):
+def finish(job, scenario, **metrics):
     output = Path(job["output_dir"])
     result = {}
     for name in ("mono", "dual"):
@@ -62,6 +62,7 @@ def finish(job, scenario):
         # The fixture tests artifact-path contracts, not PDF format/rendering.
         path.write_bytes(b"%PDF-1.4\n% transport fixture only\n%%EOF\n")
         result[f"{name}_pdf_path"] = str(path)
+    result.update(metrics)
     send("finished", result=result)
 
 
@@ -81,6 +82,38 @@ def main():
     start = json.loads(sys.stdin.buffer.readline())
     if start.get("type") != "start" or start.get("session") != SESSION:
         raise RuntimeError("Fixture expected a valid start frame")
+    if scenario == "progress_flood":
+        for number in range(2000):
+            send("progress", event={"stage": "progress flood", "number": number})
+        finish(start["job"], scenario)
+        return 0
+    if scenario in {"translation_routing", "translation_shared", "request_capacity"}:
+        count = 200 if scenario == "request_capacity" else 2
+        for number in range(count):
+            send(
+                "translate", id=f"w-{number}", method="llm_translate",
+                text=f"fixture text {number}", ignore_cache=False,
+                rate_limit_params=None,
+                translator="term" if number % 2 else "main",
+            )
+        translated = {}
+        while len(translated) < count:
+            reply = json.loads(sys.stdin.buffer.readline())
+            if reply.get("type") != "translated" or "error" in reply:
+                raise RuntimeError("Fixture expected a successful translation")
+            translated[reply["id"]] = reply["text"]
+        finish(
+            start["job"], scenario, translations=translated,
+            received_capacity=start["max_outstanding"], received_job=start["job"],
+        )
+        return 0
+    if scenario == "cli_pending":
+        send(
+            "translate", id="w-cli", method="translate", text="offline CLI fixture",
+            ignore_cache=True, rate_limit_params=None, translator="main",
+        )
+        send("progress", event={"stage": "cli_requested"})
+        hang()
     if scenario == "exit_without_terminal":
         return 0
     if scenario in {"finished_then_exit", "missing_mono", "missing_dual"}:

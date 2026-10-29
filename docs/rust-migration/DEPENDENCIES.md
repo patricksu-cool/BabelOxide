@@ -207,14 +207,16 @@
 |---|---|---|
 | `serde`、`serde_json` | 強型別設定、IPC、API JSON | 共享 message／config model；明確 protocol version |
 | `tokio` | process／stdio／非同步 HTTP 協調、deadline／取消 | 只開所需 runtime、process、io、sync、time features |
-| `reqwest` | OpenAI 相容 HTTP transport | 明確 TLS／proxy／timeout；Rust 是 retry 唯一所有者；本機 fixture 先驗證 |
+| `reqwest` | 各HTTP provider共用transport與cookie | 明確TLS／timeout／redirect policy；停用內建retry，provider控制各自SDK層 |
 | `clap` | CLI flags／help／互斥條件 | 不把 credentials 寫入 help、log 或 worker |
 | `rusqlite` | Rust 持久翻譯 cache | schema、transaction、busy timeout、成功結果規則；Windows SQLite 配置明確鎖定 |
-| `sha2` | cache 身分與內容 key／檔案比對 | key 包含實際影響輸出的參數；不是用 hash 隱藏 API key |
+| `hmac`、`sha2` | Tencent TC3簽名；後續cache／檔案身分 | 已用獨立Python stdlib oracle對照TC3；不把hash當作憑證遮蔽 |
+| `httpdate` | SDK Retry-After日期 | 可注入wall clock，與數值／ms優先順序分開驗證 |
+| `regex`、`html-escape`、`unicode-general-category` | 原prompt／Bing解析、Google HTML5 entity、Python whitespace語意 | HTML5複合entity補足93組多scalar映射；來源為Python標準庫HTML5資料，發行盤點需保留相關來源聲明 |
 | `eframe` | app 原生 GUI | 後續階段；其 native 系統／圖形依賴需在新機驗收 |
 | Rust `std` | path、同步基本元件、錯誤／程序資訊 | 不為可由標準庫處理的小需求任意增加 crate |
 
-不要把「Rust 取代 SDK」解釋成所有服務只需同一份 OpenAI JSON。Azure、DeepL、Tencent、Ollama、Xinference 等認證、端點與結果格式不同；PoC 只用 OpenAI 相容 fixture，其餘服務另外移植與測試。網路重試、速率與取消政策集中在 core；Python 不再實作第二套。
+不要把「Rust取代SDK」解釋成所有服務只需同一份OpenAI JSON。Azure、DeepL、Tencent、Ollama、Xinference等認證、端點與結果格式不同；第5階段已分別移植16種service並以mock／真loopback／受控CLI驗證。網路重試、速率與取消政策集中在core；Python adapter不實作第二套。精確剩餘差異見PROVIDER_TEST_MATRIX，不以離線測試取代真API與發行驗收。
 
 ## 引擎資源與本機只讀查核
 

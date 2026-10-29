@@ -1,8 +1,8 @@
 # Rust / BabelDOC IPC v1
 
-日期：2026-10-26；Python對照基準：`d18165e`。本文區分目前PoC公開wire contract、程式審查結論與待驗證項目。**PoC不等於完整provider等價、正式發行或乾淨Windows驗證。** 測試是否實際通過以TEST_REPORT為準。
+更新：2026-10-28；Python對照基準：`d18165e`。本文描述目前公開wire contract、程式審查結論與待驗證項目。**核心整合成功不等於完整provider等價、正式發行或乾淨Windows驗證。** 測試是否實際通過以TEST_REPORT為準。
 
-本次新增Rust/worker檔案的graph工具連線不可用，審查採已知檔案的直接source fallback，沒有宣稱新檔已完成graph coverage。既有Python的Tier 2證據與34案例對照見RETRY_COMPATIBILITY。
+最初PoC審查曾因graph連線不可用而採直接source fallback；本輪工具已恢復。2026-10-28T12:16:29Z的coverage對bridge、process、CLI、worker與相關測試皆為metadata_match／no_recorded_issue；這是best-effort freshness訊號，關鍵協定與程序保證仍以source及實測核對。既有Python的34案例對照見RETRY_COMPATIBILITY。
 
 ## 邊界
 
@@ -31,12 +31,12 @@ flowchart LR
 - 每個message有`v:1`與`type`。worker以`secrets.token_hex(16)`產生32字元hex `session`，由ready交給host；此後雙方驗session。它是process identity，不是額外網路服務的authentication token。
 - ready時尚未開始任務，不帶task_id。start及之後的task frames使用`task_id:"job-1"`；每process只有一PDF，跨PDF靠不同session區分。
 - worker translation ID是`w-N`，同一session不重用。host以相同`id`回覆，不能依順序配對。host另限制ID長度64與每任務最多1,000,000個曾用ID。
-- 同時最多128個outstanding translation。PoC超過容量會明確失敗；尚不是可取消permit排隊機制。host限制pool_max_workers最多128；術語pool與其他引擎併發仍須另測。
+- Host先完成服務preflight，再以`clamp(main_pool + term_pool, 128, 1_000_000)`協商outstanding容量；start新增可選`max_outstanding`，舊host省略時worker仍預設128。超容量明確失敗，並非另一套Python排程器。已用200個同時在途的真loopback請求驗證不再硬卡128。
 
 | 方向 | type | 內容與意義 |
 |---|---|---|
 | worker→host | `ready` | session、babeldoc_version（目前鎖定0.6.3）。目前檢查package metadata；不保證大型模型載入與PDF初始化已完成 |
-| host→worker | `start` | job:PdfJob；translator:{name:"openai",llm:true}。API key、endpoint、provider config不傳worker |
+| host→worker | `start` | job:PdfJob；translator:{name,llm}；可選term_translator:{name,llm}及max_outstanding。API key、endpoint、provider config不傳worker |
 | worker→host | `translate` | id、text、method:translate/llm_translate、ignore_cache、rate_limit_params、translator:main/term |
 | host→worker | `translated` | 相同id，成功text或error:{code,message}。現PoC對translation service failure會終結PDF |
 | worker→host | `progress` | event:JSON，引擎進度欄位白名單；不傳任意例外物件或PDF全文 |
@@ -52,7 +52,9 @@ flowchart LR
 {"v":1,"type":"translated","session":"0123456789abcdef0123456789abcdef","task_id":"job-1","id":"w-17","text":"一個公式：{v1}"}
 ```
 
-PoC使用同一adapter供一般與術語翻譯，實際目前都發main；獨立term provider尚未實作。contract保留term角色，但不能宣稱已支援獨立術語設定。`do_llm_translate(None)`是本地能力probe，不應產生API請求；translate與llm_translate須分開，避免把引擎已建prompt再包一次。
+一般與術語可使用同一Rust service，或分別傳入兩個service；worker據metadata建立main／term adapter並送正確角色。共享Arc只統計一次usage，結果的`translation_metrics`標示shared_service，獨立term才有第二組counter。這些是service生命週期統計；跨任務重用service時不是自動歸零的每任務差值。`do_llm_translate(None)`是本地能力probe，不產生API請求；translate與llm_translate分開，避免把引擎已建prompt再包一次。
+
+`glossary_files`與`max_pages_per_part`只轉換成BabelDOC既有Glossary／split strategy；worker不自行實作術語管理或PDF分割。`term_qps`由Rust消費，不進引擎config；pool設定可進BabelDOC。服務建議的QPS／pool在引擎啟動前套用；SiliconFlowFree設定探測失敗時的10／100建議不額外改變原有Rust limiter，保留Python的細節差異。
 
 ## Framing 與並行
 
@@ -62,7 +64,7 @@ Python主執行緒只讀stdin與路由responses/cancel，BabelDOC在獨立engine
 
 Rust reader只路由，不await HTTP/QPS/retry。每個translate是獨立JoinSet task；單一stdin writer透過有界channel寫回；stderr另有持續drainer；process owner監控取消、退出及deadlines。兩個直接deadlock模式必須排除：Python等待result的同一thread還要讀stdin；Rust reader收到translate就等待整個HTTP再讀下一frame。
 
-progress、response與control共用pipe但語意不同。完整可靠版需message數與總byte budget、cancel保留容量/優先路徑、可合併的progress與不可丟的terminal/results。現PoC host write channel為132 messages，每frame有界；worker同步writer鎖提供pipe背壓；**UI events仍是UnboundedSender，尚無總byte budget及完整進度合併/優先佇列**。慢消費者與長期運行不得據此宣稱記憶體有界。
+progress、response與control共用pipe但語意不同。Host write channel容量為協商outstanding+4，每frame有界；worker同步writer鎖提供pipe背壓。UI介面已改為bounded Sender，CLI容量64，reader以try_send丟棄壅塞進度；terminal經函式回傳，不依賴進度queue。未讀取容量2的queue也能完成2000個progress事件後的terminal。尚未另加總byte budget、進度合併與完整控制優先佇列，不能據此宣稱長時間記憶體與大型PDF壓力驗收完成。
 
 即使cancel有優先queue，已開始寫入的frame也不能被插入控制資料；對方完全不讀仍需要獨立cleanup deadline。超大文字應明確失敗，不能靜默截斷公式或任意讀外部暫存檔補救。
 
@@ -78,9 +80,9 @@ Rust是任務terminal權威。failed/cancelled不能被之後finish翻回成功�
 
 成功至少需要合法finished、無pending、要求的mono/dual路徑存在且在核准output根目錄、worker正常退出。exit0或EOF本身不代表成功；缺任一要求產物要失敗。現路徑檢查不等於PDF格式/頁數/文字/排版回歸，這些另由真實PoC與PDF測試驗證。
 
-取消順序：host取消token → 停止新API/重試/admission → 發cancel → worker標記局部取消、解除pending、呼叫config.cancel_translation → ack → 引擎收尾/terminal → shutdown/wait。超過grace則終止程序樹。cancel_ack不是cleanup完成。重複cancel、finish競爭、已發HTTP但尚未回應皆需測試；本地取消不保證遠端provider撤回已受理請求，因此不自動重播整份PDF。
+取消順序：host取消token → 停止新API/重試/admission → 發cancel並保持stdout drain → worker標記局部取消、解除pending、呼叫config.cancel_translation → ack → 等provider清理 → shutdown/wait。HTTP task可在grace後abort；CLITranslator／ClaudeCode及其名稱別名須cooperative join到底，不能在kill-and-reap中途丟棄future。Worker超過grace則終止程序樹。cancel_ack不是cleanup完成；本地取消不保證遠端provider撤回已受理請求，因此不自動重播整份PDF。
 
-第一次主錯誤應保留，後續pipe/cleanup錯誤不覆蓋cause。provider錯誤需要HTTP分類、attempt與最後cause才能在完整版本保持相容；現PoC通用translation_failed只滿足失敗不可誤成功，**尚未完整保留Python錯誤分類**。
+第一次主錯誤保留，後續cleanup失敗只增加安全context。Rust provider已有typed kind、retry layer、attempt與最末cause；Python wire仍只送通用translation_failed，避免文件與憑證進入引擎日誌。這是語意分類對照，不是重建Python例外類別本身；各服務證據與剩餘差異見PROVIDER_TEST_MATRIX及PROVIDER_REVIEW。
 
 ## Timeout 與 process tree
 
@@ -89,7 +91,7 @@ Rust是任務terminal權威。failed/cancelled不能被之後finish翻回成功�
 | startup | WorkerOptions預設180秒，spawn到ready；ready後引擎import/model初始化另受活動/cleanup限制 |
 | task idle | 預設1800秒。舊Python是每次queue.get等待下一進度事件；不是PDF全程30分鐘。現host每有效frame都刷新activity，完整相容版應區分工作進度與純liveness |
 | worker RPC wait | Future.result上限1800秒；額外transport護欄，需在完整provider移植時與100-attempt策略協調 |
-| provider | Rust core單次API timeout；目前無完整SDK inner及outer retry，詳RETRY_COMPATIBILITY |
+| provider | Rust core依各provider保留application／SDK inner retry與timeout區別；write／pool逐階段等價仍有界限，詳PROVIDER_TEST_MATRIX |
 | shutdown | 預設10秒；超時kill，處理writer/drainer並wait。測試可縮短驗證 |
 | exited drain | 已觀察exit0後，只給有限窗口讀取已寫但尚未處理的terminal，避免孫程序持pipe造成無限等EOF |
 
@@ -97,7 +99,7 @@ Rust是任務terminal權威。failed/cancelled不能被之後finish翻回成功�
 
 Host在startup與running都必須觀察child退出及writer失敗，不能只等stdout EOF。child退出但孫程序持stdout時，Job handle仍活著，單純等EOF可卡到1800秒。exit0仍可能有合法finished已在pipe，因此先短有界drain；非零立即失敗。
 
-Windows使用CREATE_SUSPENDED→Job Object設定KILL_ON_JOB_CLOSE→AssignProcessToJobObject→Resume，避免加入Job前先spawn孫程序；Job handle不繼承。assignment/resume失敗清理child。關閉最後Job handle終止所屬後代；這是程序樹生命週期機制，不是惡意PDFsandbox。[Microsoft Job Objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects)與[AssignProcessToJobObject](https://learn.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-assignprocesstojobobject)是此封裝的依據。
+Windows使用CREATE_SUSPENDED→Job Object設定KILL_ON_JOB_CLOSE→AssignProcessToJobObject→Resume，避免加入Job前先spawn孫程序；Job handle不繼承。assignment/resume失敗清理child。顯式cleanup另呼叫TerminateJobObject並輪詢Job ActiveProcesses=0，然後wait direct child；只關閉handle不代表後代已完成退出。穿過bridge的CLI取消測試在回傳前取得固定HANDLE，回傳後立即驗root與descendant已非STILL_ACTIVE；沒有將此結論外推到極端OS無法完成終止的情況。這是程序樹生命週期機制，不是惡意PDFsandbox。[Microsoft Job Objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects)與[AssignProcessToJobObject](https://learn.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-assignprocesstojobobject)是此封裝的依據。
 
 Tokio kill_on_drop是最後防線，不能替代顯式wait與程序樹測試。[Tokio process文件](https://docs.rs/tokio/latest/tokio/process/index.html)區分drop、kill與reap。當worker死而後代持pipe時，exit watcher須主動推進cleanup。非Windows目前未實作process group同等保證，不可把Windows結果外推。
 

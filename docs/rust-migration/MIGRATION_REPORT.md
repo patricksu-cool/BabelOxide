@@ -1,6 +1,6 @@
 # Rust 移植進度
 
-更新：2026-10-27，Asia/Taipei。分支 `feature/rust-babeldoc-hybrid`。**目前完成核心 PoC，尚未完成全面移植或正式發行。**
+更新：2026-10-29，Asia/Taipei。分支 `feature/rust-babeldoc-hybrid`。**已完成核心 PoC及Rust翻譯服務的離線整合，尚未完成全面移植或正式發行。**
 
 ## 已完成
 
@@ -10,6 +10,9 @@
 4. Rust CLI → 私有 stdio Worker → Rust OpenAI-compatible HTTP → BabelDOC → PDF 的真實流程已走通。Worker 不 import `pdf2zh_next`，不持有 API key、HTTP 翻譯器、應用快取或 retry。
 5. 指定四頁 PDF、固定 identity 回應、同 BabelDOC／字型／引擎選項下，mono／dual 共八個頁面與整合後 main 的文字、字元座標、圖片及 96 DPI RGB 渲染皆一致；像素差為 0。這是受控排版驗證，不是真實中文翻譯品質驗收。
 6. Windows suspended spawn／Job Object／kill-on-close、並行請求配對、取消、崩潰與異常退出的初步自動化驗證通過；見 [測試報告](TEST_REPORT.md)。
+7. 16種服務的HTTP／CLI執行、typed錯誤、分層retry、可注入時間與亂數、QPS與usage統計已移到Rust；原Python仍保留。各案例及未證等價的細節見 [測試矩陣](PROVIDER_TEST_MATRIX.md) 與 [Astra審查](PROVIDER_REVIEW.md)。目前產品CLI只暴露OpenAI選項，其餘服務待設定／CLI層接線。
+8. Bridge支援獨立main／term service、動態outstanding容量、有界進度佇列；已驗證200個同時在途請求、慢進度消費者與真正CLI取消後程序樹退出。Windows清理等待Job ActiveProcesses歸零，避免只發終止命令就回傳。
+9. 第5階段再次以相同SHA-256原檔完成四頁翻譯；與main基準的mono／dual共八頁文字、字元座標、圖片與96 DPI RGB渲染一致，見 [本輪PDF數據](PHASE5_PDF_COMPARISON.json)。原檔已移至下載目錄的「論文」子目錄，未改用已翻譯的PDF作輸入。
 
 ## 已修正的整合問題
 
@@ -24,13 +27,13 @@
 
 | 功能 | Rust 現況 |
 | --- | --- |
-| 翻譯服務 | 僅 OpenAI-compatible PoC；其餘服務尚未接管 |
-| Retry／Backoff／SDK 行為 | 已完成來源對照，尚未移植等價實作 |
+| 翻譯服務 | 16服務核心已有離線測試；完整設定／CLI／GUI選擇尚未接管 |
+| Retry／Backoff／SDK 行為 | 已實作並驗證主要分層政策；write／pool與部分SDK細節的界限仍列於測試矩陣 |
 | Config／舊格式遷移 | 尚未實作 |
-| 持久翻譯 cache／token 統計 | 尚未實作 |
+| 持久翻譯 cache／token 統計 | Rust service已有usage／attempt統計，持久cache尚未實作 |
 | 全部 CLI 參數／多檔批次 | 尚未實作完整相容 |
 | GUI／內嵌 PDF 預覽 | 尚未實作 |
-| 不同術語服務／glossary／分割策略 | 尚未完整接線 |
+| 不同術語服務／glossary／分割策略 | Bridge／worker已有接線與邊界測試，完整CLI／GUI及真PDF各選項驗收尚未完成 |
 | 長時間、多 Worker、大型 PDF | 尚未完成驗收 |
 | 最小 Python runtime／Windows 發行包 | 尚未建立新版本 |
 | 獨立乾淨 Windows／安全與授權驗收 | 尚未完成 |

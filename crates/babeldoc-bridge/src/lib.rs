@@ -1,9 +1,7 @@
 //! Private, bounded, bidirectional stdio transport for the BabelDOC engine.
 
-mod process;
-
 use anyhow::{Context, Result, bail, ensure};
-use pdf2zh_core::{PdfJob, TranslationRequest, TranslationService};
+use pdf2zh_core::{PdfJob, TranslationRequest, TranslationService, process};
 use serde_json::{Value, json};
 use std::{collections::HashSet, path::PathBuf, process::Stdio, sync::Arc, time::Duration};
 use tokio::{
@@ -98,14 +96,26 @@ async fn enqueue(tx: &mpsc::Sender<Value>, value: Value) -> Result<()> {
 
 pub async fn translate_pdf(
     worker: &WorkerOptions,
-    mut job: PdfJob,
+    job: PdfJob,
     translator: Arc<TranslationService>,
     cancel: CancellationToken,
-    events: Option<mpsc::UnboundedSender<Value>>,
+    events: Option<mpsc::Sender<Value>>,
+) -> Result<Value> {
+    translate_pdf_with_services(worker, job, translator, None, cancel, events).await
+}
+
+/// Main and term services may be shared or independently configured in Rust.
+pub async fn translate_pdf_with_services(
+    worker: &WorkerOptions,
+    mut job: PdfJob,
+    translator: Arc<TranslationService>,
+    term_translator: Option<Arc<TranslationService>>,
+    cancel: CancellationToken,
+    events: Option<mpsc::Sender<Value>>,
 ) -> Result<Value> {
     ensure!(
-        job.qps > 0 && job.pool_max_workers > 0 && job.pool_max_workers <= MAX_OUTSTANDING as u32,
-        "QPS and worker pool must be positive; pool cannot exceed 128"
+        job.qps > 0 && job.pool_max_workers > 0,
+        "QPS and worker pool must be positive"
     );
     ensure!(!cancel.is_cancelled(), "Translation cancelled");
     job.input_file = job
@@ -119,6 +129,24 @@ pub async fn translate_pdf(
         .canonicalize()
         .context("Resolve output directory")?;
     let output_root = job.output_dir.clone();
+    if let Some(glossaries) = job.extra.get_mut("glossary_files") {
+        let paths = glossaries
+            .as_array_mut()
+            .context("Glossary files must be a list")?;
+        for path in paths {
+            let resolved = PathBuf::from(path.as_str().context("Glossary path must be text")?)
+                .canonicalize()
+                .context("Glossary file is unavailable")?;
+            ensure!(resolved.is_file(), "Glossary must be a file");
+            *path = json!(resolved);
+        }
+    }
+    if let Some(size) = job.extra.get("max_pages_per_part") {
+        ensure!(
+            size.as_u64().is_some_and(|size| size > 0),
+            "Page split size must be positive"
+        );
+    }
     let require_mono = !job
         .extra
         .get("no_mono")
@@ -141,6 +169,70 @@ pub async fn translate_pdf(
         .script
         .canonicalize()
         .context("Worker adapter is unavailable")?;
+    // Preflight can probe a service or validate an external executable. Await it
+    // cooperatively so cancellation cannot discard its process cleanup future.
+    translator.prepare(&cancel).await?;
+    let (recommended_qps, recommended_pool) = translator.recommendations();
+    job.qps = recommended_qps.unwrap_or(job.qps);
+    job.pool_max_workers = recommended_pool.unwrap_or(job.pool_max_workers);
+    // Free-service fallback recommendations only change the engine pool/QPS;
+    // its existing limiter changes only after a valid server configuration.
+    if recommended_qps.is_none() {
+        translator.set_max_qps(job.qps).await?;
+    }
+    let term_qps = job.extra.remove("term_qps");
+    let term_qps = match term_qps.filter(|value| !value.is_null()) {
+        Some(value) => value
+            .as_u64()
+            .and_then(|value| u32::try_from(value).ok())
+            .filter(|value| *value > 0)
+            .context("Term QPS must be a positive 32-bit integer")?,
+        None => job.qps,
+    };
+    let separate_term = term_translator
+        .as_ref()
+        .filter(|term| !Arc::ptr_eq(&translator, term));
+    if let Some(term) = separate_term {
+        term.prepare(&cancel).await?;
+        let (qps, workers) = term.recommendations();
+        if qps.is_none() {
+            term.set_max_qps(term_qps).await?;
+        }
+        if let Some(workers) = workers {
+            job.extra
+                .insert("term_pool_max_workers".into(), json!(workers));
+        }
+    } else {
+        ensure!(
+            term_qps == job.qps,
+            "Independent term QPS needs a separate translation service"
+        );
+        if let Some(workers) = recommended_pool {
+            job.extra
+                .insert("term_pool_max_workers".into(), json!(workers));
+        }
+    }
+    let term_pool = match job.extra.get("term_pool_max_workers") {
+        None | Some(Value::Null) => u64::from(job.pool_max_workers),
+        Some(value) => value
+            .as_u64()
+            .context("Term worker pool must be a nonnegative integer")?,
+    };
+    let term_pool = if term_pool == 0 {
+        u64::from(job.pool_max_workers)
+    } else {
+        term_pool
+    };
+    job.extra
+        .insert("term_pool_max_workers".into(), json!(term_pool));
+    let capacity = u64::from(job.pool_max_workers)
+        .saturating_add(term_pool)
+        .clamp(MAX_OUTSTANDING as u64, 1_000_000) as usize;
+    let requires_reap = translator.requires_reap()
+        || term_translator
+            .as_ref()
+            .is_some_and(|term| term.requires_reap());
+    ensure!(!cancel.is_cancelled(), "Translation cancelled");
     let temporary =
         tempfile::tempdir_in(&output_root).context("Create engine temporary directory")?;
     let home = worker
@@ -201,7 +293,7 @@ pub async fn translate_pdf(
         }
         tokio::io::copy(&mut stderr, &mut tokio::io::sink()).await
     });
-    let (tx, mut rx) = mpsc::channel::<Value>(MAX_OUTSTANDING + 4);
+    let (tx, mut rx) = mpsc::channel::<Value>(capacity + 4);
     let mut writer = tokio::spawn(async move {
         while let Some(value) = rx.recv().await {
             let mut raw = serde_json::to_vec(&value)?;
@@ -226,7 +318,8 @@ pub async fn translate_pdf(
         ensure!(hello["type"] == "ready" && hello["babeldoc_version"] == "0.6.3", "Worker initialization failed or engine version differs");
         session = hello["session"].as_str().context("Missing worker session")?.to_owned();
         ensure!(session.len() == 32 && session.bytes().all(|b| b.is_ascii_hexdigit()), "Invalid worker session");
-        enqueue(&tx, frame("start", &session, json!({"job": job, "translator": {"name":translator.name(),"llm":translator.is_llm()}}))).await?;
+        let term_metadata = term_translator.as_ref().map(|term| json!({"name":term.name(),"llm":term.is_llm()}));
+        enqueue(&tx, frame("start", &session, json!({"job": job, "translator": {"name":translator.name(),"llm":translator.is_llm()}, "term_translator":term_metadata, "max_outstanding":capacity}))).await?;
         let mut active = HashSet::new();
         let mut seen = HashSet::new();
         let mut activity = Instant::now();
@@ -246,9 +339,9 @@ pub async fn translate_pdf(
                     active.remove(&id);
                     match translated {
                         Ok(text) => enqueue(&tx, frame("translated", &session, json!({"id":id,"text":text}))).await?,
-                        Err(_) => {
+                        Err(error) => {
                             let _ = enqueue(&tx, frame("translated", &session, json!({"id":id,"error":{"code":"translation_failed","message":"Rust translation service failed"}}))).await;
-                            bail!("Rust translation service failed; output is incomplete");
+                            return Err(error.context("Rust translation service failed; output is incomplete"));
                         }
                     }
                 }
@@ -261,19 +354,25 @@ pub async fn translate_pdf(
                             let request: TranslationRequest = serde_json::from_value(message).map_err(|_| anyhow::anyhow!("Malformed translation request"))?;
                             ensure!(seen.len() < 1_000_000, "Task exceeded the request ID budget");
                             ensure!(request.id.len() <= 64 && !request.id.is_empty() && seen.insert(request.id.clone()), "Invalid or repeated request ID");
-                            ensure!(active.len() < MAX_OUTSTANDING, "Worker exceeded request capacity");
+                            ensure!(active.len() < capacity, "Worker exceeded request capacity");
                             active.insert(request.id.clone());
-                            let service = translator.clone();
+                            let service = match request.translator.as_str() {
+                                "main" => translator.clone(),
+                                "term" => term_translator.clone().unwrap_or_else(|| translator.clone()),
+                                _ => bail!("Worker requested an unknown translation service"),
+                            };
                             let request_cancel = requests_cancel.clone();
                             requests.spawn(async move {
                                 let result = service.translate(&request, &request_cancel).await;
                                 (request.id, result)
                             });
                         }
-                        "progress" => if let Some(events) = &events { let _ = events.send(message["event"].clone()); },
+                        // Progress can be dropped under backpressure; terminal results are returned separately.
+                        "progress" => if let Some(events) = &events { let _ = events.try_send(message["event"].clone()); },
                         "finished" => {
                             ensure!(active.is_empty(), "Worker finished with pending translations");
-                            let result = message["result"].clone();
+                            let mut result = message["result"].clone();
+                            ensure!(result.is_object(), "Worker result must be an object");
                             let mut output_count = 0;
                             for key in ["mono_pdf_path", "dual_pdf_path", "no_watermark_mono_pdf_path", "no_watermark_dual_pdf_path"] {
                                 if let Some(path) = result[key].as_str() {
@@ -285,6 +384,17 @@ pub async fn translate_pdf(
                             ensure!(output_count > 0, "Worker returned no PDF output");
                             ensure!(!require_mono || result["mono_pdf_path"].is_string() || result["no_watermark_mono_pdf_path"].is_string(), "Worker omitted the requested monolingual PDF");
                             ensure!(!require_dual || result["dual_pdf_path"].is_string() || result["no_watermark_dual_pdf_path"].is_string(), "Worker omitted the requested bilingual PDF");
+                            if let Some(path) = result["auto_extracted_glossary_path"].as_str() {
+                                let path = PathBuf::from(path).canonicalize().context("Worker glossary does not exist")?;
+                                ensure!(path.is_file() && path.starts_with(&output_root), "Worker glossary escaped the requested directory");
+                            }
+                            // Service-lifetime counters; shared main/term instances
+                            // appear once, so usage cannot be counted twice.
+                            result["translation_metrics"] = json!({
+                                "main": translator.metrics(),
+                                "term": separate_term.map(|term| term.metrics()),
+                                "shared_service": separate_term.is_none(),
+                            });
                             return Ok(result);
                         }
                         "error" => bail!("BabelDOC worker failed ({})", message["code"].as_str().filter(|s| s.len() < 64 && s.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_')).unwrap_or("engine_failed")),
@@ -296,20 +406,27 @@ pub async fn translate_pdf(
         }
     }.await;
     requests_cancel.cancel();
-    requests.abort_all();
-    while requests.join_next().await.is_some() {}
-    if !session.is_empty() {
-        if outcome.is_err() {
-            let _ = enqueue(&tx, frame("cancel", &session, json!({}))).await;
-        }
-        let _ = enqueue(&tx, frame("shutdown", &session, json!({}))).await;
-    }
-    drop(tx);
-    // Drain acknowledgements during shutdown, including third-party late events.
+    // Keep output flowing while cooperative cancellation reaps provider processes.
     let drain = tokio::spawn(async move {
         while read_frame(&mut stdout, &mut frame_buffer).await?.is_some() {}
         Ok::<(), anyhow::Error>(())
     });
+    if !session.is_empty() && outcome.is_err() {
+        let _ = enqueue(&tx, frame("cancel", &session, json!({}))).await;
+    }
+    let reap = async { while requests.join_next().await.is_some() {} };
+    if requires_reap {
+        // CLI providers kill and wait on their native process tree before
+        // completing cancellation. Aborting here would discard that guarantee.
+        reap.await;
+    } else if timeout(worker.shutdown_timeout, reap).await.is_err() {
+        requests.abort_all();
+        while requests.join_next().await.is_some() {}
+    }
+    if !session.is_empty() {
+        let _ = enqueue(&tx, frame("shutdown", &session, json!({}))).await;
+    }
+    drop(tx);
     let exited = match timeout(worker.shutdown_timeout, child.wait()).await {
         Ok(result) => result.context("Wait for worker"),
         Err(_) => {
@@ -319,6 +436,7 @@ pub async fn translate_pdf(
             ))
         }
     };
+    let tree_cleanup = scope.terminate_and_wait().await;
     drop(scope);
     let _writer_ok = if writer_finished {
         false
@@ -342,10 +460,19 @@ pub async fn translate_pdf(
     }
     drain.abort();
     let _ = drain.await;
-    if outcome.is_ok() {
-        ensure!(exited?.success(), "Worker exited with a failure status");
+    match outcome {
+        Err(primary) => {
+            if tree_cleanup.is_err() {
+                return Err(primary.context("Worker process-tree cleanup also failed"));
+            }
+            Err(primary)
+        }
+        Ok(result) => {
+            tree_cleanup.context("Clean up worker process tree")?;
+            ensure!(exited?.success(), "Worker exited with a failure status");
+            Ok(result)
+        }
     }
-    outcome
 }
 
 #[cfg(test)]

@@ -29,6 +29,8 @@ def main():
     parser.add_argument("--pages")
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
+    if not args.source.is_file():
+        parser.error("source PDF does not exist or is not a file")
     if not args.label or any(
         char not in "abcdefghijklmnopqrstuvwxyz0123456789-_" for char in args.label
     ):

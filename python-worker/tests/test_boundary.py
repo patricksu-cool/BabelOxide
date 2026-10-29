@@ -1,12 +1,15 @@
 """Engine-boundary contracts without importing the legacy application."""
 
+import asyncio
 import concurrent.futures
 import importlib.util
 import io
 import json
+import sys
 import threading
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -134,3 +137,117 @@ def test_partial_pipe_writes_are_completed():
     boundary = worker.EngineBoundary(output)
     boundary.send("ready")
     assert json.loads(output.getvalue())["type"] == "ready"
+
+
+@pytest.mark.parametrize("capacity", [None, True, False, 0, -1, 1_000_001, "128", 1.5])
+def test_invalid_capacity_never_starts_an_engine_thread(capacity):
+    boundary = worker.EngineBoundary(io.BytesIO())
+    with pytest.raises(worker.ProtocolError, match="capacity"):
+        boundary.start({"task_id": "job-1", "max_outstanding": capacity})
+    assert not boundary.started
+    assert boundary.task is None
+
+
+def test_term_adapter_forwards_role_and_cache_options():
+    calls = []
+
+    class Boundary:
+        def request(self, *args):
+            calls.append(args)
+            return "譯文"
+
+    adapter = worker.RustTranslatorAdapter(
+        Boundary(),
+        {"name": "openai", "llm": True},
+        {"lang_in": "en", "lang_out": "zh"},
+        role="term",
+    )
+    assert adapter.llm_translate("prompt", True, {"tokens": 7}) == "譯文"
+    assert calls == [("term", "llm_translate", "prompt", True, {"tokens": 7})]
+
+
+def test_engine_options_glossary_split_and_metrics_stay_at_engine_boundary(
+    tmp_path,
+    monkeypatch,
+):
+    initialized = []
+    closed = []
+
+    class Config:
+        def __init__(self, **options):
+            self.options = options
+
+        @staticmethod
+        def create_max_pages_per_part_split_strategy(pages):
+            return ("max-pages", pages)
+
+    async def translate(config):
+        try:
+            yield {
+                "type": "finish",
+                "translate_result": SimpleNamespace(
+                    mono_pdf_path=tmp_path / "mono.pdf",
+                    total_seconds=1.25,
+                    peak_memory_usage=2048,
+                    total_valid_character_count=17,
+                    total_valid_text_token_count=9,
+                ),
+            }
+        finally:
+            closed.append(config)
+
+    modules = {
+        "babeldoc.format.pdf.high_level": SimpleNamespace(
+            async_translate=translate,
+            init=lambda: initialized.append(True),
+        ),
+        "babeldoc.format.pdf.translation_config": SimpleNamespace(
+            TranslationConfig=Config,
+            WatermarkOutputMode=str,
+        ),
+        "babeldoc.glossary": SimpleNamespace(
+            Glossary=SimpleNamespace(
+                from_csv=lambda path, target_lang_out: ("csv", path, target_lang_out),
+            )
+        ),
+    }
+    for name, module in modules.items():
+        monkeypatch.setitem(sys.modules, name, module)
+    source = tmp_path / "input.pdf"
+    source.write_bytes(b"%PDF-1.4\n")
+    glossary = tmp_path / "glossary.csv"
+    glossary.write_text("source,target\na,b\n", encoding="utf-8")
+    boundary = worker.EngineBoundary(io.BytesIO())
+    result = asyncio.run(
+        boundary.run_engine(
+            {
+                "input_file": str(source),
+                "output_dir": str(tmp_path),
+                "lang_in": "en",
+                "lang_out": "zh",
+                "pages": None,
+                "qps": 4,
+                "pool_max_workers": 8,
+                "term_pool_max_workers": 5,
+                "no_auto_extract_glossary": False,
+                "watermark_output_mode": "no_watermark",
+                "glossary_files": [str(glossary)],
+                "max_pages_per_part": 3,
+                "save_auto_extracted_glossary": True,
+            },
+            {"name": "openai", "llm": True},
+            {"name": "ollama", "llm": True},
+        )
+    )
+    options = boundary.config.options
+    assert initialized == [True]
+    assert closed == [boundary.config]
+    assert options["translator"].role == "main"
+    assert options["term_extraction_translator"].role == "term"
+    assert options["term_extraction_translator"].name == "ollama"
+    assert options["term_pool_max_workers"] == 5
+    assert options["glossaries"] == [("csv", glossary, "zh")]
+    assert options["split_strategy"] == ("max-pages", 3)
+    assert options["save_auto_extracted_glossary"] is True
+    assert result["total_seconds"] == 1.25
+    assert result["total_valid_character_count"] == 17

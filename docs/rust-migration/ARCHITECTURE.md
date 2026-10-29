@@ -1,6 +1,8 @@
 # Rust／BabelDOC 混合架構與引擎契約
 
-查核日期：2026-10-26。目標分支：`feature/rust-babeldoc-hybrid`。Python 回歸基準為 `d18165e`，保留標籤 `rust-python-baseline-20261026`、`pre-rust-main-20261026`。本文描述已核對的 Python 基準與分階段移植設計；**架構圖不代表所有 Rust 服務、GUI 或 Windows 發行流程已完成**。本次 PoC 先驗證 OpenAI 相容的本機固定回應端點與真實 PDF 引擎呼叫，完整服務與 GUI 移植屬後續工作。
+更新：2026-10-29。目標分支：`feature/rust-babeldoc-hybrid`。Python 回歸基準為 `d18165e`，保留標籤 `rust-python-baseline-20261026`、`pre-rust-main-20261026`。本文描述已核對的Python基準與分階段移植設計；**架構圖不代表GUI或Windows發行流程已完成**。PoC已驗證OpenAI固定回應端點與真實PDF引擎，第5階段進一步實作16種Rust服務並測分層retry；完整產品設定、CLI、GUI與發行仍待移植。
+
+第5階段的`core`依獨立職責拆為providers、transport、retry、limiter、metrics、error及共用process模組，未為每個模組增加crate。`TranslationService`負責一次logical call的preflight、admission與provider dispatch，provider保留各自SDK內層重試。外部CLI使用共用程序樹封裝；薄Python adapter不含上述應用邏輯。行為證據與差異見 [測試矩陣](PROVIDER_TEST_MATRIX.md)。
 
 ## 責任邊界
 

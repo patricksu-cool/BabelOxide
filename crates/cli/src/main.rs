@@ -18,7 +18,7 @@ use tokio_util::sync::CancellationToken;
     name = "pdf2zh",
     version,
     about,
-    long_about = "Rust/BabelDOC PDF translation proof of concept. Only OpenAI-compatible HTTP translation is implemented. Set PDF2ZH_OPENAI_API_KEY in the environment; local synthetic servers may use a synthetic key. Retries, persistent translation cache, config migration, and other providers are not implemented."
+    long_about = "Rust/BabelDOC PDF translation CLI. This initial CLI exposes the Rust OpenAI-compatible service with provider-specific retries. Set PDF2ZH_OPENAI_API_KEY in the environment; local synthetic servers may use a synthetic key. Persistent translation cache, config migration, and CLI selection of other services are still being implemented."
 )]
 struct Args {
     /// A single PDF input file.
@@ -56,9 +56,9 @@ struct Args {
     openai_base_url: String,
     #[arg(long, default_value = "gpt-4o-mini")]
     openai_model: String,
-    /// HTTP request timeout in seconds.
-    #[arg(long, default_value_t = 60.0)]
-    openai_timeout: f64,
+    /// Explicit HTTP timeout in seconds; default: read 600 seconds, connect 5 seconds.
+    #[arg(long)]
+    openai_timeout: Option<f64>,
     /// Enable JSON responses when BabelDOC explicitly requests JSON mode.
     #[arg(long)]
     openai_enable_json_mode: bool,
@@ -139,11 +139,11 @@ async fn run(args: Args, cancel: CancellationToken) -> Result<()> {
         endpoint: args.openai_base_url,
         api_key,
         model: args.openai_model,
-        timeout_seconds: args.openai_timeout,
+        timeout_seconds: args.openai_timeout.unwrap_or(600.0),
         lang_out: args.lang_out.clone(),
         options: json!({
             "qps": args.qps,
-            "max_concurrency": pool_max_workers,
+            "timeout_explicit": args.openai_timeout.is_some(),
             "enable_json_mode": args.openai_enable_json_mode,
             "ignore_cache": args.ignore_cache,
         }),
@@ -175,7 +175,7 @@ async fn run(args: Args, cancel: CancellationToken) -> Result<()> {
         watermark_output_mode: args.watermark_output_mode,
         extra,
     };
-    let (events_tx, mut events_rx) = mpsc::unbounded_channel::<Value>();
+    let (events_tx, mut events_rx) = mpsc::channel::<Value>(64);
     let json_output = args.json;
     let event_task = tokio::spawn(async move {
         let mut previous_stage = None;
@@ -238,5 +238,19 @@ fn report_failure(json_output: bool, kind: &str, message: &str) {
         let _ = write_json(&json!({"type":kind,"message":message}));
     } else {
         eprintln!("pdf2zh: {message}");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn absent_timeout_remains_distinct_from_an_explicit_float() {
+        let implicit = Args::try_parse_from(["pdf2zh", "input.pdf"]).unwrap();
+        assert_eq!(implicit.openai_timeout, None);
+        let explicit =
+            Args::try_parse_from(["pdf2zh", "input.pdf", "--openai-timeout", "1.5"]).unwrap();
+        assert_eq!(explicit.openai_timeout, Some(1.5));
     }
 }

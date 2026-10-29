@@ -1,8 +1,28 @@
 # 移植測試報告
 
-更新：2026-10-27，Asia/Taipei。Python 穩定基準 `d18165e`，Rust 開發分支 `feature/rust-babeldoc-hybrid`。本報告目前驗收核心 PoC；不宣稱全面功能等價。
+更新：2026-10-29，Asia/Taipei。Python穩定基準 `d18165e`，Rust開發分支 `feature/rust-babeldoc-hybrid`。本報告驗收核心PoC及第5階段離線翻譯服務；不宣稱全面功能或所有SDK細節等價。
 
-## 本次實測
+## 第5階段實測
+
+| 檢查 | 結果 |
+| --- | --- |
+| Rust完整workspace | **102 passed，0 failed／ignored**：core14、bridge framing3、process整合13、CLI1、legacy provider40、其餘provider31 |
+| 格式／Clippy | cargo fmt --all --check、clippy --workspace --all-targets --locked -- -D warnings通過 |
+| Python原功能與Worker | **279 passed**，分兩次執行：tests/與python-worker/tests共271（28.66秒），test/test_cache.py另8（2.81秒）；沒有跳過原先8個cache案例 |
+| Worker新增邊界 | 26 passed，包含上列279內；角色、容量、glossary／split轉換、metric與native stdio隔離 |
+| Rust provider | OpenAI-family SDK／outer分層、Free巢狀重試、Google／Bing、DeepL／Azure SDK、Tencent簽名、Ollama／Xinference、真CLI／Claude fixture；逐列證據及界限見PROVIDER_TEST_MATRIX |
+| Redirect | Free不follow；requests服務30跳；Azure外層redirect／內層SDK counter、POST301/302、303後GET的budget及body error；跨origin307/308不轉送credential |
+| Bridge | 200個同時在途RPC、獨立main／term、共享usage不重算、有界慢進度消費者；真正CLI取消後root／descendant固定HANDLE立即確認退出 |
+| 指定四頁PDF | exit0；105個loopback請求、36個batch、68個進度、1個finish；無合成key外洩 |
+| PDF與main比較 | mono／dual各4頁；文字、字元座標、圖片一致；8頁96 DPI RGB渲染像素差0，見PHASE5_PDF_COMPARISON.json |
+
+Rust證據：`.test-output/rust-migration/phase5-verified-tests.log`。Python證據：`phase5-python-full.xml`、`phase5-python-cache.xml`；命令分別為隔離runner後接`pytest tests python-worker/tests -q`與`pytest test/test_cache.py -q`。所有HTTP驗證只用loopback，CLI只用現有rustc編譯的受控fixture，未啟動真Claude或使用付費／使用者憑證。
+
+PDF證據位於`.test-output/rust-migration/phase5-full-recovered/`；原檔已移至`Downloads/論文`，SHA-256仍為`d0a8367aa014b52929af86f42b5164ade3bb551c69717734a975ba122369498f`。先前原路徑不存在的`phase5-full-verified/`失敗輸出保留，沒有列為通過；smoke腳本現會在開始前檢查來源檔。新版PDF的少量二進位大小差異未造成文字／幾何／渲染差異。
+
+本輪另修正兩個測試暴露的問題：HTML5複合entity不能只解碼第一個Unicode scalar；DeepL timeout依`max(deadline-now,10)`動態改變，第六次可為10.48576秒，不能用固定10秒的錯誤oracle。修正後維持精確sleep／attempt斷言。Rust test編譯早期缺Instant匯入亦已修正。原失敗log沒有覆寫成成功證據。
+
+## 已提交PoC基準（0b33926）
 
 | 檢查 | 結果 |
 | --- | --- |
@@ -38,4 +58,4 @@ Rust 指令：`cargo test --workspace --locked`。Python 指令：`.venv/Scripts
 
 ## 尚未驗收
 
-原 34 項 Python retry tests 仍包含於 269 項，**尚未有對應完整 Rust 34 項等價驗收**。SDK retry／jitter／Retry-After、所有 provider、設定遷移、cache、GUI、預覽、真實免費 API、長時間／大型／並行 PDF、乾淨 Windows、正式打包、安全與再散布授權均需後續驗證。沒有將舊輪次通過數字當成上述新功能的測試結果。
+原34項Python retry案例仍保留，Rust現在已有對應runtime／transport證據，詳PROVIDER_TEST_MATRIX；未把原policy宣告物件的每個負例重建成完整逐列矩陣，也未證明HTTPX write／pool逐階段timeout完全等價。設定遷移、持久cache、GUI、預覽、真實免費API、長時間／大型／並行PDF、乾淨Windows、正式打包、安全與再散布授權均需後續驗證。沒有將舊輪次數字當成新功能的測試結果。

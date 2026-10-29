@@ -1,6 +1,6 @@
 # Windows 發行狀態
 
-更新：2026-10-27。**目前只有 Rust CLI 開發原型，不是完成的 Windows 發行包。** 沒有 Push，也沒有建立 GitHub Release；原第四輪候選包沒有被覆寫。
+更新：2026-10-29。**已有Rust CLI與16服務核心的開發建置，尚不是完成的Windows發行包。** 沒有Push，也沒有建立GitHub Release；原第四輪候選包沒有被覆寫。
 
 ## 目前可執行產物
 
