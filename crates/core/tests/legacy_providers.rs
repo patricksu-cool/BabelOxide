@@ -7,6 +7,7 @@ use pdf2zh_core::{
     ProviderContext, ProviderError, ProviderOutput, ProviderResult, RandomSource, RetryRuntime,
     TranslationRequest, TranslatorConfig, providers::legacy,
 };
+use reqwest::Method;
 use serde_json::{Value, json};
 use std::{
     collections::{BTreeMap, VecDeque},
@@ -659,6 +660,78 @@ async fn anythingllm_and_dify_retry_http_parse_and_nonstring_output() {
             harness.drained();
         }
     }
+}
+
+#[tokio::test]
+async fn app_provider_cookies_stay_within_one_redirect_chain() {
+    for (provider, body) in [
+        ("anythingllm", r#"{"textResponse":"translated"}"#),
+        ("dify", r#"{"data":{"outputs":{"text":"translated"}}}"#),
+    ] {
+        let server = Loopback::start(vec![
+            WireStep::reply(302, "")
+                .header("Location", "/continued")
+                .header("Set-Cookie", "fixture=chain; Path=/"),
+            WireStep::reply(200, body),
+            WireStep::reply(302, "")
+                .header("Location", "/continued")
+                .header("Set-Cookie", "fixture=chain; Path=/"),
+            WireStep::reply(200, body),
+        ])
+        .await;
+        let harness = Harness::loopback(provider, &format!("{}/start", server.endpoint));
+        let service = pdf2zh_core::TranslationService::new_with_runtime(
+            harness.config.clone(),
+            harness.runtime.clone(),
+        )
+        .unwrap();
+        for _ in 0..2 {
+            assert_eq!(
+                service
+                    .translate_typed(&harness.request, &harness.cancel)
+                    .await
+                    .unwrap()
+                    .text,
+                "translated"
+            );
+        }
+        let requests = server.finish().await;
+        assert!(!requests[0].headers.contains_key("cookie"));
+        assert_eq!(requests[1].headers["cookie"], "fixture=chain");
+        assert!(
+            !requests[2].headers.contains_key("cookie"),
+            "{provider} retained a prior operation's cookie"
+        );
+        assert_eq!(requests[3].headers["cookie"], "fixture=chain");
+    }
+}
+
+#[tokio::test]
+async fn session_transport_retains_cookies_across_operations() {
+    let server = Loopback::start(vec![
+        WireStep::reply(200, "first").header("Set-Cookie", "session=retained; Path=/"),
+        WireStep::reply(200, "second"),
+    ])
+    .await;
+    let http = HttpTransport::new(RetryRuntime::default(), None);
+    for _ in 0..2 {
+        http.send(
+            HttpRequest {
+                method: Method::GET,
+                url: server.endpoint.clone(),
+                headers: BTreeMap::new(),
+                query: vec![],
+                body: HttpBody::Empty,
+                timeout: Some(Duration::from_secs(2)),
+            },
+            &CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+    }
+    let requests = server.finish().await;
+    assert!(!requests[0].headers.contains_key("cookie"));
+    assert_eq!(requests[1].headers["cookie"], "session=retained");
 }
 
 #[tokio::test]

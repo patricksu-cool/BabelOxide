@@ -85,6 +85,7 @@ pub struct HttpTransport {
     connect_timeout: Option<Duration>,
     clients: Mutex<BTreeMap<Option<Duration>, Client>>,
     cookies: Arc<reqwest::cookie::Jar>,
+    request_scoped_cookies: bool,
     executor: Option<Arc<dyn HttpExecutor>>,
     redirect_limit: usize,
 }
@@ -102,6 +103,7 @@ impl HttpTransport {
             connect_timeout,
             clients: Mutex::new(BTreeMap::new()),
             cookies: Arc::new(reqwest::cookie::Jar::default()),
+            request_scoped_cookies: false,
             executor: None,
             redirect_limit: 20,
         }
@@ -118,31 +120,49 @@ impl HttpTransport {
         self
     }
 
+    /// Match top-level requests calls: keep cookies within one redirect chain,
+    /// but create a fresh session for each attempt or logical translation.
+    pub fn with_request_scoped_cookies(mut self) -> Self {
+        self.request_scoped_cookies = true;
+        self
+    }
+
     fn client(&self, timeout: Option<Duration>) -> ProviderResult<Client> {
+        if self.request_scoped_cookies {
+            return self.build_client(timeout, Arc::new(reqwest::cookie::Jar::default()));
+        }
         let mut clients = self.clients.lock().map_err(|_| {
             ProviderError::new(ErrorKind::Transport, "translation HTTP client lock failed")
         })?;
         if let Some(client) = clients.get(&timeout) {
             return Ok(client.clone());
         }
+        let client = self.build_client(timeout, self.cookies.clone())?;
+        clients.insert(timeout, client.clone());
+        Ok(client)
+    }
+
+    fn build_client(
+        &self,
+        timeout: Option<Duration>,
+        cookies: Arc<reqwest::cookie::Jar>,
+    ) -> ProviderResult<Client> {
         let mut builder = Client::builder()
             .redirect(reqwest::redirect::Policy::none())
             .retry(reqwest::retry::never())
-            .cookie_provider(self.cookies.clone());
+            .cookie_provider(cookies);
         if let Some(timeout) = timeout {
             builder = builder.read_timeout(timeout);
         }
         if let Some(connect) = self.connect_timeout.or(timeout) {
             builder = builder.connect_timeout(connect);
         }
-        let client = builder.build().map_err(|_| {
+        builder.build().map_err(|_| {
             ProviderError::new(
                 ErrorKind::Transport,
                 "could not initialize the translation HTTP client",
             )
-        })?;
-        clients.insert(timeout, client.clone());
-        Ok(client)
+        })
     }
 
     pub async fn send(

@@ -172,8 +172,11 @@ impl TranslationService {
             "siliconflowfree" | "azure" => 0,
             _ => 30,
         };
-        let http = HttpTransport::new(runtime.clone(), connect_timeout)
+        let mut http = HttpTransport::new(runtime.clone(), connect_timeout)
             .with_redirect_limit(redirect_limit);
+        if matches!(config.provider.as_str(), "anythingllm" | "dify") {
+            http = http.with_request_scoped_cookies();
+        }
         Ok(Self {
             rate_limiter: RateLimiter::with_now(qps, runtime.now()),
             config,
