@@ -5,13 +5,15 @@ use std::{collections::BTreeMap, fs, path::PathBuf, sync::Arc, time::Duration};
 
 use anyhow::{Context, Result, bail, ensure};
 use babeldoc_bridge::{WorkerOptions, translate_pdf, translate_pdf_with_services};
-use pdf2zh_core::{PdfJob, TranslationService, TranslatorConfig};
+use pdf2zh_core::{
+    CacheBackend, CacheError, CacheFuture, CacheKey, PdfJob, TranslationService, TranslatorConfig,
+};
 use serde_json::{Value, json};
 use tempfile::TempDir;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream},
-    sync::{Barrier, mpsc},
+    sync::{Barrier, Notify, mpsc},
     task::{JoinHandle, JoinSet},
     time::timeout,
 };
@@ -333,6 +335,117 @@ async fn configured_large_pool_supports_more_than_128_outstanding_requests() -> 
     ensure!(result["received_capacity"] == 400);
     ensure!(result["translation_metrics"]["main"]["peak_inflight"] == 200);
     ensure!(timeout(DEADLINE, server).await???.len() == 200);
+    Ok(())
+}
+
+#[derive(Default)]
+struct ControlledCache {
+    entered: Notify,
+    cancelling: Notify,
+    release: Notify,
+    cleaned: std::sync::atomic::AtomicBool,
+    dropped_early: std::sync::atomic::AtomicBool,
+}
+
+struct CacheCleanupGuard<'a>(&'a ControlledCache);
+impl Drop for CacheCleanupGuard<'_> {
+    fn drop(&mut self) {
+        use std::sync::atomic::Ordering;
+        if !self.0.cleaned.load(Ordering::SeqCst) {
+            self.0.dropped_early.store(true, Ordering::SeqCst);
+        }
+    }
+}
+
+impl CacheBackend for ControlledCache {
+    fn get<'a>(
+        &'a self,
+        _key: &'a CacheKey,
+        cancel: &'a CancellationToken,
+    ) -> CacheFuture<'a, Option<String>> {
+        Box::pin(async move {
+            if cancel.is_cancelled() {
+                Err(CacheError::cancelled())
+            } else {
+                Ok(None)
+            }
+        })
+    }
+
+    fn set<'a>(
+        &'a self,
+        _key: &'a CacheKey,
+        _text: &'a str,
+        cancel: &'a CancellationToken,
+    ) -> CacheFuture<'a, ()> {
+        Box::pin(async move {
+            let _guard = CacheCleanupGuard(self);
+            self.entered.notify_one();
+            cancel.cancelled().await;
+            self.cancelling.notify_one();
+            self.release.notified().await;
+            self.cleaned
+                .store(true, std::sync::atomic::Ordering::SeqCst);
+            Err(CacheError::cancelled())
+        })
+    }
+}
+
+#[tokio::test]
+async fn cancelling_http_with_cache_waits_for_cache_cleanup_even_with_zero_grace() -> Result<()> {
+    use std::sync::atomic::Ordering;
+    let mut fixture = Fixture::new("cache_pending")?;
+    fixture.worker.shutdown_timeout = Duration::ZERO;
+    let (endpoint, server) = model_server(1, false).await?;
+    let backend = Arc::new(ControlledCache::default());
+    let service = TranslationService::new(TranslatorConfig {
+        provider: "openai".into(),
+        endpoint,
+        api_key: "synthetic-loopback-key".into(),
+        model: "cleanup-model".into(),
+        timeout_seconds: 3.0,
+        lang_out: "zh".into(),
+        options: json!({"qps":1}),
+    })?
+    .with_cache(backend.clone());
+    ensure!(!service.requires_reap() && service.requires_cooperative_cleanup());
+    let cancel = CancellationToken::new();
+    let operation = translate_pdf(
+        &fixture.worker,
+        fixture.job.clone(),
+        Arc::new(service),
+        cancel.clone(),
+        None,
+    );
+    tokio::pin!(operation);
+    timeout(DEADLINE, async {
+        tokio::select! {
+            _ = backend.entered.notified() => Ok(()),
+            result = &mut operation => bail!("cache write was never reached: {result:?}"),
+        }
+    })
+    .await??;
+    cancel.cancel();
+    timeout(DEADLINE, async {
+        tokio::select! {
+            _ = backend.cancelling.notified() => Ok(()),
+            result = &mut operation => bail!("bridge dropped cache cleanup: {result:?}"),
+        }
+    })
+    .await??;
+    tokio::select! {
+        result = &mut operation => bail!("bridge returned before cache cleanup was released: {result:?}"),
+        _ = tokio::time::sleep(Duration::from_millis(50)) => {},
+    }
+    ensure!(!backend.dropped_early.load(Ordering::SeqCst));
+    backend.release.notify_one();
+    let error = timeout(DEADLINE, &mut operation)
+        .await?
+        .expect_err("cancel must fail the task");
+    ensure!(format!("{error:#}").contains("cancelled"));
+    ensure!(backend.cleaned.load(Ordering::SeqCst));
+    ensure!(!backend.dropped_early.load(Ordering::SeqCst));
+    ensure!(timeout(DEADLINE, server).await???.len() == 1);
     Ok(())
 }
 

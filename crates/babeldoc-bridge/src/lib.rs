@@ -228,10 +228,10 @@ pub async fn translate_pdf_with_services(
     let capacity = u64::from(job.pool_max_workers)
         .saturating_add(term_pool)
         .clamp(MAX_OUTSTANDING as u64, 1_000_000) as usize;
-    let requires_reap = translator.requires_reap()
+    let cooperative_cleanup = translator.requires_cooperative_cleanup()
         || term_translator
             .as_ref()
-            .is_some_and(|term| term.requires_reap());
+            .is_some_and(|term| term.requires_cooperative_cleanup());
     ensure!(!cancel.is_cancelled(), "Translation cancelled");
     let temporary =
         tempfile::tempdir_in(&output_root).context("Create engine temporary directory")?;
@@ -415,9 +415,9 @@ pub async fn translate_pdf_with_services(
         let _ = enqueue(&tx, frame("cancel", &session, json!({}))).await;
     }
     let reap = async { while requests.join_next().await.is_some() {} };
-    if requires_reap {
-        // CLI providers kill and wait on their native process tree before
-        // completing cancellation. Aborting here would discard that guarantee.
+    if cooperative_cleanup {
+        // CLI providers reap their process tree, and cache backends wait for
+        // interrupted blocking writes. Aborting would discard those owners.
         reap.await;
     } else if timeout(worker.shutdown_timeout, reap).await.is_err() {
         requests.abort_all();

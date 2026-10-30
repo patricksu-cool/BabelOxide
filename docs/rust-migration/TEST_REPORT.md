@@ -1,6 +1,22 @@
 # 移植測試報告
 
-更新：2026-10-29，Asia/Taipei。Python穩定基準 `d18165e`，Rust開發分支 `feature/rust-babeldoc-hybrid`。本報告驗收核心PoC及第5階段離線翻譯服務；不宣稱全面功能或所有SDK細節等價。
+更新：2026-10-30，Asia/Taipei。Python 穩定基準 `d18165e`，Rust 開發分支 `feature/rust-babeldoc-hybrid`。本報告驗收核心 PoC、第 5 階段翻譯服務及第 6 階段設定／快取／CLI／任務管理；不宣稱全面功能或所有 SDK 細節等價。
+
+## 第 6 階段核心與 CLI 實測
+
+| 檢查 | 結果 |
+| --- | --- |
+| Rust workspace | **167 passed，0 failed／ignored**：bridge 17、CLI 7、config 22、core 112、tasks 9 |
+| 格式／Clippy | `cargo fmt --all --check`、`cargo clippy --workspace --all-targets --locked -- -D warnings` 通過 |
+| Worker／Ruff | **26 passed**；worker 與 smoke 腳本 Ruff 通過。原 Python 全套 279 項沿用下列第 5 階段紀錄，未宣稱本輪重新執行 |
+| Config | 優先序、24 服務選項、舊 TOML 保留、並行遷移／寫入、Windows 鎖檔原子保存、CWD 隔離；API key 以遮罩 Debug 與錯誤訊息處理 |
+| Cache | 27 項 storage／service 測試，涵蓋真 SQLite／WAL、舊 JSON namespace、端點隔離、read-only、loopback HTTP 後重新開庫命中、busy／取消與無晚到 writer |
+| Tasks／Bridge | 排隊取消、獨立並行批次、首檔失敗停止、shutdown 等待、未首次 poll 就關 runtime、取消與終態線性化；cache 清理 fixture 證明 grace=0 仍等待 cooperative cleanup |
+| CLI process | help／version 不啟 Python、不建立設定；兩檔單一 terminal；獨立 main／term HTTP 設定與 usage；敏感錯誤不回顯 |
+| 真實 BabelDOC PDF | exit 0；四頁原檔、105 個 loopback identity 請求、36 個 batch、68 個進度、1 個 finish |
+| 與 Python main 比較 | mono／dual 各 4 頁；文字、逐字元座標、圖片一致；8 頁 96 DPI RGB 渲染像素差 0，見 [PHASE6_PDF_COMPARISON](PHASE6_PDF_COMPARISON.json) |
+
+證據：`.test-output/rust-migration/phase6-core-cli-tests.log`、`phase6-worker-tests.xml`、`phase6-cli-full/summary.json` 與 `phase6-pdf-comparison.json`。測試隔離 HOME／USERPROFILE／TEMP／PDF2ZH_APP_DIR，不讀取使用者真實設定或憑證。GUI／PDFium 尚未包含在上述 167 項中，離線資產維護操作仍待實作。
 
 ## 第5階段實測
 
@@ -58,4 +74,4 @@ Rust 指令：`cargo test --workspace --locked`。Python 指令：`.venv/Scripts
 
 ## 尚未驗收
 
-原34項Python retry案例仍保留，Rust現在已有對應runtime／transport證據，詳PROVIDER_TEST_MATRIX；未把原policy宣告物件的每個負例重建成完整逐列矩陣，也未證明HTTPX write／pool逐階段timeout完全等價。設定遷移、持久cache、GUI、預覽、真實免費API、長時間／大型／並行PDF、乾淨Windows、正式打包、安全與再散布授權均需後續驗證。沒有將舊輪次數字當成新功能的測試結果。
+原 34 項 Python retry 案例仍保留，Rust 現在已有對應 runtime／transport 證據，詳 PROVIDER_TEST_MATRIX；未把原 policy 宣告物件的每個負例重建成完整逐列矩陣，也未證明 HTTPX write／pool 逐階段 timeout 完全等價。GUI、預覽、資產維護、真實免費 API、長時間／大型／並行 PDF、乾淨 Windows、正式打包、安全與再散布授權仍需驗證。沒有將舊輪次數字當成新功能的測試結果。

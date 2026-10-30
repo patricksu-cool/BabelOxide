@@ -14,6 +14,9 @@ pub struct Usage {
 pub struct MetricsSnapshot {
     pub calls: u64,
     pub cache_hits: u64,
+    pub cache_read_errors: u64,
+    pub cache_write_errors: u64,
+    pub legacy_cache_hits: u64,
     pub admissions: u64,
     pub http_attempts: u64,
     pub retry_sleeps: u64,
@@ -27,6 +30,9 @@ pub struct MetricsSnapshot {
 pub struct Metrics {
     calls: AtomicU64,
     cache_hits: AtomicU64,
+    cache_read_errors: AtomicU64,
+    cache_write_errors: AtomicU64,
+    legacy_cache_hits: AtomicU64,
     admissions: AtomicU64,
     http_attempts: AtomicU64,
     retry_sleeps: AtomicU64,
@@ -44,6 +50,9 @@ impl Metrics {
         MetricsSnapshot {
             calls: load(&self.calls),
             cache_hits: load(&self.cache_hits),
+            cache_read_errors: load(&self.cache_read_errors),
+            cache_write_errors: load(&self.cache_write_errors),
+            legacy_cache_hits: load(&self.legacy_cache_hits),
             admissions: load(&self.admissions),
             http_attempts: load(&self.http_attempts),
             retry_sleeps: load(&self.retry_sleeps),
@@ -63,6 +72,18 @@ impl Metrics {
     }
     pub(crate) fn admit(&self) {
         self.admissions.fetch_add(1, Ordering::Relaxed);
+    }
+    pub(crate) fn cache_hit(&self) {
+        self.cache_hits.fetch_add(1, Ordering::Relaxed);
+    }
+    pub(crate) fn cache_read_error(&self) {
+        self.cache_read_errors.fetch_add(1, Ordering::Relaxed);
+    }
+    pub(crate) fn cache_write_error(&self) {
+        self.cache_write_errors.fetch_add(1, Ordering::Relaxed);
+    }
+    pub(crate) fn legacy_cache_hit(&self) {
+        self.legacy_cache_hits.fetch_add(1, Ordering::Relaxed);
     }
     pub(crate) fn http(&self) {
         self.http_attempts.fetch_add(1, Ordering::Relaxed);

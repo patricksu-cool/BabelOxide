@@ -73,6 +73,8 @@ def main():
 
     scenario = json.loads((ROOT / "scenario.json").read_text(encoding="utf-8"))["scenario"]
     (ROOT / "worker.pid").write_text(str(os.getpid()), encoding="ascii")
+    with (ROOT / "worker-starts.log").open("a", encoding="ascii") as starts:
+        starts.write(f"{os.getpid()}\n")
     if scenario == "startup_crash":
         os._exit(23)
     if scenario == "startup_hang":
@@ -107,10 +109,10 @@ def main():
             received_capacity=start["max_outstanding"], received_job=start["job"],
         )
         return 0
-    if scenario == "cli_pending":
+    if scenario in {"cli_pending", "cache_pending"}:
         send(
             "translate", id="w-cli", method="translate", text="offline CLI fixture",
-            ignore_cache=True, rate_limit_params=None, translator="main",
+            ignore_cache=scenario == "cli_pending", rate_limit_params=None, translator="main",
         )
         send("progress", event={"stage": "cli_requested"})
         hang()

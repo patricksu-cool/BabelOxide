@@ -7,12 +7,16 @@ use std::{
     collections::BTreeMap,
     fmt,
     path::PathBuf,
-    sync::atomic::{AtomicU32, AtomicU64, Ordering},
+    sync::{
+        Arc,
+        atomic::{AtomicU32, AtomicU64, Ordering},
+    },
     time::Duration,
 };
 use tokio::sync::{Mutex, OnceCell, Semaphore};
 use tokio_util::sync::CancellationToken;
 
+pub mod cache;
 pub mod error;
 pub mod limiter;
 pub mod metrics;
@@ -21,6 +25,10 @@ pub mod providers;
 pub mod retry;
 pub mod transport;
 
+pub use cache::{
+    CacheBackend, CacheError, CacheErrorKind, CacheFuture, CacheKey, CacheMethod, CacheResult,
+    CacheStore, LegacyBinding, LegacyNamespace,
+};
 pub use error::{ErrorKind, ProviderError, ProviderResult};
 pub use limiter::RateLimiter;
 pub use metrics::{MetricsSnapshot, Usage};
@@ -90,6 +98,8 @@ pub struct TranslationService {
     num_predict: AtomicU64,
     recommended_qps: AtomicU32,
     recommended_workers: AtomicU32,
+    cache: Option<Arc<dyn CacheBackend>>,
+    legacy_cache: Option<LegacyBinding>,
 }
 impl TranslationService {
     pub fn new(config: TranslatorConfig) -> Result<Self> {
@@ -175,6 +185,8 @@ impl TranslationService {
             num_predict: AtomicU64::new(num_predict),
             recommended_qps: AtomicU32::new(0),
             recommended_workers: AtomicU32::new(0),
+            cache: None,
+            legacy_cache: None,
         })
     }
     pub fn new_with_transport(
@@ -185,6 +197,17 @@ impl TranslationService {
         let mut service = Self::new_with_runtime(config, runtime)?;
         service.http = http;
         Ok(service)
+    }
+    /// Cache access remains optional and never chooses a user path implicitly.
+    pub fn with_cache(mut self, cache: Arc<dyn CacheBackend>) -> Self {
+        self.cache = Some(cache);
+        self
+    }
+    /// Explicitly assigns the provenance of old Python rows to this configured
+    /// service. Unbound legacy rows are preserved but never automatically used.
+    pub fn with_legacy_cache(mut self, binding: LegacyBinding) -> Self {
+        self.legacy_cache = Some(binding);
+        self
     }
     pub fn name(&self) -> &str {
         &self.config.provider
@@ -204,6 +227,12 @@ impl TranslationService {
     }
     pub fn owns_process(&self) -> bool {
         self.requires_reap()
+    }
+    /// Cache backends can own blocking SQLite work or transaction rollback.
+    /// The bridge must await their cooperative cancellation just as it awaits
+    /// a child-process owner; aborting the future can detach that cleanup.
+    pub fn requires_cooperative_cleanup(&self) -> bool {
+        self.requires_reap() || self.cache.is_some()
     }
     pub fn lang_out(&self) -> &str {
         &self.config.lang_out
@@ -265,6 +294,21 @@ impl TranslationService {
                 "unsupported translation request method",
             ));
         }
+        let cache_key = (self.cache.is_some()
+            && !request.ignore_cache
+            && self
+                .config
+                .options
+                .get("ignore_cache")
+                .and_then(Value::as_bool)
+                != Some(true))
+        .then(|| CacheKey::from_request(&self.config, request));
+        if let Some(key) = &cache_key
+            && let Some(text) = self.cached_translation(key, request, cancel).await?
+        {
+            self.runtime.metrics().cache_hit();
+            return Ok(ProviderOutput::text(text));
+        }
         let ctx = ProviderContext {
             config: &self.config,
             request,
@@ -288,7 +332,73 @@ impl TranslationService {
         self.runtime.metrics().admit();
         let _inflight = self.runtime.metrics().enter();
         // Cooperative provider cancellation permits process-tree kill and reap.
-        providers::dispatch(&ctx, &self.num_predict).await
+        let output = providers::dispatch(&ctx, &self.num_predict).await?;
+        if let Some(key) = &cache_key {
+            self.store_translation(key, &output.text, cancel).await?;
+        }
+        Ok(output)
+    }
+    async fn cached_translation(
+        &self,
+        key: &CacheKey,
+        request: &TranslationRequest,
+        cancel: &CancellationToken,
+    ) -> ProviderResult<Option<String>> {
+        let Some(cache) = &self.cache else {
+            return Ok(None);
+        };
+        match cache.get(key, cancel).await {
+            Ok(Some(text)) => {
+                if cancel.is_cancelled() {
+                    return Err(ProviderError::cancelled());
+                }
+                return Ok(Some(text));
+            }
+            Ok(None) => {}
+            Err(error) if error.is_cancelled() => return Err(ProviderError::cancelled()),
+            Err(_) => self.runtime.metrics().cache_read_error(),
+        }
+        if let Some(binding) = &self.legacy_cache
+            && binding.matches(request)
+        {
+            match cache
+                .get_legacy(&binding.namespace, &request.text, cancel)
+                .await
+            {
+                Ok(Some(text)) => {
+                    if cancel.is_cancelled() {
+                        return Err(ProviderError::cancelled());
+                    }
+                    self.store_translation(key, &text, cancel).await?;
+                    self.runtime.metrics().legacy_cache_hit();
+                    return Ok(Some(text));
+                }
+                Ok(None) => {}
+                Err(error) if error.is_cancelled() => return Err(ProviderError::cancelled()),
+                Err(_) => self.runtime.metrics().cache_read_error(),
+            }
+        }
+        Ok(None)
+    }
+    async fn store_translation(
+        &self,
+        key: &CacheKey,
+        text: &str,
+        cancel: &CancellationToken,
+    ) -> ProviderResult<()> {
+        if cancel.is_cancelled() {
+            return Err(ProviderError::cancelled());
+        }
+        if let Some(cache) = &self.cache {
+            match cache.set(key, text, cancel).await {
+                Ok(()) => {}
+                Err(error) if error.is_cancelled() => return Err(ProviderError::cancelled()),
+                // Python TranslationCache.set catches Exception internally.
+                // Cache persistence failure must not fail a valid translation.
+                Err(_) => self.runtime.metrics().cache_write_error(),
+            }
+        }
+        Ok(())
     }
     async fn ensure_prepared(&self, ctx: &ProviderContext<'_>) -> ProviderResult<()> {
         let cancel = ctx.cancel;

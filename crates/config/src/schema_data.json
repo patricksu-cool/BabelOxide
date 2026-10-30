@@ -1,0 +1,2883 @@
+{
+  "fields": [
+    {
+      "path": "basic.input_files",
+      "flag": "input-files",
+      "env": "PDF2ZH_INPUT_FILES",
+      "kind": "StringSet",
+      "default": [],
+      "nullable": false,
+      "secret": false,
+      "help": "Input PDF files to process"
+    },
+    {
+      "path": "basic.debug",
+      "flag": "debug",
+      "env": "PDF2ZH_DEBUG",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Enable debug mode"
+    },
+    {
+      "path": "basic.gui",
+      "flag": "gui",
+      "env": "PDF2ZH_GUI",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Enable GUI mode"
+    },
+    {
+      "path": "basic.warmup",
+      "flag": "warmup",
+      "env": "PDF2ZH_WARMUP",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Only download and verify required assets then exit"
+    },
+    {
+      "path": "basic.generate_offline_assets",
+      "flag": "generate-offline-assets",
+      "env": "PDF2ZH_GENERATE_OFFLINE_ASSETS",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Generate offline assets package in the specified directory"
+    },
+    {
+      "path": "basic.restore_offline_assets",
+      "flag": "restore-offline-assets",
+      "env": "PDF2ZH_RESTORE_OFFLINE_ASSETS",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Restore offline assets package from the specified file"
+    },
+    {
+      "path": "basic.version",
+      "flag": "version",
+      "env": "PDF2ZH_VERSION",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Show version then exit"
+    },
+    {
+      "path": "gui_settings.share",
+      "flag": "share",
+      "env": "PDF2ZH_SHARE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Enable sharing mode"
+    },
+    {
+      "path": "gui_settings.auth_file",
+      "flag": "auth-file",
+      "env": "PDF2ZH_AUTH_FILE",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "Path to the authentication file"
+    },
+    {
+      "path": "gui_settings.welcome_page",
+      "flag": "welcome-page",
+      "env": "PDF2ZH_WELCOME_PAGE",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Path to the welcome page html file"
+    },
+    {
+      "path": "gui_settings.enabled_services",
+      "flag": "enabled-services",
+      "env": "PDF2ZH_ENABLED_SERVICES",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Enabled services"
+    },
+    {
+      "path": "gui_settings.disable_gui_sensitive_input",
+      "flag": "disable-gui-sensitive-input",
+      "env": "PDF2ZH_DISABLE_GUI_SENSITIVE_INPUT",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Disable GUI sensitive input"
+    },
+    {
+      "path": "gui_settings.disable_config_auto_save",
+      "flag": "disable-config-auto-save",
+      "env": "PDF2ZH_DISABLE_CONFIG_AUTO_SAVE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Disable automatic saving of configuration"
+    },
+    {
+      "path": "gui_settings.server_port",
+      "flag": "server-port",
+      "env": "PDF2ZH_SERVER_PORT",
+      "kind": "Integer",
+      "default": 7860,
+      "nullable": false,
+      "secret": false,
+      "help": "WebUI port"
+    },
+    {
+      "path": "gui_settings.server_name",
+      "flag": "server-name",
+      "env": "PDF2ZH_SERVER_NAME",
+      "kind": "String",
+      "default": "127.0.0.1",
+      "nullable": false,
+      "secret": false,
+      "help": "WebUI listen address; other addresses expose the GUI"
+    },
+    {
+      "path": "gui_settings.ui_lang",
+      "flag": "ui-lang",
+      "env": "PDF2ZH_UI_LANG",
+      "kind": "String",
+      "default": "en",
+      "nullable": true,
+      "secret": false,
+      "help": "UI language"
+    },
+    {
+      "path": "translation.min_text_length",
+      "flag": "min-text-length",
+      "env": "PDF2ZH_MIN_TEXT_LENGTH",
+      "kind": "Integer",
+      "default": 5,
+      "nullable": false,
+      "secret": false,
+      "help": "Minimum text length to translate"
+    },
+    {
+      "path": "translation.rpc_doclayout",
+      "flag": "rpc-doclayout",
+      "env": "PDF2ZH_RPC_DOCLAYOUT",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "RPC service host address for document layout analysis"
+    },
+    {
+      "path": "translation.lang_in",
+      "flag": "lang-in",
+      "env": "PDF2ZH_LANG_IN",
+      "kind": "String",
+      "default": "en",
+      "nullable": false,
+      "secret": false,
+      "help": "Source language code"
+    },
+    {
+      "path": "translation.lang_out",
+      "flag": "lang-out",
+      "env": "PDF2ZH_LANG_OUT",
+      "kind": "String",
+      "default": "zh",
+      "nullable": false,
+      "secret": false,
+      "help": "Target language code"
+    },
+    {
+      "path": "translation.output",
+      "flag": "output",
+      "env": "PDF2ZH_OUTPUT",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Output directory for translated files"
+    },
+    {
+      "path": "translation.qps",
+      "flag": "qps",
+      "env": "PDF2ZH_QPS",
+      "kind": "Integer",
+      "default": 4,
+      "nullable": false,
+      "secret": false,
+      "help": "QPS limit for translation service"
+    },
+    {
+      "path": "translation.ignore_cache",
+      "flag": "ignore-cache",
+      "env": "PDF2ZH_IGNORE_CACHE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Ignore translation cache"
+    },
+    {
+      "path": "translation.custom_system_prompt",
+      "flag": "custom-system-prompt",
+      "env": "PDF2ZH_CUSTOM_SYSTEM_PROMPT",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "Custom system prompt for translation. It is mainly used to add the `/no_think` instruction of Qwen 3 in the prompt. e.g. --custom-system-prompt \"/no_think You are a professional, authentic machine translation engine.\""
+    },
+    {
+      "path": "translation.glossaries",
+      "flag": "glossaries",
+      "env": "PDF2ZH_GLOSSARIES",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Glossary file list."
+    },
+    {
+      "path": "translation.save_auto_extracted_glossary",
+      "flag": "save-auto-extracted-glossary",
+      "env": "PDF2ZH_SAVE_AUTO_EXTRACTED_GLOSSARY",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "save automatically extracted glossary"
+    },
+    {
+      "path": "translation.pool_max_workers",
+      "flag": "pool-max-workers",
+      "env": "PDF2ZH_POOL_MAX_WORKERS",
+      "kind": "Integer",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Maximum number of workers for translation pool. If not set, will use qps as the number of workers"
+    },
+    {
+      "path": "translation.term_qps",
+      "flag": "term-qps",
+      "env": "PDF2ZH_TERM_QPS",
+      "kind": "Integer",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "QPS limit for term extraction translation service. If not set, will follow qps."
+    },
+    {
+      "path": "translation.term_pool_max_workers",
+      "flag": "term-pool-max-workers",
+      "env": "PDF2ZH_TERM_POOL_MAX_WORKERS",
+      "kind": "Integer",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Maximum number of workers for term extraction translation pool. If not set or 0, will follow pool_max_workers."
+    },
+    {
+      "path": "translation.no_auto_extract_glossary",
+      "flag": "no-auto-extract-glossary",
+      "env": "PDF2ZH_NO_AUTO_EXTRACT_GLOSSARY",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Disable auto extract glossary"
+    },
+    {
+      "path": "translation.primary_font_family",
+      "flag": "primary-font-family",
+      "env": "PDF2ZH_PRIMARY_FONT_FAMILY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Override primary font family for translated text. Choices: 'serif' for serif fonts, 'sans-serif' for sans-serif fonts, 'script' for script/italic fonts. If not specified, uses automatic font selection based on original text properties."
+    },
+    {
+      "path": "pdf.pages",
+      "flag": "pages",
+      "env": "PDF2ZH_PAGES",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Pages to translate (e.g. '1,2,1-,-3,3-5')"
+    },
+    {
+      "path": "pdf.no_dual",
+      "flag": "no-dual",
+      "env": "PDF2ZH_NO_DUAL",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Do not output bilingual PDF files"
+    },
+    {
+      "path": "pdf.no_mono",
+      "flag": "no-mono",
+      "env": "PDF2ZH_NO_MONO",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Do not output monolingual PDF files"
+    },
+    {
+      "path": "pdf.formular_font_pattern",
+      "flag": "formular-font-pattern",
+      "env": "PDF2ZH_FORMULAR_FONT_PATTERN",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Font pattern to identify formula text"
+    },
+    {
+      "path": "pdf.formular_char_pattern",
+      "flag": "formular-char-pattern",
+      "env": "PDF2ZH_FORMULAR_CHAR_PATTERN",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Character pattern to identify formula text"
+    },
+    {
+      "path": "pdf.split_short_lines",
+      "flag": "split-short-lines",
+      "env": "PDF2ZH_SPLIT_SHORT_LINES",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Force split short lines into different paragraphs"
+    },
+    {
+      "path": "pdf.short_line_split_factor",
+      "flag": "short-line-split-factor",
+      "env": "PDF2ZH_SHORT_LINE_SPLIT_FACTOR",
+      "kind": "Float",
+      "default": 0.8,
+      "nullable": false,
+      "secret": false,
+      "help": "Split threshold factor for short lines"
+    },
+    {
+      "path": "pdf.skip_clean",
+      "flag": "skip-clean",
+      "env": "PDF2ZH_SKIP_CLEAN",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Skip PDF cleaning step"
+    },
+    {
+      "path": "pdf.dual_translate_first",
+      "flag": "dual-translate-first",
+      "env": "PDF2ZH_DUAL_TRANSLATE_FIRST",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Put translated pages first in dual PDF mode"
+    },
+    {
+      "path": "pdf.disable_rich_text_translate",
+      "flag": "disable-rich-text-translate",
+      "env": "PDF2ZH_DISABLE_RICH_TEXT_TRANSLATE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Disable rich text translation"
+    },
+    {
+      "path": "pdf.enhance_compatibility",
+      "flag": "enhance-compatibility",
+      "env": "PDF2ZH_ENHANCE_COMPATIBILITY",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Enable all compatibility enhancement options"
+    },
+    {
+      "path": "pdf.use_alternating_pages_dual",
+      "flag": "use-alternating-pages-dual",
+      "env": "PDF2ZH_USE_ALTERNATING_PAGES_DUAL",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use alternating pages mode for dual PDF"
+    },
+    {
+      "path": "pdf.watermark_output_mode",
+      "flag": "watermark-output-mode",
+      "env": "PDF2ZH_WATERMARK_OUTPUT_MODE",
+      "kind": "String",
+      "default": "watermarked",
+      "nullable": false,
+      "secret": false,
+      "help": "Watermark output mode for PDF files (watermarked, no_watermark, or both)"
+    },
+    {
+      "path": "pdf.max_pages_per_part",
+      "flag": "max-pages-per-part",
+      "env": "PDF2ZH_MAX_PAGES_PER_PART",
+      "kind": "Integer",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Maximum pages per part for split translation"
+    },
+    {
+      "path": "pdf.translate_table_text",
+      "flag": "translate-table-text",
+      "env": "PDF2ZH_TRANSLATE_TABLE_TEXT",
+      "kind": "Bool",
+      "default": true,
+      "nullable": false,
+      "secret": false,
+      "help": "Translate table text (experimental)"
+    },
+    {
+      "path": "pdf.skip_scanned_detection",
+      "flag": "skip-scanned-detection",
+      "env": "PDF2ZH_SKIP_SCANNED_DETECTION",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Skip scanned detection"
+    },
+    {
+      "path": "pdf.ocr_workaround",
+      "flag": "ocr-workaround",
+      "env": "PDF2ZH_OCR_WORKAROUND",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Force translated text to be black and add white background"
+    },
+    {
+      "path": "pdf.auto_enable_ocr_workaround",
+      "flag": "auto-enable-ocr-workaround",
+      "env": "PDF2ZH_AUTO_ENABLE_OCR_WORKAROUND",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Enable automatic OCR workaround. If a document is detected as heavily scanned, this will attempt to enable OCR processing and skip further scan detection. See documentation for details. (default: False)"
+    },
+    {
+      "path": "pdf.only_include_translated_page",
+      "flag": "only-include-translated-page",
+      "env": "PDF2ZH_ONLY_INCLUDE_TRANSLATED_PAGE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Only include translated pages in the output PDF. Effective only when --pages is used."
+    },
+    {
+      "path": "pdf.no_merge_alternating_line_numbers",
+      "flag": "no-merge-alternating-line-numbers",
+      "env": "PDF2ZH_NO_MERGE_ALTERNATING_LINE_NUMBERS",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Handle alternating line numbers and text paragraphs in documents with line numbers"
+    },
+    {
+      "path": "pdf.no_remove_non_formula_lines",
+      "flag": "no-remove-non-formula-lines",
+      "env": "PDF2ZH_NO_REMOVE_NON_FORMULA_LINES",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Remove non-formula lines within paragraph areas"
+    },
+    {
+      "path": "pdf.non_formula_line_iou_threshold",
+      "flag": "non-formula-line-iou-threshold",
+      "env": "PDF2ZH_NON_FORMULA_LINE_IOU_THRESHOLD",
+      "kind": "Float",
+      "default": 0.9,
+      "nullable": false,
+      "secret": false,
+      "help": "IoU threshold for identifying non-formula lines"
+    },
+    {
+      "path": "pdf.figure_table_protection_threshold",
+      "flag": "figure-table-protection-threshold",
+      "env": "PDF2ZH_FIGURE_TABLE_PROTECTION_THRESHOLD",
+      "kind": "Float",
+      "default": 0.9,
+      "nullable": false,
+      "secret": false,
+      "help": "Protection threshold for figures and tables (lines within figures/tables will not be processed)"
+    },
+    {
+      "path": "pdf.skip_formula_offset_calculation",
+      "flag": "skip-formula-offset-calculation",
+      "env": "PDF2ZH_SKIP_FORMULA_OFFSET_CALCULATION",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Skip formula offset calculation during processing"
+    },
+    {
+      "path": "config_file",
+      "flag": "config-file",
+      "env": "PDF2ZH_CONFIG_FILE",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Path to the configuration file"
+    },
+    {
+      "path": "report_interval",
+      "flag": "report-interval",
+      "env": "PDF2ZH_REPORT_INTERVAL",
+      "kind": "Float",
+      "default": 0.1,
+      "nullable": false,
+      "secret": false,
+      "help": "Progress report interval in seconds"
+    },
+    {
+      "path": "siliconflowfree",
+      "flag": "siliconflowfree",
+      "env": "PDF2ZH_SILICONFLOWFREE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use SiliconFlowFree for translation"
+    },
+    {
+      "path": "siliconflowfree_detail.siliconflow_free_enable_json_mode",
+      "flag": "siliconflow-free-enable-json-mode",
+      "env": "PDF2ZH_SILICONFLOW_FREE_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for SiliconFlow Free service"
+    },
+    {
+      "path": "term_siliconflowfree",
+      "flag": "term-siliconflowfree",
+      "env": "PDF2ZH_TERM_SILICONFLOWFREE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use SiliconFlowFree for term extraction"
+    },
+    {
+      "path": "term_siliconflowfree_detail.term_siliconflow_free_enable_json_mode",
+      "flag": "term-siliconflow-free-enable-json-mode",
+      "env": "PDF2ZH_TERM_SILICONFLOW_FREE_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for SiliconFlow Free service"
+    },
+    {
+      "path": "openai",
+      "flag": "openai",
+      "env": "PDF2ZH_OPENAI",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use OpenAI for translation"
+    },
+    {
+      "path": "openai_detail.openai_model",
+      "flag": "openai-model",
+      "env": "PDF2ZH_OPENAI_MODEL",
+      "kind": "String",
+      "default": "gpt-4o-mini",
+      "nullable": false,
+      "secret": false,
+      "help": "OpenAI model to use"
+    },
+    {
+      "path": "openai_detail.openai_base_url",
+      "flag": "openai-base-url",
+      "env": "PDF2ZH_OPENAI_BASE_URL",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "Base URL for OpenAI API"
+    },
+    {
+      "path": "openai_detail.openai_api_key",
+      "flag": "openai-api-key",
+      "env": "PDF2ZH_OPENAI_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for OpenAI service"
+    },
+    {
+      "path": "openai_detail.openai_timeout",
+      "flag": "openai-timeout",
+      "env": "PDF2ZH_OPENAI_TIMEOUT",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Timeout (seconds) for OpenAI service"
+    },
+    {
+      "path": "openai_detail.openai_temperature",
+      "flag": "openai-temperature",
+      "env": "PDF2ZH_OPENAI_TEMPERATURE",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Temperature for OpenAI service"
+    },
+    {
+      "path": "openai_detail.openai_reasoning_effort",
+      "flag": "openai-reasoning-effort",
+      "env": "PDF2ZH_OPENAI_REASONING_EFFORT",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Reasoning effort for OpenAI service (minimal/low/medium/high)"
+    },
+    {
+      "path": "openai_detail.openai_enable_json_mode",
+      "flag": "openai-enable-json-mode",
+      "env": "PDF2ZH_OPENAI_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for OpenAI service"
+    },
+    {
+      "path": "openai_detail.openai_send_temprature",
+      "flag": "openai-send-temprature",
+      "env": "PDF2ZH_OPENAI_SEND_TEMPRATURE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Send temprature to OpenAI service"
+    },
+    {
+      "path": "openai_detail.openai_send_reasoning_effort",
+      "flag": "openai-send-reasoning-effort",
+      "env": "PDF2ZH_OPENAI_SEND_REASONING_EFFORT",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Send reasoning effort to OpenAI service"
+    },
+    {
+      "path": "term_openai",
+      "flag": "term-openai",
+      "env": "PDF2ZH_TERM_OPENAI",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use OpenAI for term extraction"
+    },
+    {
+      "path": "term_openai_detail.term_openai_model",
+      "flag": "term-openai-model",
+      "env": "PDF2ZH_TERM_OPENAI_MODEL",
+      "kind": "String",
+      "default": "gpt-4o-mini",
+      "nullable": false,
+      "secret": false,
+      "help": "OpenAI model to use"
+    },
+    {
+      "path": "term_openai_detail.term_openai_base_url",
+      "flag": "term-openai-base-url",
+      "env": "PDF2ZH_TERM_OPENAI_BASE_URL",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "Base URL for OpenAI API"
+    },
+    {
+      "path": "term_openai_detail.term_openai_api_key",
+      "flag": "term-openai-api-key",
+      "env": "PDF2ZH_TERM_OPENAI_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for OpenAI service"
+    },
+    {
+      "path": "term_openai_detail.term_openai_timeout",
+      "flag": "term-openai-timeout",
+      "env": "PDF2ZH_TERM_OPENAI_TIMEOUT",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Timeout (seconds) for OpenAI service"
+    },
+    {
+      "path": "term_openai_detail.term_openai_temperature",
+      "flag": "term-openai-temperature",
+      "env": "PDF2ZH_TERM_OPENAI_TEMPERATURE",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Temperature for OpenAI service"
+    },
+    {
+      "path": "term_openai_detail.term_openai_reasoning_effort",
+      "flag": "term-openai-reasoning-effort",
+      "env": "PDF2ZH_TERM_OPENAI_REASONING_EFFORT",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Reasoning effort for OpenAI service (minimal/low/medium/high)"
+    },
+    {
+      "path": "term_openai_detail.term_openai_enable_json_mode",
+      "flag": "term-openai-enable-json-mode",
+      "env": "PDF2ZH_TERM_OPENAI_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for OpenAI service"
+    },
+    {
+      "path": "term_openai_detail.term_openai_send_temprature",
+      "flag": "term-openai-send-temprature",
+      "env": "PDF2ZH_TERM_OPENAI_SEND_TEMPRATURE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Send temprature to OpenAI service"
+    },
+    {
+      "path": "term_openai_detail.term_openai_send_reasoning_effort",
+      "flag": "term-openai-send-reasoning-effort",
+      "env": "PDF2ZH_TERM_OPENAI_SEND_REASONING_EFFORT",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Send reasoning effort to OpenAI service"
+    },
+    {
+      "path": "aliyundashscope",
+      "flag": "aliyundashscope",
+      "env": "PDF2ZH_ALIYUNDASHSCOPE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use AliyunDashScope for translation"
+    },
+    {
+      "path": "aliyundashscope_detail.aliyun_dashscope_model",
+      "flag": "aliyun-dashscope-model",
+      "env": "PDF2ZH_ALIYUN_DASHSCOPE_MODEL",
+      "kind": "String",
+      "default": "qwen-plus-latest",
+      "nullable": false,
+      "secret": false,
+      "help": "Aliyun DashScope model to use"
+    },
+    {
+      "path": "aliyundashscope_detail.aliyun_dashscope_base_url",
+      "flag": "aliyun-dashscope-base-url",
+      "env": "PDF2ZH_ALIYUN_DASHSCOPE_BASE_URL",
+      "kind": "String",
+      "default": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "nullable": true,
+      "secret": true,
+      "help": "Base URL for Aliyun DashScope API"
+    },
+    {
+      "path": "aliyundashscope_detail.aliyun_dashscope_api_key",
+      "flag": "aliyun-dashscope-api-key",
+      "env": "PDF2ZH_ALIYUN_DASHSCOPE_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for Aliyun DashScope service"
+    },
+    {
+      "path": "aliyundashscope_detail.aliyun_dashscope_timeout",
+      "flag": "aliyun-dashscope-timeout",
+      "env": "PDF2ZH_ALIYUN_DASHSCOPE_TIMEOUT",
+      "kind": "String",
+      "default": "500",
+      "nullable": true,
+      "secret": false,
+      "help": "Timeout (seconds) for Aliyun DashScope service"
+    },
+    {
+      "path": "aliyundashscope_detail.aliyun_dashscope_temperature",
+      "flag": "aliyun-dashscope-temperature",
+      "env": "PDF2ZH_ALIYUN_DASHSCOPE_TEMPERATURE",
+      "kind": "String",
+      "default": "0.0",
+      "nullable": true,
+      "secret": false,
+      "help": "Temperature for Aliyun DashScope service"
+    },
+    {
+      "path": "aliyundashscope_detail.aliyun_dashscope_send_temperature",
+      "flag": "aliyun-dashscope-send-temperature",
+      "env": "PDF2ZH_ALIYUN_DASHSCOPE_SEND_TEMPERATURE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Send temperature to Aliyun DashScope service"
+    },
+    {
+      "path": "aliyundashscope_detail.aliyun_dashscope_enable_json_mode",
+      "flag": "aliyun-dashscope-enable-json-mode",
+      "env": "PDF2ZH_ALIYUN_DASHSCOPE_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for Aliyun DashScope service"
+    },
+    {
+      "path": "term_aliyundashscope",
+      "flag": "term-aliyundashscope",
+      "env": "PDF2ZH_TERM_ALIYUNDASHSCOPE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use AliyunDashScope for term extraction"
+    },
+    {
+      "path": "term_aliyundashscope_detail.term_aliyun_dashscope_model",
+      "flag": "term-aliyun-dashscope-model",
+      "env": "PDF2ZH_TERM_ALIYUN_DASHSCOPE_MODEL",
+      "kind": "String",
+      "default": "qwen-plus-latest",
+      "nullable": false,
+      "secret": false,
+      "help": "Aliyun DashScope model to use"
+    },
+    {
+      "path": "term_aliyundashscope_detail.term_aliyun_dashscope_base_url",
+      "flag": "term-aliyun-dashscope-base-url",
+      "env": "PDF2ZH_TERM_ALIYUN_DASHSCOPE_BASE_URL",
+      "kind": "String",
+      "default": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "nullable": true,
+      "secret": true,
+      "help": "Base URL for Aliyun DashScope API"
+    },
+    {
+      "path": "term_aliyundashscope_detail.term_aliyun_dashscope_api_key",
+      "flag": "term-aliyun-dashscope-api-key",
+      "env": "PDF2ZH_TERM_ALIYUN_DASHSCOPE_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for Aliyun DashScope service"
+    },
+    {
+      "path": "term_aliyundashscope_detail.term_aliyun_dashscope_timeout",
+      "flag": "term-aliyun-dashscope-timeout",
+      "env": "PDF2ZH_TERM_ALIYUN_DASHSCOPE_TIMEOUT",
+      "kind": "String",
+      "default": "500",
+      "nullable": true,
+      "secret": false,
+      "help": "Timeout (seconds) for Aliyun DashScope service"
+    },
+    {
+      "path": "term_aliyundashscope_detail.term_aliyun_dashscope_temperature",
+      "flag": "term-aliyun-dashscope-temperature",
+      "env": "PDF2ZH_TERM_ALIYUN_DASHSCOPE_TEMPERATURE",
+      "kind": "String",
+      "default": "0.0",
+      "nullable": true,
+      "secret": false,
+      "help": "Temperature for Aliyun DashScope service"
+    },
+    {
+      "path": "term_aliyundashscope_detail.term_aliyun_dashscope_send_temperature",
+      "flag": "term-aliyun-dashscope-send-temperature",
+      "env": "PDF2ZH_TERM_ALIYUN_DASHSCOPE_SEND_TEMPERATURE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Send temperature to Aliyun DashScope service"
+    },
+    {
+      "path": "term_aliyundashscope_detail.term_aliyun_dashscope_enable_json_mode",
+      "flag": "term-aliyun-dashscope-enable-json-mode",
+      "env": "PDF2ZH_TERM_ALIYUN_DASHSCOPE_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for Aliyun DashScope service"
+    },
+    {
+      "path": "google",
+      "flag": "google",
+      "env": "PDF2ZH_GOOGLE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use Google for translation"
+    },
+    {
+      "path": "bing",
+      "flag": "bing",
+      "env": "PDF2ZH_BING",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use Bing for translation"
+    },
+    {
+      "path": "deepl",
+      "flag": "deepl",
+      "env": "PDF2ZH_DEEPL",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use DeepL for translation"
+    },
+    {
+      "path": "deepl_detail.deepl_auth_key",
+      "flag": "deepl-auth-key",
+      "env": "PDF2ZH_DEEPL_AUTH_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "DeepL auth key"
+    },
+    {
+      "path": "deepseek",
+      "flag": "deepseek",
+      "env": "PDF2ZH_DEEPSEEK",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use DeepSeek for translation"
+    },
+    {
+      "path": "deepseek_detail.deepseek_model",
+      "flag": "deepseek-model",
+      "env": "PDF2ZH_DEEPSEEK_MODEL",
+      "kind": "String",
+      "default": "deepseek-chat",
+      "nullable": false,
+      "secret": false,
+      "help": "DeepSeek model to use"
+    },
+    {
+      "path": "deepseek_detail.deepseek_api_key",
+      "flag": "deepseek-api-key",
+      "env": "PDF2ZH_DEEPSEEK_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for DeepSeek service"
+    },
+    {
+      "path": "deepseek_detail.deepseek_enable_json_mode",
+      "flag": "deepseek-enable-json-mode",
+      "env": "PDF2ZH_DEEPSEEK_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for DeepSeek service"
+    },
+    {
+      "path": "deepseek_detail.deepseek_thinking_mode",
+      "flag": "deepseek-thinking-mode",
+      "env": "PDF2ZH_DEEPSEEK_THINKING_MODE",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Thinking mode for DeepSeek v4 models (enabled/disabled)"
+    },
+    {
+      "path": "deepseek_detail.deepseek_reasoning_effort",
+      "flag": "deepseek-reasoning-effort",
+      "env": "PDF2ZH_DEEPSEEK_REASONING_EFFORT",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Reasoning effort for DeepSeek thinking mode (high/max)"
+    },
+    {
+      "path": "term_deepseek",
+      "flag": "term-deepseek",
+      "env": "PDF2ZH_TERM_DEEPSEEK",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use DeepSeek for term extraction"
+    },
+    {
+      "path": "term_deepseek_detail.term_deepseek_model",
+      "flag": "term-deepseek-model",
+      "env": "PDF2ZH_TERM_DEEPSEEK_MODEL",
+      "kind": "String",
+      "default": "deepseek-chat",
+      "nullable": false,
+      "secret": false,
+      "help": "DeepSeek model to use"
+    },
+    {
+      "path": "term_deepseek_detail.term_deepseek_api_key",
+      "flag": "term-deepseek-api-key",
+      "env": "PDF2ZH_TERM_DEEPSEEK_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for DeepSeek service"
+    },
+    {
+      "path": "term_deepseek_detail.term_deepseek_enable_json_mode",
+      "flag": "term-deepseek-enable-json-mode",
+      "env": "PDF2ZH_TERM_DEEPSEEK_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for DeepSeek service"
+    },
+    {
+      "path": "term_deepseek_detail.term_deepseek_thinking_mode",
+      "flag": "term-deepseek-thinking-mode",
+      "env": "PDF2ZH_TERM_DEEPSEEK_THINKING_MODE",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Thinking mode for DeepSeek v4 models (enabled/disabled)"
+    },
+    {
+      "path": "term_deepseek_detail.term_deepseek_reasoning_effort",
+      "flag": "term-deepseek-reasoning-effort",
+      "env": "PDF2ZH_TERM_DEEPSEEK_REASONING_EFFORT",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Reasoning effort for DeepSeek thinking mode (high/max)"
+    },
+    {
+      "path": "ollama",
+      "flag": "ollama",
+      "env": "PDF2ZH_OLLAMA",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use Ollama for translation"
+    },
+    {
+      "path": "ollama_detail.ollama_model",
+      "flag": "ollama-model",
+      "env": "PDF2ZH_OLLAMA_MODEL",
+      "kind": "String",
+      "default": "gemma2",
+      "nullable": false,
+      "secret": false,
+      "help": "Ollama model to use"
+    },
+    {
+      "path": "ollama_detail.ollama_host",
+      "flag": "ollama-host",
+      "env": "PDF2ZH_OLLAMA_HOST",
+      "kind": "String",
+      "default": "http://localhost:11434",
+      "nullable": true,
+      "secret": true,
+      "help": "Ollama host"
+    },
+    {
+      "path": "ollama_detail.num_predict",
+      "flag": "num-predict",
+      "env": "PDF2ZH_NUM_PREDICT",
+      "kind": "Integer",
+      "default": 2000,
+      "nullable": true,
+      "secret": false,
+      "help": "The max number of token to predict."
+    },
+    {
+      "path": "term_ollama",
+      "flag": "term-ollama",
+      "env": "PDF2ZH_TERM_OLLAMA",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use Ollama for term extraction"
+    },
+    {
+      "path": "term_ollama_detail.term_ollama_model",
+      "flag": "term-ollama-model",
+      "env": "PDF2ZH_TERM_OLLAMA_MODEL",
+      "kind": "String",
+      "default": "gemma2",
+      "nullable": false,
+      "secret": false,
+      "help": "Ollama model to use"
+    },
+    {
+      "path": "term_ollama_detail.term_ollama_host",
+      "flag": "term-ollama-host",
+      "env": "PDF2ZH_TERM_OLLAMA_HOST",
+      "kind": "String",
+      "default": "http://localhost:11434",
+      "nullable": true,
+      "secret": true,
+      "help": "Ollama host"
+    },
+    {
+      "path": "term_ollama_detail.term_num_predict",
+      "flag": "term-num-predict",
+      "env": "PDF2ZH_TERM_NUM_PREDICT",
+      "kind": "Integer",
+      "default": 2000,
+      "nullable": true,
+      "secret": false,
+      "help": "The max number of token to predict."
+    },
+    {
+      "path": "xinference",
+      "flag": "xinference",
+      "env": "PDF2ZH_XINFERENCE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use Xinference for translation"
+    },
+    {
+      "path": "xinference_detail.xinference_model",
+      "flag": "xinference-model",
+      "env": "PDF2ZH_XINFERENCE_MODEL",
+      "kind": "String",
+      "default": "gemma-2-it",
+      "nullable": false,
+      "secret": false,
+      "help": "Xinference model to use"
+    },
+    {
+      "path": "xinference_detail.xinference_host",
+      "flag": "xinference-host",
+      "env": "PDF2ZH_XINFERENCE_HOST",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "Xinference host"
+    },
+    {
+      "path": "term_xinference",
+      "flag": "term-xinference",
+      "env": "PDF2ZH_TERM_XINFERENCE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use Xinference for term extraction"
+    },
+    {
+      "path": "term_xinference_detail.term_xinference_model",
+      "flag": "term-xinference-model",
+      "env": "PDF2ZH_TERM_XINFERENCE_MODEL",
+      "kind": "String",
+      "default": "gemma-2-it",
+      "nullable": false,
+      "secret": false,
+      "help": "Xinference model to use"
+    },
+    {
+      "path": "term_xinference_detail.term_xinference_host",
+      "flag": "term-xinference-host",
+      "env": "PDF2ZH_TERM_XINFERENCE_HOST",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "Xinference host"
+    },
+    {
+      "path": "azureopenai",
+      "flag": "azureopenai",
+      "env": "PDF2ZH_AZUREOPENAI",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use AzureOpenAI for translation"
+    },
+    {
+      "path": "azureopenai_detail.azure_openai_model",
+      "flag": "azure-openai-model",
+      "env": "PDF2ZH_AZURE_OPENAI_MODEL",
+      "kind": "String",
+      "default": "gpt-4o-mini",
+      "nullable": false,
+      "secret": false,
+      "help": "AzureOpenAI model to use"
+    },
+    {
+      "path": "azureopenai_detail.azure_openai_base_url",
+      "flag": "azure-openai-base-url",
+      "env": "PDF2ZH_AZURE_OPENAI_BASE_URL",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "Base URL for AzureOpenAI API"
+    },
+    {
+      "path": "azureopenai_detail.azure_openai_api_key",
+      "flag": "azure-openai-api-key",
+      "env": "PDF2ZH_AZURE_OPENAI_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for AzureOpenAI service"
+    },
+    {
+      "path": "azureopenai_detail.azure_openai_api_version",
+      "flag": "azure-openai-api-version",
+      "env": "PDF2ZH_AZURE_OPENAI_API_VERSION",
+      "kind": "String",
+      "default": "2024-06-01",
+      "nullable": false,
+      "secret": false,
+      "help": "API version for AzureOpenAI service"
+    },
+    {
+      "path": "term_azureopenai",
+      "flag": "term-azureopenai",
+      "env": "PDF2ZH_TERM_AZUREOPENAI",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use AzureOpenAI for term extraction"
+    },
+    {
+      "path": "term_azureopenai_detail.term_azure_openai_model",
+      "flag": "term-azure-openai-model",
+      "env": "PDF2ZH_TERM_AZURE_OPENAI_MODEL",
+      "kind": "String",
+      "default": "gpt-4o-mini",
+      "nullable": false,
+      "secret": false,
+      "help": "AzureOpenAI model to use"
+    },
+    {
+      "path": "term_azureopenai_detail.term_azure_openai_base_url",
+      "flag": "term-azure-openai-base-url",
+      "env": "PDF2ZH_TERM_AZURE_OPENAI_BASE_URL",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "Base URL for AzureOpenAI API"
+    },
+    {
+      "path": "term_azureopenai_detail.term_azure_openai_api_key",
+      "flag": "term-azure-openai-api-key",
+      "env": "PDF2ZH_TERM_AZURE_OPENAI_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for AzureOpenAI service"
+    },
+    {
+      "path": "term_azureopenai_detail.term_azure_openai_api_version",
+      "flag": "term-azure-openai-api-version",
+      "env": "PDF2ZH_TERM_AZURE_OPENAI_API_VERSION",
+      "kind": "String",
+      "default": "2024-06-01",
+      "nullable": false,
+      "secret": false,
+      "help": "API version for AzureOpenAI service"
+    },
+    {
+      "path": "modelscope",
+      "flag": "modelscope",
+      "env": "PDF2ZH_MODELSCOPE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use ModelScope for translation"
+    },
+    {
+      "path": "modelscope_detail.modelscope_model",
+      "flag": "modelscope-model",
+      "env": "PDF2ZH_MODELSCOPE_MODEL",
+      "kind": "String",
+      "default": "Qwen/Qwen2.5-32B-Instruct",
+      "nullable": false,
+      "secret": false,
+      "help": "ModelScope model to use"
+    },
+    {
+      "path": "modelscope_detail.modelscope_api_key",
+      "flag": "modelscope-api-key",
+      "env": "PDF2ZH_MODELSCOPE_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for ModelScope service"
+    },
+    {
+      "path": "modelscope_detail.modelscope_enable_json_mode",
+      "flag": "modelscope-enable-json-mode",
+      "env": "PDF2ZH_MODELSCOPE_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for ModelScope service"
+    },
+    {
+      "path": "term_modelscope",
+      "flag": "term-modelscope",
+      "env": "PDF2ZH_TERM_MODELSCOPE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use ModelScope for term extraction"
+    },
+    {
+      "path": "term_modelscope_detail.term_modelscope_model",
+      "flag": "term-modelscope-model",
+      "env": "PDF2ZH_TERM_MODELSCOPE_MODEL",
+      "kind": "String",
+      "default": "Qwen/Qwen2.5-32B-Instruct",
+      "nullable": false,
+      "secret": false,
+      "help": "ModelScope model to use"
+    },
+    {
+      "path": "term_modelscope_detail.term_modelscope_api_key",
+      "flag": "term-modelscope-api-key",
+      "env": "PDF2ZH_TERM_MODELSCOPE_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for ModelScope service"
+    },
+    {
+      "path": "term_modelscope_detail.term_modelscope_enable_json_mode",
+      "flag": "term-modelscope-enable-json-mode",
+      "env": "PDF2ZH_TERM_MODELSCOPE_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for ModelScope service"
+    },
+    {
+      "path": "zhipu",
+      "flag": "zhipu",
+      "env": "PDF2ZH_ZHIPU",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use Zhipu for translation"
+    },
+    {
+      "path": "zhipu_detail.zhipu_model",
+      "flag": "zhipu-model",
+      "env": "PDF2ZH_ZHIPU_MODEL",
+      "kind": "String",
+      "default": "glm-4-flash",
+      "nullable": false,
+      "secret": false,
+      "help": "Zhipu model to use"
+    },
+    {
+      "path": "zhipu_detail.zhipu_api_key",
+      "flag": "zhipu-api-key",
+      "env": "PDF2ZH_ZHIPU_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for Zhipu service"
+    },
+    {
+      "path": "zhipu_detail.zhipu_enable_json_mode",
+      "flag": "zhipu-enable-json-mode",
+      "env": "PDF2ZH_ZHIPU_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for Zhipu service"
+    },
+    {
+      "path": "term_zhipu",
+      "flag": "term-zhipu",
+      "env": "PDF2ZH_TERM_ZHIPU",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use Zhipu for term extraction"
+    },
+    {
+      "path": "term_zhipu_detail.term_zhipu_model",
+      "flag": "term-zhipu-model",
+      "env": "PDF2ZH_TERM_ZHIPU_MODEL",
+      "kind": "String",
+      "default": "glm-4-flash",
+      "nullable": false,
+      "secret": false,
+      "help": "Zhipu model to use"
+    },
+    {
+      "path": "term_zhipu_detail.term_zhipu_api_key",
+      "flag": "term-zhipu-api-key",
+      "env": "PDF2ZH_TERM_ZHIPU_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for Zhipu service"
+    },
+    {
+      "path": "term_zhipu_detail.term_zhipu_enable_json_mode",
+      "flag": "term-zhipu-enable-json-mode",
+      "env": "PDF2ZH_TERM_ZHIPU_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for Zhipu service"
+    },
+    {
+      "path": "siliconflow",
+      "flag": "siliconflow",
+      "env": "PDF2ZH_SILICONFLOW",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use SiliconFlow for translation"
+    },
+    {
+      "path": "siliconflow_detail.siliconflow_base_url",
+      "flag": "siliconflow-base-url",
+      "env": "PDF2ZH_SILICONFLOW_BASE_URL",
+      "kind": "String",
+      "default": "https://api.siliconflow.cn/v1",
+      "nullable": true,
+      "secret": true,
+      "help": "Base URL for SiliconFlow API"
+    },
+    {
+      "path": "siliconflow_detail.siliconflow_model",
+      "flag": "siliconflow-model",
+      "env": "PDF2ZH_SILICONFLOW_MODEL",
+      "kind": "String",
+      "default": "Qwen/Qwen2.5-7B-Instruct",
+      "nullable": false,
+      "secret": false,
+      "help": "SiliconFlow model to use"
+    },
+    {
+      "path": "siliconflow_detail.siliconflow_api_key",
+      "flag": "siliconflow-api-key",
+      "env": "PDF2ZH_SILICONFLOW_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for SiliconFlow service"
+    },
+    {
+      "path": "siliconflow_detail.siliconflow_enable_thinking",
+      "flag": "siliconflow-enable-thinking",
+      "env": "PDF2ZH_SILICONFLOW_ENABLE_THINKING",
+      "kind": "Bool",
+      "default": false,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable thinking for SiliconFlow service"
+    },
+    {
+      "path": "siliconflow_detail.siliconflow_send_enable_thinking_param",
+      "flag": "siliconflow-send-enable-thinking-param",
+      "env": "PDF2ZH_SILICONFLOW_SEND_ENABLE_THINKING_PARAM",
+      "kind": "Bool",
+      "default": false,
+      "nullable": true,
+      "secret": false,
+      "help": "Send enable thinking param to SiliconFlow service"
+    },
+    {
+      "path": "siliconflow_detail.siliconflow_enable_json_mode",
+      "flag": "siliconflow-enable-json-mode",
+      "env": "PDF2ZH_SILICONFLOW_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for SiliconFlow service"
+    },
+    {
+      "path": "term_siliconflow",
+      "flag": "term-siliconflow",
+      "env": "PDF2ZH_TERM_SILICONFLOW",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use SiliconFlow for term extraction"
+    },
+    {
+      "path": "term_siliconflow_detail.term_siliconflow_base_url",
+      "flag": "term-siliconflow-base-url",
+      "env": "PDF2ZH_TERM_SILICONFLOW_BASE_URL",
+      "kind": "String",
+      "default": "https://api.siliconflow.cn/v1",
+      "nullable": true,
+      "secret": true,
+      "help": "Base URL for SiliconFlow API"
+    },
+    {
+      "path": "term_siliconflow_detail.term_siliconflow_model",
+      "flag": "term-siliconflow-model",
+      "env": "PDF2ZH_TERM_SILICONFLOW_MODEL",
+      "kind": "String",
+      "default": "Qwen/Qwen2.5-7B-Instruct",
+      "nullable": false,
+      "secret": false,
+      "help": "SiliconFlow model to use"
+    },
+    {
+      "path": "term_siliconflow_detail.term_siliconflow_api_key",
+      "flag": "term-siliconflow-api-key",
+      "env": "PDF2ZH_TERM_SILICONFLOW_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for SiliconFlow service"
+    },
+    {
+      "path": "term_siliconflow_detail.term_siliconflow_enable_thinking",
+      "flag": "term-siliconflow-enable-thinking",
+      "env": "PDF2ZH_TERM_SILICONFLOW_ENABLE_THINKING",
+      "kind": "Bool",
+      "default": false,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable thinking for SiliconFlow service"
+    },
+    {
+      "path": "term_siliconflow_detail.term_siliconflow_send_enable_thinking_param",
+      "flag": "term-siliconflow-send-enable-thinking-param",
+      "env": "PDF2ZH_TERM_SILICONFLOW_SEND_ENABLE_THINKING_PARAM",
+      "kind": "Bool",
+      "default": false,
+      "nullable": true,
+      "secret": false,
+      "help": "Send enable thinking param to SiliconFlow service"
+    },
+    {
+      "path": "term_siliconflow_detail.term_siliconflow_enable_json_mode",
+      "flag": "term-siliconflow-enable-json-mode",
+      "env": "PDF2ZH_TERM_SILICONFLOW_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for SiliconFlow service"
+    },
+    {
+      "path": "tencentmechinetranslation",
+      "flag": "tencentmechinetranslation",
+      "env": "PDF2ZH_TENCENTMECHINETRANSLATION",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use TencentMechineTranslation for translation"
+    },
+    {
+      "path": "tencentmechinetranslation_detail.tencentcloud_secret_id",
+      "flag": "tencentcloud-secret-id",
+      "env": "PDF2ZH_TENCENTCLOUD_SECRET_ID",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "Tencent Mechine Translation secret ID"
+    },
+    {
+      "path": "tencentmechinetranslation_detail.tencentcloud_secret_key",
+      "flag": "tencentcloud-secret-key",
+      "env": "PDF2ZH_TENCENTCLOUD_SECRET_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "Tencent Mechine Translation secret Key"
+    },
+    {
+      "path": "gemini",
+      "flag": "gemini",
+      "env": "PDF2ZH_GEMINI",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use Gemini for translation"
+    },
+    {
+      "path": "gemini_detail.gemini_model",
+      "flag": "gemini-model",
+      "env": "PDF2ZH_GEMINI_MODEL",
+      "kind": "String",
+      "default": "gemini-1.5-flash",
+      "nullable": false,
+      "secret": false,
+      "help": "Gemini model to use"
+    },
+    {
+      "path": "gemini_detail.gemini_api_key",
+      "flag": "gemini-api-key",
+      "env": "PDF2ZH_GEMINI_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for Gemini service"
+    },
+    {
+      "path": "gemini_detail.gemini_enable_json_mode",
+      "flag": "gemini-enable-json-mode",
+      "env": "PDF2ZH_GEMINI_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for Gemini service"
+    },
+    {
+      "path": "term_gemini",
+      "flag": "term-gemini",
+      "env": "PDF2ZH_TERM_GEMINI",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use Gemini for term extraction"
+    },
+    {
+      "path": "term_gemini_detail.term_gemini_model",
+      "flag": "term-gemini-model",
+      "env": "PDF2ZH_TERM_GEMINI_MODEL",
+      "kind": "String",
+      "default": "gemini-1.5-flash",
+      "nullable": false,
+      "secret": false,
+      "help": "Gemini model to use"
+    },
+    {
+      "path": "term_gemini_detail.term_gemini_api_key",
+      "flag": "term-gemini-api-key",
+      "env": "PDF2ZH_TERM_GEMINI_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for Gemini service"
+    },
+    {
+      "path": "term_gemini_detail.term_gemini_enable_json_mode",
+      "flag": "term-gemini-enable-json-mode",
+      "env": "PDF2ZH_TERM_GEMINI_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for Gemini service"
+    },
+    {
+      "path": "azure",
+      "flag": "azure",
+      "env": "PDF2ZH_AZURE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use Azure for translation"
+    },
+    {
+      "path": "azure_detail.azure_endpoint",
+      "flag": "azure-endpoint",
+      "env": "PDF2ZH_AZURE_ENDPOINT",
+      "kind": "String",
+      "default": "https://api.translator.azure.cn",
+      "nullable": true,
+      "secret": true,
+      "help": "Azure endpoint"
+    },
+    {
+      "path": "azure_detail.azure_api_key",
+      "flag": "azure-api-key",
+      "env": "PDF2ZH_AZURE_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "Azure API Key"
+    },
+    {
+      "path": "anythingllm",
+      "flag": "anythingllm",
+      "env": "PDF2ZH_ANYTHINGLLM",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use AnythingLLM for translation"
+    },
+    {
+      "path": "anythingllm_detail.anythingllm_url",
+      "flag": "anythingllm-url",
+      "env": "PDF2ZH_ANYTHINGLLM_URL",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "AnythingLLM url"
+    },
+    {
+      "path": "anythingllm_detail.anythingllm_apikey",
+      "flag": "anythingllm-apikey",
+      "env": "PDF2ZH_ANYTHINGLLM_APIKEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "AnythingLLM API Key"
+    },
+    {
+      "path": "dify",
+      "flag": "dify",
+      "env": "PDF2ZH_DIFY",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use Dify for translation"
+    },
+    {
+      "path": "dify_detail.dify_url",
+      "flag": "dify-url",
+      "env": "PDF2ZH_DIFY_URL",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "Dify url"
+    },
+    {
+      "path": "dify_detail.dify_apikey",
+      "flag": "dify-apikey",
+      "env": "PDF2ZH_DIFY_APIKEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "Dify API Key"
+    },
+    {
+      "path": "grok",
+      "flag": "grok",
+      "env": "PDF2ZH_GROK",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use Grok for translation"
+    },
+    {
+      "path": "grok_detail.grok_model",
+      "flag": "grok-model",
+      "env": "PDF2ZH_GROK_MODEL",
+      "kind": "String",
+      "default": "grok-2-1212",
+      "nullable": false,
+      "secret": false,
+      "help": "Grok model to use"
+    },
+    {
+      "path": "grok_detail.grok_api_key",
+      "flag": "grok-api-key",
+      "env": "PDF2ZH_GROK_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for Grok service"
+    },
+    {
+      "path": "grok_detail.grok_enable_json_mode",
+      "flag": "grok-enable-json-mode",
+      "env": "PDF2ZH_GROK_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for Grok service"
+    },
+    {
+      "path": "term_grok",
+      "flag": "term-grok",
+      "env": "PDF2ZH_TERM_GROK",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use Grok for term extraction"
+    },
+    {
+      "path": "term_grok_detail.term_grok_model",
+      "flag": "term-grok-model",
+      "env": "PDF2ZH_TERM_GROK_MODEL",
+      "kind": "String",
+      "default": "grok-2-1212",
+      "nullable": false,
+      "secret": false,
+      "help": "Grok model to use"
+    },
+    {
+      "path": "term_grok_detail.term_grok_api_key",
+      "flag": "term-grok-api-key",
+      "env": "PDF2ZH_TERM_GROK_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for Grok service"
+    },
+    {
+      "path": "term_grok_detail.term_grok_enable_json_mode",
+      "flag": "term-grok-enable-json-mode",
+      "env": "PDF2ZH_TERM_GROK_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for Grok service"
+    },
+    {
+      "path": "groq",
+      "flag": "groq",
+      "env": "PDF2ZH_GROQ",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use Groq for translation"
+    },
+    {
+      "path": "groq_detail.groq_model",
+      "flag": "groq-model",
+      "env": "PDF2ZH_GROQ_MODEL",
+      "kind": "String",
+      "default": "llama-3-3-70b-versatile",
+      "nullable": false,
+      "secret": false,
+      "help": "Groq model to use"
+    },
+    {
+      "path": "groq_detail.groq_api_key",
+      "flag": "groq-api-key",
+      "env": "PDF2ZH_GROQ_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for Groq service"
+    },
+    {
+      "path": "groq_detail.groq_enable_json_mode",
+      "flag": "groq-enable-json-mode",
+      "env": "PDF2ZH_GROQ_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for Groq service"
+    },
+    {
+      "path": "term_groq",
+      "flag": "term-groq",
+      "env": "PDF2ZH_TERM_GROQ",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use Groq for term extraction"
+    },
+    {
+      "path": "term_groq_detail.term_groq_model",
+      "flag": "term-groq-model",
+      "env": "PDF2ZH_TERM_GROQ_MODEL",
+      "kind": "String",
+      "default": "llama-3-3-70b-versatile",
+      "nullable": false,
+      "secret": false,
+      "help": "Groq model to use"
+    },
+    {
+      "path": "term_groq_detail.term_groq_api_key",
+      "flag": "term-groq-api-key",
+      "env": "PDF2ZH_TERM_GROQ_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for Groq service"
+    },
+    {
+      "path": "term_groq_detail.term_groq_enable_json_mode",
+      "flag": "term-groq-enable-json-mode",
+      "env": "PDF2ZH_TERM_GROQ_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for Groq service"
+    },
+    {
+      "path": "qwenmt",
+      "flag": "qwenmt",
+      "env": "PDF2ZH_QWENMT",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use QwenMt for translation"
+    },
+    {
+      "path": "qwenmt_detail.qwenmt_model",
+      "flag": "qwenmt-model",
+      "env": "PDF2ZH_QWENMT_MODEL",
+      "kind": "String",
+      "default": "qwen-mt-plus",
+      "nullable": false,
+      "secret": false,
+      "help": "QwenMt model to use"
+    },
+    {
+      "path": "qwenmt_detail.qwenmt_base_url",
+      "flag": "qwenmt-base-url",
+      "env": "PDF2ZH_QWENMT_BASE_URL",
+      "kind": "String",
+      "default": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "nullable": true,
+      "secret": true,
+      "help": "Base URL for QwenMt API"
+    },
+    {
+      "path": "qwenmt_detail.qwenmt_api_key",
+      "flag": "qwenmt-api-key",
+      "env": "PDF2ZH_QWENMT_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for QwenMt service"
+    },
+    {
+      "path": "qwenmt_detail.ali_domains",
+      "flag": "ali-domains",
+      "env": "PDF2ZH_ALI_DOMAINS",
+      "kind": "String",
+      "default": "This sentence is extracted from a scientific paper. When translating, please pay close attention to the use of specialized troubleshooting terminologies and adhere to scientific sentence structures to maintain the technical rigor and precision of the original text.",
+      "nullable": true,
+      "secret": false,
+      "help": "the target domain to guide translation style for QwenMt service"
+    },
+    {
+      "path": "openaicompatible",
+      "flag": "openaicompatible",
+      "env": "PDF2ZH_OPENAICOMPATIBLE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use OpenAICompatible for translation"
+    },
+    {
+      "path": "openaicompatible_detail.openai_compatible_model",
+      "flag": "openai-compatible-model",
+      "env": "PDF2ZH_OPENAI_COMPATIBLE_MODEL",
+      "kind": "String",
+      "default": "gpt-4o-mini",
+      "nullable": false,
+      "secret": false,
+      "help": "OpenAI Compatible model to use"
+    },
+    {
+      "path": "openaicompatible_detail.openai_compatible_base_url",
+      "flag": "openai-compatible-base-url",
+      "env": "PDF2ZH_OPENAI_COMPATIBLE_BASE_URL",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "Base URL for OpenAI Compatible service"
+    },
+    {
+      "path": "openaicompatible_detail.openai_compatible_api_key",
+      "flag": "openai-compatible-api-key",
+      "env": "PDF2ZH_OPENAI_COMPATIBLE_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for OpenAI Compatible service"
+    },
+    {
+      "path": "openaicompatible_detail.openai_compatible_timeout",
+      "flag": "openai-compatible-timeout",
+      "env": "PDF2ZH_OPENAI_COMPATIBLE_TIMEOUT",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Timeout (seconds) for OpenAI Compatible service"
+    },
+    {
+      "path": "openaicompatible_detail.openai_compatible_temperature",
+      "flag": "openai-compatible-temperature",
+      "env": "PDF2ZH_OPENAI_COMPATIBLE_TEMPERATURE",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Temperature for OpenAI Compatible service"
+    },
+    {
+      "path": "openaicompatible_detail.openai_compatible_reasoning_effort",
+      "flag": "openai-compatible-reasoning-effort",
+      "env": "PDF2ZH_OPENAI_COMPATIBLE_REASONING_EFFORT",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Reasoning effort for OpenAI Compatible service (minimal/low/medium/high)"
+    },
+    {
+      "path": "openaicompatible_detail.openai_compatible_send_temperature",
+      "flag": "openai-compatible-send-temperature",
+      "env": "PDF2ZH_OPENAI_COMPATIBLE_SEND_TEMPERATURE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Send temperature to OpenAI Compatible service"
+    },
+    {
+      "path": "openaicompatible_detail.openai_compatible_send_reasoning_effort",
+      "flag": "openai-compatible-send-reasoning-effort",
+      "env": "PDF2ZH_OPENAI_COMPATIBLE_SEND_REASONING_EFFORT",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Send reasoning effort to OpenAI Compatible service"
+    },
+    {
+      "path": "openaicompatible_detail.openai_compatible_enable_json_mode",
+      "flag": "openai-compatible-enable-json-mode",
+      "env": "PDF2ZH_OPENAI_COMPATIBLE_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for OpenAI Compatible service"
+    },
+    {
+      "path": "term_openaicompatible",
+      "flag": "term-openaicompatible",
+      "env": "PDF2ZH_TERM_OPENAICOMPATIBLE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use OpenAICompatible for term extraction"
+    },
+    {
+      "path": "term_openaicompatible_detail.term_openai_compatible_model",
+      "flag": "term-openai-compatible-model",
+      "env": "PDF2ZH_TERM_OPENAI_COMPATIBLE_MODEL",
+      "kind": "String",
+      "default": "gpt-4o-mini",
+      "nullable": false,
+      "secret": false,
+      "help": "OpenAI Compatible model to use"
+    },
+    {
+      "path": "term_openaicompatible_detail.term_openai_compatible_base_url",
+      "flag": "term-openai-compatible-base-url",
+      "env": "PDF2ZH_TERM_OPENAI_COMPATIBLE_BASE_URL",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "Base URL for OpenAI Compatible service"
+    },
+    {
+      "path": "term_openaicompatible_detail.term_openai_compatible_api_key",
+      "flag": "term-openai-compatible-api-key",
+      "env": "PDF2ZH_TERM_OPENAI_COMPATIBLE_API_KEY",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "API key for OpenAI Compatible service"
+    },
+    {
+      "path": "term_openaicompatible_detail.term_openai_compatible_timeout",
+      "flag": "term-openai-compatible-timeout",
+      "env": "PDF2ZH_TERM_OPENAI_COMPATIBLE_TIMEOUT",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Timeout (seconds) for OpenAI Compatible service"
+    },
+    {
+      "path": "term_openaicompatible_detail.term_openai_compatible_temperature",
+      "flag": "term-openai-compatible-temperature",
+      "env": "PDF2ZH_TERM_OPENAI_COMPATIBLE_TEMPERATURE",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Temperature for OpenAI Compatible service"
+    },
+    {
+      "path": "term_openaicompatible_detail.term_openai_compatible_reasoning_effort",
+      "flag": "term-openai-compatible-reasoning-effort",
+      "env": "PDF2ZH_TERM_OPENAI_COMPATIBLE_REASONING_EFFORT",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Reasoning effort for OpenAI Compatible service (minimal/low/medium/high)"
+    },
+    {
+      "path": "term_openaicompatible_detail.term_openai_compatible_send_temperature",
+      "flag": "term-openai-compatible-send-temperature",
+      "env": "PDF2ZH_TERM_OPENAI_COMPATIBLE_SEND_TEMPERATURE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Send temperature to OpenAI Compatible service"
+    },
+    {
+      "path": "term_openaicompatible_detail.term_openai_compatible_send_reasoning_effort",
+      "flag": "term-openai-compatible-send-reasoning-effort",
+      "env": "PDF2ZH_TERM_OPENAI_COMPATIBLE_SEND_REASONING_EFFORT",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Send reasoning effort to OpenAI Compatible service"
+    },
+    {
+      "path": "term_openaicompatible_detail.term_openai_compatible_enable_json_mode",
+      "flag": "term-openai-compatible-enable-json-mode",
+      "env": "PDF2ZH_TERM_OPENAI_COMPATIBLE_ENABLE_JSON_MODE",
+      "kind": "Bool",
+      "default": null,
+      "nullable": true,
+      "secret": false,
+      "help": "Enable JSON mode for OpenAI Compatible service"
+    },
+    {
+      "path": "claudecode",
+      "flag": "claudecode",
+      "env": "PDF2ZH_CLAUDECODE",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use ClaudeCode for translation"
+    },
+    {
+      "path": "claudecode_detail.claude_code_path",
+      "flag": "claude-code-path",
+      "env": "PDF2ZH_CLAUDE_CODE_PATH",
+      "kind": "String",
+      "default": "claude",
+      "nullable": false,
+      "secret": false,
+      "help": "Path to Claude Code CLI"
+    },
+    {
+      "path": "claudecode_detail.claude_code_model",
+      "flag": "claude-code-model",
+      "env": "PDF2ZH_CLAUDE_CODE_MODEL",
+      "kind": "String",
+      "default": "sonnet",
+      "nullable": false,
+      "secret": false,
+      "help": "Claude Code model to use"
+    },
+    {
+      "path": "clitranslator",
+      "flag": "clitranslator",
+      "env": "PDF2ZH_CLITRANSLATOR",
+      "kind": "Bool",
+      "default": false,
+      "nullable": false,
+      "secret": false,
+      "help": "Use CLITranslator for translation"
+    },
+    {
+      "path": "clitranslator_detail.clitranslator_command",
+      "flag": "clitranslator-command",
+      "env": "PDF2ZH_CLITRANSLATOR_COMMAND",
+      "kind": "String",
+      "default": "",
+      "nullable": false,
+      "secret": true,
+      "help": "CLI command to execute. May include arguments and will be split like a shell command (e.g., 'your-translator-command --flag value')."
+    },
+    {
+      "path": "clitranslator_detail.clitranslator_timeout",
+      "flag": "clitranslator-timeout",
+      "env": "PDF2ZH_CLITRANSLATOR_TIMEOUT",
+      "kind": "Integer",
+      "default": 60,
+      "nullable": false,
+      "secret": false,
+      "help": "Command timeout in seconds"
+    },
+    {
+      "path": "clitranslator_detail.clitranslator_postprocess_command",
+      "flag": "clitranslator-postprocess-command",
+      "env": "PDF2ZH_CLITRANSLATOR_POSTPROCESS_COMMAND",
+      "kind": "String",
+      "default": null,
+      "nullable": true,
+      "secret": true,
+      "help": "Optional postprocess command to run on CLI output (reads from stdin). Example: 'jq -r .result.translation'"
+    }
+  ],
+  "engines": [
+    {
+      "name": "SiliconFlowFree",
+      "flag": "siliconflowfree",
+      "detail_key": "siliconflowfree_detail",
+      "supports_llm": true
+    },
+    {
+      "name": "OpenAI",
+      "flag": "openai",
+      "detail_key": "openai_detail",
+      "supports_llm": true
+    },
+    {
+      "name": "AliyunDashScope",
+      "flag": "aliyundashscope",
+      "detail_key": "aliyundashscope_detail",
+      "supports_llm": true
+    },
+    {
+      "name": "Google",
+      "flag": "google",
+      "detail_key": null,
+      "supports_llm": false
+    },
+    {
+      "name": "Bing",
+      "flag": "bing",
+      "detail_key": null,
+      "supports_llm": false
+    },
+    {
+      "name": "DeepL",
+      "flag": "deepl",
+      "detail_key": "deepl_detail",
+      "supports_llm": false
+    },
+    {
+      "name": "DeepSeek",
+      "flag": "deepseek",
+      "detail_key": "deepseek_detail",
+      "supports_llm": true
+    },
+    {
+      "name": "Ollama",
+      "flag": "ollama",
+      "detail_key": "ollama_detail",
+      "supports_llm": true
+    },
+    {
+      "name": "Xinference",
+      "flag": "xinference",
+      "detail_key": "xinference_detail",
+      "supports_llm": true
+    },
+    {
+      "name": "AzureOpenAI",
+      "flag": "azureopenai",
+      "detail_key": "azureopenai_detail",
+      "supports_llm": true
+    },
+    {
+      "name": "ModelScope",
+      "flag": "modelscope",
+      "detail_key": "modelscope_detail",
+      "supports_llm": true
+    },
+    {
+      "name": "Zhipu",
+      "flag": "zhipu",
+      "detail_key": "zhipu_detail",
+      "supports_llm": true
+    },
+    {
+      "name": "SiliconFlow",
+      "flag": "siliconflow",
+      "detail_key": "siliconflow_detail",
+      "supports_llm": true
+    },
+    {
+      "name": "TencentMechineTranslation",
+      "flag": "tencentmechinetranslation",
+      "detail_key": "tencentmechinetranslation_detail",
+      "supports_llm": false
+    },
+    {
+      "name": "Gemini",
+      "flag": "gemini",
+      "detail_key": "gemini_detail",
+      "supports_llm": true
+    },
+    {
+      "name": "Azure",
+      "flag": "azure",
+      "detail_key": "azure_detail",
+      "supports_llm": false
+    },
+    {
+      "name": "AnythingLLM",
+      "flag": "anythingllm",
+      "detail_key": "anythingllm_detail",
+      "supports_llm": false
+    },
+    {
+      "name": "Dify",
+      "flag": "dify",
+      "detail_key": "dify_detail",
+      "supports_llm": false
+    },
+    {
+      "name": "Grok",
+      "flag": "grok",
+      "detail_key": "grok_detail",
+      "supports_llm": true
+    },
+    {
+      "name": "Groq",
+      "flag": "groq",
+      "detail_key": "groq_detail",
+      "supports_llm": true
+    },
+    {
+      "name": "QwenMt",
+      "flag": "qwenmt",
+      "detail_key": "qwenmt_detail",
+      "supports_llm": false
+    },
+    {
+      "name": "OpenAICompatible",
+      "flag": "openaicompatible",
+      "detail_key": "openaicompatible_detail",
+      "supports_llm": true
+    },
+    {
+      "name": "ClaudeCode",
+      "flag": "claudecode",
+      "detail_key": "claudecode_detail",
+      "supports_llm": false
+    },
+    {
+      "name": "CLITranslator",
+      "flag": "clitranslator",
+      "detail_key": "clitranslator_detail",
+      "supports_llm": false
+    }
+  ],
+  "defaults": {
+    "basic": {
+      "input_files": [],
+      "debug": false,
+      "gui": false,
+      "warmup": false,
+      "generate_offline_assets": null,
+      "restore_offline_assets": null,
+      "version": false
+    },
+    "gui_settings": {
+      "share": false,
+      "auth_file": null,
+      "welcome_page": null,
+      "enabled_services": null,
+      "disable_gui_sensitive_input": false,
+      "disable_config_auto_save": false,
+      "server_port": 7860,
+      "server_name": "127.0.0.1",
+      "ui_lang": "en"
+    },
+    "translation": {
+      "min_text_length": 5,
+      "rpc_doclayout": null,
+      "lang_in": "en",
+      "lang_out": "zh",
+      "output": null,
+      "qps": 4,
+      "ignore_cache": false,
+      "custom_system_prompt": null,
+      "glossaries": null,
+      "save_auto_extracted_glossary": false,
+      "pool_max_workers": null,
+      "term_qps": null,
+      "term_pool_max_workers": null,
+      "no_auto_extract_glossary": false,
+      "primary_font_family": null
+    },
+    "pdf": {
+      "pages": null,
+      "no_dual": false,
+      "no_mono": false,
+      "formular_font_pattern": null,
+      "formular_char_pattern": null,
+      "split_short_lines": false,
+      "short_line_split_factor": 0.8,
+      "skip_clean": false,
+      "dual_translate_first": false,
+      "disable_rich_text_translate": false,
+      "enhance_compatibility": false,
+      "use_alternating_pages_dual": false,
+      "watermark_output_mode": "watermarked",
+      "max_pages_per_part": null,
+      "translate_table_text": true,
+      "skip_scanned_detection": false,
+      "ocr_workaround": false,
+      "auto_enable_ocr_workaround": false,
+      "only_include_translated_page": false,
+      "no_merge_alternating_line_numbers": false,
+      "no_remove_non_formula_lines": false,
+      "non_formula_line_iou_threshold": 0.9,
+      "figure_table_protection_threshold": 0.9,
+      "skip_formula_offset_calculation": false
+    },
+    "config_file": null,
+    "report_interval": 0.1,
+    "siliconflowfree": false,
+    "siliconflowfree_detail": {
+      "translate_engine_type": "SiliconFlowFree",
+      "support_llm": "yes",
+      "siliconflow_free_enable_json_mode": false
+    },
+    "term_siliconflowfree": false,
+    "term_siliconflowfree_detail": {
+      "translate_engine_type": "SiliconFlowFree",
+      "support_llm": "yes",
+      "term_siliconflow_free_enable_json_mode": false
+    },
+    "openai": false,
+    "openai_detail": {
+      "translate_engine_type": "OpenAI",
+      "support_llm": "yes",
+      "openai_model": "gpt-4o-mini",
+      "openai_base_url": null,
+      "openai_api_key": null,
+      "openai_timeout": null,
+      "openai_temperature": null,
+      "openai_reasoning_effort": null,
+      "openai_enable_json_mode": null,
+      "openai_send_temprature": null,
+      "openai_send_reasoning_effort": null
+    },
+    "term_openai": false,
+    "term_openai_detail": {
+      "translate_engine_type": "OpenAI",
+      "support_llm": "yes",
+      "term_openai_model": "gpt-4o-mini",
+      "term_openai_base_url": null,
+      "term_openai_api_key": null,
+      "term_openai_timeout": null,
+      "term_openai_temperature": null,
+      "term_openai_reasoning_effort": null,
+      "term_openai_enable_json_mode": null,
+      "term_openai_send_temprature": null,
+      "term_openai_send_reasoning_effort": null
+    },
+    "aliyundashscope": false,
+    "aliyundashscope_detail": {
+      "translate_engine_type": "AliyunDashScope",
+      "support_llm": "yes",
+      "aliyun_dashscope_model": "qwen-plus-latest",
+      "aliyun_dashscope_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "aliyun_dashscope_api_key": null,
+      "aliyun_dashscope_timeout": "500",
+      "aliyun_dashscope_temperature": "0.0",
+      "aliyun_dashscope_send_temperature": null,
+      "aliyun_dashscope_enable_json_mode": null
+    },
+    "term_aliyundashscope": false,
+    "term_aliyundashscope_detail": {
+      "translate_engine_type": "AliyunDashScope",
+      "support_llm": "yes",
+      "term_aliyun_dashscope_model": "qwen-plus-latest",
+      "term_aliyun_dashscope_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "term_aliyun_dashscope_api_key": null,
+      "term_aliyun_dashscope_timeout": "500",
+      "term_aliyun_dashscope_temperature": "0.0",
+      "term_aliyun_dashscope_send_temperature": null,
+      "term_aliyun_dashscope_enable_json_mode": null
+    },
+    "google": false,
+    "bing": false,
+    "deepl": false,
+    "deepl_detail": {
+      "translate_engine_type": "DeepL",
+      "deepl_auth_key": null
+    },
+    "deepseek": false,
+    "deepseek_detail": {
+      "translate_engine_type": "DeepSeek",
+      "support_llm": "yes",
+      "deepseek_model": "deepseek-chat",
+      "deepseek_api_key": null,
+      "deepseek_enable_json_mode": null,
+      "deepseek_thinking_mode": null,
+      "deepseek_reasoning_effort": null
+    },
+    "term_deepseek": false,
+    "term_deepseek_detail": {
+      "translate_engine_type": "DeepSeek",
+      "support_llm": "yes",
+      "term_deepseek_model": "deepseek-chat",
+      "term_deepseek_api_key": null,
+      "term_deepseek_enable_json_mode": null,
+      "term_deepseek_thinking_mode": null,
+      "term_deepseek_reasoning_effort": null
+    },
+    "ollama": false,
+    "ollama_detail": {
+      "translate_engine_type": "Ollama",
+      "support_llm": "yes",
+      "ollama_model": "gemma2",
+      "ollama_host": "http://localhost:11434",
+      "num_predict": 2000
+    },
+    "term_ollama": false,
+    "term_ollama_detail": {
+      "translate_engine_type": "Ollama",
+      "support_llm": "yes",
+      "term_ollama_model": "gemma2",
+      "term_ollama_host": "http://localhost:11434",
+      "term_num_predict": 2000
+    },
+    "xinference": false,
+    "xinference_detail": {
+      "translate_engine_type": "Xinference",
+      "support_llm": "yes",
+      "xinference_model": "gemma-2-it",
+      "xinference_host": null
+    },
+    "term_xinference": false,
+    "term_xinference_detail": {
+      "translate_engine_type": "Xinference",
+      "support_llm": "yes",
+      "term_xinference_model": "gemma-2-it",
+      "term_xinference_host": null
+    },
+    "azureopenai": false,
+    "azureopenai_detail": {
+      "translate_engine_type": "AzureOpenAI",
+      "support_llm": "yes",
+      "azure_openai_model": "gpt-4o-mini",
+      "azure_openai_base_url": null,
+      "azure_openai_api_key": null,
+      "azure_openai_api_version": "2024-06-01"
+    },
+    "term_azureopenai": false,
+    "term_azureopenai_detail": {
+      "translate_engine_type": "AzureOpenAI",
+      "support_llm": "yes",
+      "term_azure_openai_model": "gpt-4o-mini",
+      "term_azure_openai_base_url": null,
+      "term_azure_openai_api_key": null,
+      "term_azure_openai_api_version": "2024-06-01"
+    },
+    "modelscope": false,
+    "modelscope_detail": {
+      "translate_engine_type": "ModelScope",
+      "support_llm": "yes",
+      "modelscope_model": "Qwen/Qwen2.5-32B-Instruct",
+      "modelscope_api_key": null,
+      "modelscope_enable_json_mode": null
+    },
+    "term_modelscope": false,
+    "term_modelscope_detail": {
+      "translate_engine_type": "ModelScope",
+      "support_llm": "yes",
+      "term_modelscope_model": "Qwen/Qwen2.5-32B-Instruct",
+      "term_modelscope_api_key": null,
+      "term_modelscope_enable_json_mode": null
+    },
+    "zhipu": false,
+    "zhipu_detail": {
+      "translate_engine_type": "Zhipu",
+      "support_llm": "yes",
+      "zhipu_model": "glm-4-flash",
+      "zhipu_api_key": null,
+      "zhipu_enable_json_mode": null
+    },
+    "term_zhipu": false,
+    "term_zhipu_detail": {
+      "translate_engine_type": "Zhipu",
+      "support_llm": "yes",
+      "term_zhipu_model": "glm-4-flash",
+      "term_zhipu_api_key": null,
+      "term_zhipu_enable_json_mode": null
+    },
+    "siliconflow": false,
+    "siliconflow_detail": {
+      "translate_engine_type": "SiliconFlow",
+      "support_llm": "yes",
+      "siliconflow_base_url": "https://api.siliconflow.cn/v1",
+      "siliconflow_model": "Qwen/Qwen2.5-7B-Instruct",
+      "siliconflow_api_key": null,
+      "siliconflow_enable_thinking": false,
+      "siliconflow_send_enable_thinking_param": false,
+      "siliconflow_enable_json_mode": false
+    },
+    "term_siliconflow": false,
+    "term_siliconflow_detail": {
+      "translate_engine_type": "SiliconFlow",
+      "support_llm": "yes",
+      "term_siliconflow_base_url": "https://api.siliconflow.cn/v1",
+      "term_siliconflow_model": "Qwen/Qwen2.5-7B-Instruct",
+      "term_siliconflow_api_key": null,
+      "term_siliconflow_enable_thinking": false,
+      "term_siliconflow_send_enable_thinking_param": false,
+      "term_siliconflow_enable_json_mode": false
+    },
+    "tencentmechinetranslation": false,
+    "tencentmechinetranslation_detail": {
+      "translate_engine_type": "TencentMechineTranslation",
+      "tencentcloud_secret_id": null,
+      "tencentcloud_secret_key": null
+    },
+    "gemini": false,
+    "gemini_detail": {
+      "translate_engine_type": "Gemini",
+      "support_llm": "yes",
+      "gemini_model": "gemini-1.5-flash",
+      "gemini_api_key": null,
+      "gemini_enable_json_mode": null
+    },
+    "term_gemini": false,
+    "term_gemini_detail": {
+      "translate_engine_type": "Gemini",
+      "support_llm": "yes",
+      "term_gemini_model": "gemini-1.5-flash",
+      "term_gemini_api_key": null,
+      "term_gemini_enable_json_mode": null
+    },
+    "azure": false,
+    "azure_detail": {
+      "translate_engine_type": "Azure",
+      "azure_endpoint": "https://api.translator.azure.cn",
+      "azure_api_key": null
+    },
+    "anythingllm": false,
+    "anythingllm_detail": {
+      "translate_engine_type": "AnythingLLM",
+      "anythingllm_url": null,
+      "anythingllm_apikey": null
+    },
+    "dify": false,
+    "dify_detail": {
+      "translate_engine_type": "Dify",
+      "dify_url": null,
+      "dify_apikey": null
+    },
+    "grok": false,
+    "grok_detail": {
+      "translate_engine_type": "Grok",
+      "support_llm": "yes",
+      "grok_model": "grok-2-1212",
+      "grok_api_key": null,
+      "grok_enable_json_mode": null
+    },
+    "term_grok": false,
+    "term_grok_detail": {
+      "translate_engine_type": "Grok",
+      "support_llm": "yes",
+      "term_grok_model": "grok-2-1212",
+      "term_grok_api_key": null,
+      "term_grok_enable_json_mode": null
+    },
+    "groq": false,
+    "groq_detail": {
+      "translate_engine_type": "Groq",
+      "support_llm": "yes",
+      "groq_model": "llama-3-3-70b-versatile",
+      "groq_api_key": null,
+      "groq_enable_json_mode": null
+    },
+    "term_groq": false,
+    "term_groq_detail": {
+      "translate_engine_type": "Groq",
+      "support_llm": "yes",
+      "term_groq_model": "llama-3-3-70b-versatile",
+      "term_groq_api_key": null,
+      "term_groq_enable_json_mode": null
+    },
+    "qwenmt": false,
+    "qwenmt_detail": {
+      "translate_engine_type": "QwenMt",
+      "support_llm": "no",
+      "qwenmt_model": "qwen-mt-plus",
+      "qwenmt_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "qwenmt_api_key": null,
+      "ali_domains": "This sentence is extracted from a scientific paper. When translating, please pay close attention to the use of specialized troubleshooting terminologies and adhere to scientific sentence structures to maintain the technical rigor and precision of the original text."
+    },
+    "openaicompatible": false,
+    "openaicompatible_detail": {
+      "translate_engine_type": "OpenAICompatible",
+      "support_llm": "yes",
+      "openai_compatible_model": "gpt-4o-mini",
+      "openai_compatible_base_url": null,
+      "openai_compatible_api_key": null,
+      "openai_compatible_timeout": null,
+      "openai_compatible_temperature": null,
+      "openai_compatible_reasoning_effort": null,
+      "openai_compatible_send_temperature": null,
+      "openai_compatible_send_reasoning_effort": null,
+      "openai_compatible_enable_json_mode": null
+    },
+    "term_openaicompatible": false,
+    "term_openaicompatible_detail": {
+      "translate_engine_type": "OpenAICompatible",
+      "support_llm": "yes",
+      "term_openai_compatible_model": "gpt-4o-mini",
+      "term_openai_compatible_base_url": null,
+      "term_openai_compatible_api_key": null,
+      "term_openai_compatible_timeout": null,
+      "term_openai_compatible_temperature": null,
+      "term_openai_compatible_reasoning_effort": null,
+      "term_openai_compatible_send_temperature": null,
+      "term_openai_compatible_send_reasoning_effort": null,
+      "term_openai_compatible_enable_json_mode": null
+    },
+    "claudecode": false,
+    "claudecode_detail": {
+      "translate_engine_type": "ClaudeCode",
+      "claude_code_path": "claude",
+      "claude_code_model": "sonnet"
+    },
+    "clitranslator": false,
+    "clitranslator_detail": {
+      "translate_engine_type": "CLITranslator",
+      "support_llm": "no",
+      "clitranslator_command": "",
+      "clitranslator_timeout": 60,
+      "clitranslator_postprocess_command": null
+    }
+  }
+}

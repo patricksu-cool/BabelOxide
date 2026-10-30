@@ -1,18 +1,20 @@
 # Rust 移植進度
 
-更新：2026-10-29，Asia/Taipei。分支 `feature/rust-babeldoc-hybrid`。**已完成核心 PoC及Rust翻譯服務的離線整合，尚未完成全面移植或正式發行。**
+更新：2026-10-30，Asia/Taipei。分支 `feature/rust-babeldoc-hybrid`。**已完成核心 PoC、Rust 翻譯服務及設定／快取／CLI／任務管理的離線整合；原生 GUI、預覽及正式發行仍在實作。**
 
 ## 已完成
 
 1. main 安全整合三個 maintenance 分支的 50 個提交，保留歷史與基準標籤；見 [Git 整合](GIT_INTEGRATION.md)。
 2. 分析原 Python／BabelDOC 邊界、34 項 retry characterization 與 SDK 額外重試；見 [架構](ARCHITECTURE.md)、[依賴](DEPENDENCIES.md)、[行為契約](RETRY_COMPATIBILITY.md)。
-3. 建立 Rust workspace：`core`、`babeldoc-bridge`、`cli`。`app` crate 尚未建立。
+3. 已驗收 Rust workspace：`core`、`babeldoc-bridge`、`cli`、`config`、`tasks`。`app` 與 `pdf-preview` 正在實作，尚未列為通過。
 4. Rust CLI → 私有 stdio Worker → Rust OpenAI-compatible HTTP → BabelDOC → PDF 的真實流程已走通。Worker 不 import `pdf2zh_next`，不持有 API key、HTTP 翻譯器、應用快取或 retry。
 5. 指定四頁 PDF、固定 identity 回應、同 BabelDOC／字型／引擎選項下，mono／dual 共八個頁面與整合後 main 的文字、字元座標、圖片及 96 DPI RGB 渲染皆一致；像素差為 0。這是受控排版驗證，不是真實中文翻譯品質驗收。
 6. Windows suspended spawn／Job Object／kill-on-close、並行請求配對、取消、崩潰與異常退出的初步自動化驗證通過；見 [測試報告](TEST_REPORT.md)。
-7. 16種服務的HTTP／CLI執行、typed錯誤、分層retry、可注入時間與亂數、QPS與usage統計已移到Rust；原Python仍保留。各案例及未證等價的細節見 [測試矩陣](PROVIDER_TEST_MATRIX.md) 與 [Astra審查](PROVIDER_REVIEW.md)。目前產品CLI只暴露OpenAI選項，其餘服務待設定／CLI層接線。
+7. 16 種服務的 HTTP／CLI 執行、typed 錯誤、分層 retry、可注入時間與亂數、QPS 與 usage 統計已移到 Rust；原 Python 仍保留。各案例及未證等價的細節見 [測試矩陣](PROVIDER_TEST_MATRIX.md) 與 [Astra 審查](PROVIDER_REVIEW.md)。設定與 CLI 現已接線 24 個服務選項（含別名）。
 8. Bridge支援獨立main／term service、動態outstanding容量、有界進度佇列；已驗證200個同時在途請求、慢進度消費者與真正CLI取消後程序樹退出。Windows清理等待Job ActiveProcesses歸零，避免只發終止命令就回傳。
 9. 第5階段再次以相同SHA-256原檔完成四頁翻譯；與main基準的mono／dual共八頁文字、字元座標、圖片與96 DPI RGB渲染一致，見 [本輪PDF數據](PHASE5_PDF_COMPARISON.json)。原檔已移至下載目錄的「論文」子目錄，未改用已翻譯的PDF作輸入。
+10. 第 6 階段完成 235 項設定描述、舊 TOML 相容與不覆寫遷移、程式目錄原子保存、SQLite 持久快取、clap 多檔 CLI 與共用 TaskManager。167 項 Rust 測試、fmt、Clippy 及 26 項 Worker 測試通過；詳見 [設定](CONFIG_MIGRATION.md)、[快取](CACHE_COMPATIBILITY.md)、[任務審查](TASKS_REVIEW.md)。舊快取缺少完整來源身分，只有明確 provenance binding 才重用，不自動混用不同端點結果。
+11. 新 CLI 再次完成四頁 PDF：105 個固定回應請求、36 個 batch、68 個進度與單一 finish。mono／dual 共八頁文字、座標、圖片及渲染像素差皆為 0，見 [第 6 階段比對](PHASE6_PDF_COMPARISON.json)。這仍是受控 identity 回應驗證。
 
 ## 已修正的整合問題
 
@@ -27,12 +29,12 @@
 
 | 功能 | Rust 現況 |
 | --- | --- |
-| 翻譯服務 | 16服務核心已有離線測試；完整設定／CLI／GUI選擇尚未接管 |
+| 翻譯服務 | 16 服務核心及 24 個設定／CLI 選項已有離線測試；GUI 接線與真實服務驗收仍待完成 |
 | Retry／Backoff／SDK 行為 | 已實作並驗證主要分層政策；write／pool與部分SDK細節的界限仍列於測試矩陣 |
-| Config／舊格式遷移 | 尚未實作 |
-| 持久翻譯 cache／token 統計 | Rust service已有usage／attempt統計，持久cache尚未實作 |
-| 全部 CLI 參數／多檔批次 | 尚未實作完整相容 |
-| GUI／內嵌 PDF 預覽 | 尚未實作 |
+| Config／舊格式遷移 | 已實作並測試；Tencent 自動憑證鏈等缺口見 CONFIG_MIGRATION |
+| 持久翻譯 cache／token 統計 | 已實作；舊庫受保護，取消等待 blocking writer 清理；證據界限見 CACHE_COMPATIBILITY |
+| 全部 CLI 參數／多檔批次 | 235 項設定與批次已接線；warmup／離線資產操作尚未接通 |
+| GUI／內嵌 PDF 預覽 | 正在實作 eframe／PDFium；尚未編譯及互動驗收 |
 | 不同術語服務／glossary／分割策略 | Bridge／worker已有接線與邊界測試，完整CLI／GUI及真PDF各選項驗收尚未完成 |
 | 長時間、多 Worker、大型 PDF | 尚未完成驗收 |
 | 最小 Python runtime／Windows 發行包 | 尚未建立新版本 |

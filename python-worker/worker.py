@@ -43,6 +43,7 @@ ENGINE_OPTIONS = frozenset(
         "figure_table_protection_threshold",
         "skip_formula_offset_calculation",
         "term_pool_max_workers",
+        "report_interval",
         "save_auto_extracted_glossary",
     }
 )

@@ -104,6 +104,17 @@ def main():
         key: value for key, value in os.environ.items() if not key.startswith("PDF2ZH_")
     }
     environment["PDF2ZH_OPENAI_API_KEY"] = synthetic
+    # The full Rust CLI now loads configuration. Keep the fixture independent
+    # of the user's legacy home and application settings.
+    isolated = output / "isolation"
+    isolated_home = isolated / "home"
+    isolated_temp = isolated / "tmp"
+    isolated_app = isolated / "app"
+    for directory in (isolated_home, isolated_temp, isolated_app):
+        directory.mkdir(parents=True)
+    environment["HOME"] = environment["USERPROFILE"] = str(isolated_home)
+    environment["TEMP"] = environment["TMP"] = str(isolated_temp)
+    environment["PDF2ZH_APP_DIR"] = str(isolated_app)
     environment["NO_PROXY"] = environment["no_proxy"] = "127.0.0.1,localhost"
     command = [
         str(args.exe.resolve()),

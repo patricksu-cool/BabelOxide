@@ -1,0 +1,13 @@
+[package]
+name = "pdf2zh-config"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+pdf2zh-core = { path = "../core" }
+serde.workspace = true
+serde_json.workspace = true
+tempfile.workspace = true
+toml = "0.9.8"

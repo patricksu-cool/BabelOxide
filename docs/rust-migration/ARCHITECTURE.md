@@ -1,6 +1,6 @@
 # Rust／BabelDOC 混合架構與引擎契約
 
-更新：2026-10-29。目標分支：`feature/rust-babeldoc-hybrid`。Python 回歸基準為 `d18165e`，保留標籤 `rust-python-baseline-20261026`、`pre-rust-main-20261026`。本文描述已核對的Python基準與分階段移植設計；**架構圖不代表GUI或Windows發行流程已完成**。PoC已驗證OpenAI固定回應端點與真實PDF引擎，第5階段進一步實作16種Rust服務並測分層retry；完整產品設定、CLI、GUI與發行仍待移植。
+更新：2026-10-30。目標分支：`feature/rust-babeldoc-hybrid`。Python 回歸基準為 `d18165e`，保留標籤 `rust-python-baseline-20261026`、`pre-rust-main-20261026`。本文描述已核對的 Python 基準與分階段移植設計；**架構圖不代表 GUI 或 Windows 發行流程已完成**。PoC 已驗證固定回應端點與真實 PDF 引擎，第 5 階段實作 16 種 Rust 服務，第 6 階段完成設定、CLI、快取與共用任務管理；GUI、預覽與發行仍待驗收。
 
 第5階段的`core`依獨立職責拆為providers、transport、retry、limiter、metrics、error及共用process模組，未為每個模組增加crate。`TranslationService`負責一次logical call的preflight、admission與provider dispatch，provider保留各自SDK內層重試。外部CLI使用共用程序樹封裝；薄Python adapter不含上述應用邏輯。行為證據與差異見 [測試矩陣](PROVIDER_TEST_MATRIX.md)。
 
@@ -35,10 +35,13 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    CLI["cli：clap"] --> Core["core：設定／模型／服務／HTTP／cache"]
+    CLI["cli：clap"] --> Config["config：設定／舊 TOML 遷移／原子儲存"]
     App["app：eframe GUI（分階段）"] --> Core
-    CLI --> Bridge["babeldoc-bridge：任務與 IPC"]
-    App --> Bridge
+    App --> Config
+    CLI --> Tasks["tasks：共用 factory／批次排程／取消／最新狀態"]
+    App --> Tasks
+    Tasks --> Core["core：模型／服務／HTTP／SQLite cache"]
+    Tasks --> Bridge["babeldoc-bridge：程序與 IPC"]
     Bridge --> Core
     Bridge <-->|"UTF-8 NDJSON / stdio"| Worker["最小 Python Worker"]
     Worker --> Babel["BabelDOC 0.6.3"]
@@ -49,9 +52,11 @@ flowchart LR
 
 | crate／元件 | 責任 | 初期驗收範圍 |
 |---|---|---|
-| `core` | 分離 config、models、translators、network、cache；來源優先序、命名映射與 validation；provider 身分與錯誤型別；唯一應用級 retry／limiter／cache | OpenAI 相容固定回應端點；不把所有原服務標成已移植 |
+| `core` | 共用資料模型、16 種 provider、typed 錯誤、唯一應用級 retry／limiter／SQLite cache、程序樹封裝 | provider 行為與界限見測試矩陣；cache 見 CACHE_COMPATIBILITY |
+| `config` | 235 項設定描述、24 個服務選項、CLI／環境／檔案優先序、舊 TOML 遷移、程式目錄原子保存與 engine kwargs 正規化 | 22 項設定／儲存測試；缺口見 CONFIG_MIGRATION |
+| `tasks` | 共用 task_from_settings 建立主／術語服務、批次排程、取消與 shutdown、watch 最新狀態 | 9 項測試；不 abort bridge，等待正常程序與 cache 清理 |
 | `babeldoc-bridge` | worker 啟停、版本握手、雙向 IPC、請求關聯、任務狀態、取消、程序回收、輸出路徑驗證 | 先單 worker／單文件；多文件排程另外驗收 |
-| `cli` | clap 參數、載入 core 設定、進度與 exit code | 呼叫同一 core／bridge，不能另寫一套 HTTP 政策 |
+| `cli` | 動態 clap 參數、載入設定、多檔批次、進度與 exit code | 使用共用 tasks；7 項測試；資產維護仍待接線 |
 | `app` | eframe 介面、進度、取消、設定與結果呈現 | 規劃；不得因選定框架即聲稱舊 GUI 的所有選項與預覽等價 |
 | Python Worker | 引擎呼叫與資料轉接 | 不 import `pdf2zh_next`；key 不進 worker；只接受有限 engine options |
 

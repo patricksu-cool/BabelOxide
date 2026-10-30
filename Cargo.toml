@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/core", "crates/babeldoc-bridge", "crates/cli"]
+members = ["crates/core", "crates/babeldoc-bridge", "crates/cli", "crates/config", "crates/tasks"]
 resolver = "2"
 
 [workspace.package]
@@ -16,7 +16,7 @@ tokio = { version = "1.54.1", features = ["full", "test-util"] }
 tokio-util = { version = "0.7.20", features = ["rt"] }
 reqwest = { version = "0.13.5", default-features = false, features = ["json", "rustls-no-provider", "query", "form"] }
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
-clap = { version = "4.6.7", features = ["derive", "env"] }
+clap = { version = "4.6.7", features = ["derive", "env", "string"] }
 tracing = "0.1.44"
 thiserror = "2.0.21"
 tempfile = "3.27.0"
