@@ -12,7 +12,7 @@ use std::{
 };
 
 use anyhow::{Context, Result, ensure};
-use babeldoc_bridge::{WorkerOptions, translate_pdf_with_services};
+use babeldoc_bridge::{FactoryInitialization, WorkerOptions, translate_pdf_with_initialization};
 use pdf2zh_core::{PdfJob, ProviderError, TranslationService};
 use serde::Serialize;
 use serde_json::Value;
@@ -60,6 +60,7 @@ pub struct TaskSpec {
     pub jobs: Vec<PdfJob>,
     pub translator: Arc<TranslationService>,
     pub term_translator: Option<Arc<TranslationService>>,
+    pub initialization: Option<FactoryInitialization>,
 }
 
 struct TaskState {
@@ -294,13 +295,14 @@ async fn execute_batch(spec: TaskSpec, state: Arc<TaskState>, slots: Arc<Semapho
             snapshot.progress = None;
         });
         let (progress, mut received) = mpsc::channel(32);
-        let operation = translate_pdf_with_services(
+        let operation = translate_pdf_with_initialization(
             &spec.worker,
             job,
             spec.translator.clone(),
             spec.term_translator.clone(),
             state.cancel.clone(),
             Some(progress),
+            spec.initialization,
         );
         tokio::pin!(operation);
         let mut progress_closed = false;

@@ -2,6 +2,8 @@
 
 查核：2026-10-30。這是限定範圍的唯讀 source audit，不是新一輪 runtime 驗收。本輪只新增本文件；未修改 source、執行 Cargo／Python oracle、讀取真實 HOME／credential、呼叫 metadata／STS／翻譯 API。依主代理回報，GUI checkpoint 的205項 Rust、285項 Python、clippy 與 Astra review 已通過；它們不自動補足以下缺口。Graph coverage 本輪不可用，使用鎖版 repo／`.venv` SDK／Cargo registry source fallback。
 
+整合後更新：上述段落與下列來源表保留最初 audit 的範圍。HTTP compression、AnythingLLM／Dify cookie scope、**每 PDF 的 Hello／raw term QPS 共享／service 生命週期**均已修正並測試；最新 225 項 Rust 通過。健康檢查的具體 oracle、107 次真 PDF fixture 與未重算的界限見 [FACTORY_INITIALIZATION](FACTORY_INITIALIZATION.md)。第 1 節 Tencent chain 及第 3 節尚未修正的 SDK 邊界仍有效，不把歷史發現全部列為現存缺陷。
+
 `CONFIG_MIGRATION.md` 與 `PROVIDER_TEST_MATRIX.md` 是不同階段的快照。矩陣「persistent cache 尚未移植」及「set 錯誤傳出」已過時：現階段 Rust cache 已實作，Python `TranslationCache.set` 本身會 catch DB exception，Rust ordinary get/set error 也 best effort；取消另行傳播。正確 cache 證據見 `CACHE_COMPATIBILITY.md`，不能把舊文字當成剩餘功能。
 
 ## 1. Tencent DefaultCredentialProvider
@@ -36,6 +38,8 @@
 應補的 hermetic oracle：env pair 覆蓋 explicit＋不讀檔/HTTP；partial env→profile；profile HOME 優先／`[default]`與錯誤邊界；CVM role＋token與300秒refresh／並行鎖；TKE constructor沒有STS、首次簽名與到期refresh／重讀token；只有 constructor OSError fallback、SDK錯及refresh錯不fallback；解析中取消不送TMT；TMT簽章/X-TC-Token真loopback；所有解析credential不進錯誤／Debug／TOML／cache／Worker。檔案全用 TempDir，env全用明確map，clock可控。Python對照也需先 patch environment、expanduser／exists／file讀取與 urlopen／CommonClient，才可建 provider。
 
 ## 2. `translate("Hello", ignore_cache=True)` 初始化健康檢查
+
+**狀態：本節列出的主要差異已關閉。** 下列是修正前 source audit 與需求；現行 GUI／CLI 以明確 `FactoryInitialization` 在每 PDF 建新服務，普通 Hello 略過 cache，保持 main→recommendations→term 順序、raw None／明確 QPS 的共享條件。Free、非 LLM、兩份不同檔案、HTTP／native 取消、typed failure／零 Worker 與 dry factory 均有上列測試證據。
 
 ### 次數與順序
 

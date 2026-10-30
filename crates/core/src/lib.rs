@@ -212,6 +212,14 @@ impl TranslationService {
         self.legacy_cache = Some(binding);
         self
     }
+    /// A PDF gets a new SDK/session/limiter lifetime while retaining the shared
+    /// application cache. Construction never sends a request or starts a child.
+    pub fn fresh_for_document(&self) -> Result<Self> {
+        let mut fresh = Self::new(self.config.clone())?;
+        fresh.cache = self.cache.clone();
+        fresh.legacy_cache = self.legacy_cache.clone();
+        Ok(fresh)
+    }
     pub fn name(&self) -> &str {
         &self.config.provider
     }
@@ -268,6 +276,23 @@ impl TranslationService {
     }
     pub async fn set_max_qps(&self, qps: u32) -> ProviderResult<()> {
         self.rate_limiter.set_max_qps(qps).await
+    }
+    /// The legacy factory checks ordinary translation, bypassing both cache
+    /// reads and writes. Call after prepare, outside its initialization lock.
+    pub async fn health_check(&self, cancel: &CancellationToken) -> ProviderResult<()> {
+        self.translate_typed(
+            &TranslationRequest {
+                id: "health".into(),
+                text: "Hello".into(),
+                method: "translate".into(),
+                ignore_cache: true,
+                rate_limit_params: Value::Null,
+                translator: self.name().into(),
+            },
+            cancel,
+        )
+        .await
+        .map(|_| ())
     }
     pub async fn translate(
         &self,

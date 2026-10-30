@@ -13,6 +13,13 @@ use tokio::{
     net::TcpListener,
     time::timeout,
 };
+mod http_fixture {
+    include!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../test-support/loopback.rs"
+    ));
+}
+use http_fixture::LoopbackProvider;
 
 struct Fixture {
     directory: TempDir,
@@ -228,7 +235,21 @@ fn invalid_settings_do_not_echo_secret_arguments_or_write_configuration() -> Res
 #[test]
 fn multiple_pdfs_share_the_task_pipeline_and_return_one_batch_terminal() -> Result<()> {
     let fixture = Fixture::new("finished_then_exit", 2)?;
-    let output = fixture.translation().arg("--google").output()?;
+    let server = LoopbackProvider::new()?;
+    let output = fixture
+        .translation()
+        .args([
+            "--openai",
+            "--openai-api-key",
+            "synthetic-only",
+            "--openai-base-url",
+            server.endpoint(),
+            "--openai-model",
+            "fixture-model",
+            "--qps",
+            "200",
+        ])
+        .output()?;
     ensure!(
         output.status.success(),
         "{}",
@@ -257,6 +278,10 @@ fn multiple_pdfs_share_the_task_pipeline_and_return_one_batch_terminal() -> Resu
         !fixture.app.join("config").exists(),
         "CLI load must not auto-save merged runtime settings"
     );
+    ensure!(
+        server.requests().len() == 4,
+        "Each PDF initializes main and default term independently"
+    );
     Ok(())
 }
 
@@ -267,7 +292,7 @@ async fn main_and_term_cli_options_reach_separate_rust_services_over_real_http()
     let endpoint = format!("http://{}/v1", listener.local_addr()?);
     let server = tokio::spawn(async move {
         let mut models = Vec::new();
-        for _ in 0..2 {
+        for _ in 0..4 {
             let (mut stream, _) = listener.accept().await?;
             let mut header = Vec::new();
             while !header.ends_with(b"\r\n\r\n") {
@@ -337,11 +362,19 @@ async fn main_and_term_cli_options_reach_separate_rust_services_over_real_http()
             && result["translations"]["w-1"] == "term-model"
     );
     ensure!(
-        result["translation_metrics"]["main"]["calls"] == 1
-            && result["translation_metrics"]["term"]["calls"] == 1
+        result["translation_metrics"]["main"]["calls"] == 2
+            && result["translation_metrics"]["term"]["calls"] == 2
     );
     let mut models = timeout(Duration::from_secs(5), server).await???;
     models.sort_by_key(|model| model.as_str().unwrap_or("").to_owned());
-    ensure!(models == vec![json!("main-model"), json!("term-model")]);
+    ensure!(
+        models
+            == vec![
+                json!("main-model"),
+                json!("main-model"),
+                json!("term-model"),
+                json!("term-model")
+            ]
+    );
     Ok(())
 }

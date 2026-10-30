@@ -204,6 +204,14 @@ impl Settings {
                 .then_some(self.main_engine())
         })
     }
+    /// Compare engine settings before deriving QPS or constructing any service.
+    pub fn term_engine_settings_match(&self) -> bool {
+        self.term_engine().is_some_and(|term| {
+            let main = self.main_engine();
+            main.name == term.name
+                && self.engine_detail(main, false) == self.engine_detail(term, true)
+        })
+    }
     fn selected_engine(&self, term: bool) -> Option<&'static EngineSpec> {
         engine_specs()
             .iter()

@@ -4,6 +4,8 @@
 
 ## Windows 診斷整包與 HTTP 後續回歸
 
+後續初始化修正：**225 passed、0 failed、1 ignored**，Clippy 通過；每份 PDF 的 Hello／term sharing、Free 推薦、cache／QPS／usage、HTTP 與原生 CLI 健康檢查取消均已驗證。四頁 PDF 回到 107 次 identity 請求、八頁零差異。詳 [FACTORY_INITIALIZATION](FACTORY_INITIALIZATION.md)；下表 214 是先前整包 EXE 的檢查點。
+
 | 檢查 | 結果 |
 | --- | --- |
 | 最新完整 Rust workspace | **214 passed，0 failed，1 ignored**；205 項原生整合後新增 compression 6、cookie 2、Worker 旗標 1；all-targets Clippy 通過 |

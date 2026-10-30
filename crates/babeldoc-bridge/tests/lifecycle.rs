@@ -5,7 +5,8 @@ use std::{collections::BTreeMap, fs, path::PathBuf, sync::Arc, time::Duration};
 
 use anyhow::{Context, Result, bail, ensure};
 use babeldoc_bridge::{
-    AssetOperation, WorkerOptions, maintain_assets, translate_pdf, translate_pdf_with_services,
+    AssetOperation, FactoryInitialization, WorkerOptions, maintain_assets, translate_pdf,
+    translate_pdf_with_initialization, translate_pdf_with_services,
 };
 use pdf2zh_core::{
     CacheBackend, CacheError, CacheFuture, CacheKey, PdfJob, TranslationService, TranslatorConfig,
@@ -845,6 +846,17 @@ async fn cancellation_force_kills_the_entire_contained_tree() -> Result<()> {
 #[cfg(windows)]
 #[tokio::test]
 async fn cancelling_a_cli_request_waits_for_native_process_tree_cleanup() -> Result<()> {
+    cancel_cli_process_tree(false).await
+}
+
+#[cfg(windows)]
+#[tokio::test]
+async fn cancelling_factory_health_reaps_native_tree_without_starting_python() -> Result<()> {
+    cancel_cli_process_tree(true).await
+}
+
+#[cfg(windows)]
+async fn cancel_cli_process_tree(initialize: bool) -> Result<()> {
     let mut fixture = Fixture::new("cli_pending")?;
     // This timeout must not abort CLI providers while they kill and reap.
     fixture.worker.shutdown_timeout = Duration::ZERO;
@@ -889,12 +901,16 @@ async fn cancelling_a_cli_request_waits_for_native_process_tree_cleanup() -> Res
         "aliases must preserve process cleanup ownership"
     );
     let cancel = CancellationToken::new();
-    let operation = translate_pdf(
+    let operation = translate_pdf_with_initialization(
         &fixture.worker,
         fixture.job.clone(),
         service,
+        None,
         cancel.clone(),
         None,
+        initialize.then_some(FactoryInitialization {
+            matching_engine_settings: false,
+        }),
     );
     tokio::pin!(operation);
     timeout(DEADLINE, async {
@@ -921,5 +937,8 @@ async fn cancelling_a_cli_request_waits_for_native_process_tree_cleanup() -> Res
     ensure!(format!("{error:#}").contains("cancelled"));
     child.assert_exited_now()?;
     descendant.assert_exited_now()?;
+    if initialize {
+        ensure!(!fixture.directory.path().join("worker-starts.log").exists());
+    }
     Ok(())
 }

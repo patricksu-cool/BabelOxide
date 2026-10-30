@@ -38,6 +38,13 @@ struct SessionServices {
     term: Option<Arc<TranslationService>>,
 }
 
+/// The application factory creates fresh services for each PDF and checks
+/// availability before starting Python. Raw term QPS decides legacy sharing.
+#[derive(Clone, Copy, Debug)]
+pub struct FactoryInitialization {
+    pub matching_engine_settings: bool,
+}
+
 struct SessionPlan {
     start: Value,
     services: Option<SessionServices>,
@@ -138,11 +145,34 @@ pub async fn translate_pdf(
 /// Main and term services may be shared or independently configured in Rust.
 pub async fn translate_pdf_with_services(
     worker: &WorkerOptions,
+    job: PdfJob,
+    translator: Arc<TranslationService>,
+    term_translator: Option<Arc<TranslationService>>,
+    cancel: CancellationToken,
+    events: Option<mpsc::Sender<Value>>,
+) -> Result<Value> {
+    translate_pdf_with_initialization(
+        worker,
+        job,
+        translator,
+        term_translator,
+        cancel,
+        events,
+        None,
+    )
+    .await
+}
+
+/// Low-level callers can supply already initialized services with `None`;
+/// GUI/CLI use the legacy per-PDF factory lifecycle.
+pub async fn translate_pdf_with_initialization(
+    worker: &WorkerOptions,
     mut job: PdfJob,
     translator: Arc<TranslationService>,
     term_translator: Option<Arc<TranslationService>>,
     cancel: CancellationToken,
     events: Option<mpsc::Sender<Value>>,
+    initialization: Option<FactoryInitialization>,
 ) -> Result<Value> {
     ensure!(
         job.qps > 0 && job.pool_max_workers > 0,
@@ -192,9 +222,17 @@ pub async fn translate_pdf_with_services(
         require_mono || require_dual,
         "At least one PDF output must be enabled"
     );
+    let translator = if initialization.is_some() {
+        Arc::new(translator.fresh_for_document()?)
+    } else {
+        translator
+    };
     // Preflight can probe a service or validate an external executable. Await it
     // cooperatively so cancellation cannot discard its process cleanup future.
     translator.prepare(&cancel).await?;
+    if initialization.is_some() {
+        translator.health_check(&cancel).await?;
+    }
     let (recommended_qps, recommended_pool) = translator.recommendations();
     job.qps = recommended_qps.unwrap_or(job.qps);
     job.pool_max_workers = recommended_pool.unwrap_or(job.pool_max_workers);
@@ -204,6 +242,7 @@ pub async fn translate_pdf_with_services(
         translator.set_max_qps(job.qps).await?;
     }
     let term_qps = job.extra.remove("term_qps");
+    let raw_term_qps = term_qps.as_ref().and_then(Value::as_u64);
     let term_qps = match term_qps.filter(|value| !value.is_null()) {
         Some(value) => value
             .as_u64()
@@ -212,11 +251,28 @@ pub async fn translate_pdf_with_services(
             .context("Term QPS must be a positive 32-bit integer")?,
         None => job.qps,
     };
+    let term_translator = if let Some(factory) = initialization {
+        if factory.matching_engine_settings && raw_term_qps == Some(u64::from(job.qps)) {
+            term_translator.map(|_| translator.clone())
+        } else {
+            term_translator
+                .map(|term| term.fresh_for_document().map(Arc::new))
+                .transpose()?
+        }
+    } else {
+        term_translator
+    };
     let separate_term = term_translator
         .as_ref()
         .filter(|term| !Arc::ptr_eq(&translator, term));
     if let Some(term) = separate_term {
+        if initialization.is_some() {
+            term.set_max_qps(term_qps).await?;
+        }
         term.prepare(&cancel).await?;
+        if initialization.is_some() {
+            term.health_check(&cancel).await?;
+        }
         let (qps, workers) = term.recommendations();
         if qps.is_none() {
             term.set_max_qps(term_qps).await?;

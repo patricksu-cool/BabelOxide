@@ -28,3 +28,5 @@ GUI 產出的 mono／dual 與 Python main 比較：頁數、文字、字元座�
 新 `dist/hybrid-diagnostic-20261030-v2`（Rust `f17abb8`／Pillow 13）複製至 `.test-output/q 包 v2` 後重做相同步驟。Terra xhigh 回報 Complete 1/1、100%，Translated 與 Bilingual 均可顯示並翻到第 2/4 頁；第二輪處理中關閉顯示取消／安全清理後視窗消失。fixture exit 0、105 requests／36 batch，產生 mono／dual 四頁；完整比對另見 [新版包 GUI 比對](PHASE6_BUNDLE_GUI_COMPARISON.json)。整合者對此特定複本唯讀查詢 Python Worker，沒有符合的殘留程序。
 
 兩輪都用隔離 HOME／設定／TEMP、原指定四頁 PDF、本機 identity API。被測引擎是包內 embedded Python 與 BabelDOC；開發 `.venv` 僅執行外部測試 harness／PDF 比對，不作被測 Worker。這些結果不代表乾淨機、唯讀安裝或所有顯示驅動已驗收。
+
+後續新 Hello factory 流程再編譯 GUI，只替換 `.test-output/q 包 v2` 測試複本的 EXE；原 `dist` 成品未改。Terra xhigh 再次完成翻譯／譯文與雙語預覽，第二輪處理中關閉亦安全清理退出。兩輪合計 109 requests、36 batch、exit 0，指定 Python Worker 無殘留；首輪八頁零差異。詳見 [FACTORY_INITIALIZATION](FACTORY_INITIALIZATION.md)。

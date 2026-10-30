@@ -2,6 +2,8 @@
 
 更新日期：2026-10-29。Python 行為基準為 `d18165e`；案例定義見 [RETRY_COMPATIBILITY.md](RETRY_COMPATIBILITY.md)。本文件映射目前 Rust 測試中的實際斷言，不把政策常數、來源檢讀或測試函式存在視為完整等價證明。
 
+2026-10-30 補充：本文件主要表格保留第 5 階段快照。持久 cache 已完成，ordinary get/set failure 均 best effort；見 CACHE_COMPATIBILITY。HTTP compression 與 AnythingLLM／Dify cookie scope 已有真 wire 證據。每 PDF 的普通 Hello、raw term QPS 共享、服務重建／計數、Free 推薦及健康檢查取消已補，最新 workspace 225 passed，原四頁 PDF 107 次 identity 請求且八頁零差異；見 [FACTORY_INITIALIZATION](FACTORY_INITIALIZATION.md) 與 TEST_REPORT。剩餘 Tencent／Azure／DeepL／write-pool 細節請以 REMAINING_PROVIDER_GAPS 的現行狀態為準。
+
 `RETRY_COMPATIBILITY.md` 的「目前是 PoC」段落記錄該文件建立時的狀態；此矩陣補充後續 provider 實作的證據，不改寫原始 34+5 個 oracle。主代理在最後 Azure body-error 修正後執行 `cargo test --workspace --locked`：**102 passed，0 failed／ignored**（core14、legacy40、provider31、bridge framing3／整合13、CLI1）。結果位於 `.test-output/rust-migration/phase5-verified-tests.log`，本文件已核對各 suite 的結果行。主代理另確認 fmt check 與 clippy all-targets `-D warnings` 通過；本次文件整理沒有另跑 cargo。
 
 完整回歸與 PDF 證據見 [TEST_REPORT.md](TEST_REPORT.md)。本輪四頁 PDF 產生 mono／dual，105 個 loopback API requests、36 batches；文字、字元座標、圖片及 8 頁 96 DPI RGB render 與 Python 基準一致，render 像素差 0。這證明受測 PDF 流程保持品質，不能用來補足下列 provider oracle 的缺口。

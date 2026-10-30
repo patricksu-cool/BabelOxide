@@ -375,6 +375,37 @@ impl CacheBackend for FailingCache {
 }
 
 #[tokio::test]
+async fn factory_health_bypasses_cache_but_counts_usage_and_rate_admissions() {
+    let cache = Arc::new(FailingCache {
+        reads: AtomicUsize::new(0),
+        writes: AtomicUsize::new(0),
+        kind: CacheErrorKind::Cancelled,
+    });
+    let mut config = config();
+    config.options["qps"] = json!(1);
+    let (service, script, clock) = make_service(
+        config,
+        vec![Plan::Text("health-one"), Plan::Text("health-two")],
+        Some(cache.clone()),
+    );
+    let cancel = CancellationToken::new();
+    service.prepare(&cancel).await.unwrap();
+    service.health_check(&cancel).await.unwrap();
+    service.health_check(&cancel).await.unwrap();
+    assert_eq!(cache.reads.load(Ordering::SeqCst), 0);
+    assert_eq!(cache.writes.load(Ordering::SeqCst), 0);
+    let metrics = service.metrics();
+    assert_eq!(
+        (metrics.calls, metrics.admissions, metrics.http_attempts),
+        (2, 2, 2)
+    );
+    assert_eq!(metrics.usage.total_tokens, 16);
+    assert_eq!(metrics.cache_hits, 0);
+    assert_eq!(*clock.sleeps.lock().unwrap(), vec![Duration::from_secs(1)]);
+    script.drained();
+}
+
+#[tokio::test]
 async fn cache_failures_are_best_effort_but_cancelled_is_a_control_event() {
     let cache = Arc::new(FailingCache {
         reads: AtomicUsize::new(0),

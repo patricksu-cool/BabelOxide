@@ -414,6 +414,12 @@ fn open_result(_path: &std::path::Path) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    mod http_fixture {
+        include!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../test-support/loopback.rs"
+        ));
+    }
     #[test]
     fn result_copy_uses_exact_paths_without_command_interpretation() {
         let temp = tempfile::tempdir().unwrap();
@@ -543,9 +549,11 @@ mod tests {
         directory: tempfile::TempDir,
         worker: WorkerOptions,
         settings: Settings,
+        server: http_fixture::LoopbackProvider,
     }
     impl WorkerFixture {
         fn new(scenario: &str) -> Self {
+            let server = http_fixture::LoopbackProvider::new().unwrap();
             let directory = tempfile::tempdir().unwrap();
             let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
                 .join("../..")
@@ -598,7 +606,7 @@ mod tests {
                 ),
                 (
                     "openai_detail.openai_base_url",
-                    serde_json::json!("http://127.0.0.1:9/v1"),
+                    serde_json::json!(server.endpoint()),
                 ),
                 ("basic.input_files", serde_json::json!([input])),
                 (
@@ -617,6 +625,7 @@ mod tests {
                 directory,
                 worker,
                 settings,
+                server,
             }
         }
         fn background(&self) -> (Background, BackgroundThread) {
@@ -642,7 +651,7 @@ mod tests {
         .unwrap()
     }
     #[tokio::test]
-    async fn submit_uses_shared_manager_and_exposes_real_result_paths_without_api_calls() {
+    async fn submit_initializes_services_and_exposes_real_result_paths_over_loopback() {
         let fixture = WorkerFixture::new("finished_then_exit");
         let (mut background, thread) = fixture.background();
         assert!(!fixture.directory.path().join("worker.pid").exists());
@@ -655,6 +664,7 @@ mod tests {
             .unwrap();
         assert_eq!(snapshot.status, pdf2zh_tasks::TaskStatus::Succeeded);
         assert_eq!(snapshot.completed_files, 1);
+        assert_eq!(fixture.server.requests().len(), 2);
         let result = PathBuf::from(snapshot.results[0]["mono_pdf_path"].as_str().unwrap());
         assert!(result.is_file());
         assert!(!fixture.directory.path().join("app/cache").exists());
