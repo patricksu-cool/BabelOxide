@@ -1,0 +1,15 @@
+[package]
+name = "pdf2zh-pdf-preview"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+pdfium-render = { version = "=0.9.4", default-features = false, features = ["thread_safe", "pdfium_7881"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "=0.61.2", features = ["Win32_Foundation", "Win32_System_LibraryLoader"] }
+
+[dev-dependencies]
+tempfile.workspace = true

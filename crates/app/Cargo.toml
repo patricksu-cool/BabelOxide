@@ -1,0 +1,27 @@
+[package]
+name = "pdf2zh-app"
+version.workspace = true
+edition.workspace = true
+rust-version = "1.95"
+license.workspace = true
+
+[[bin]]
+name = "pdf2zh-gui"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tempfile.workspace = true
+pdf2zh-cli = { path = "../cli" }
+pdf2zh-config = { path = "../config" }
+pdf2zh-core = { path = "../core" }
+pdf2zh-tasks = { path = "../tasks" }
+babeldoc-bridge = { path = "../babeldoc-bridge" }
+pdf2zh-pdf-preview = { path = "../pdf-preview" }
+eframe = { version = "=0.37.0", default-features = false, features = ["glow", "default_fonts", "system_fonts", "clipboard"] }
+
+[target.'cfg(windows)'.dependencies]
+rfd = { version = "=0.17.2", default-features = false }
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }

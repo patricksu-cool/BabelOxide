@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/core", "crates/babeldoc-bridge", "crates/cli", "crates/config", "crates/tasks"]
+members = ["crates/core", "crates/babeldoc-bridge", "crates/cli", "crates/config", "crates/tasks", "crates/app", "crates/pdf-preview"]
 resolver = "2"
 
 [workspace.package]

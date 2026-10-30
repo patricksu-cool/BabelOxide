@@ -4,6 +4,8 @@
 
 ## 第 6 階段核心與 CLI 實測
 
+下表為 `e10173a` 核心／CLI 檢查點；後續原生整合結果見下一節。
+
 | 檢查 | 結果 |
 | --- | --- |
 | Rust workspace | **167 passed，0 failed／ignored**：bridge 17、CLI 7、config 22、core 112、tasks 9 |
@@ -17,6 +19,24 @@
 | 與 Python main 比較 | mono／dual 各 4 頁；文字、逐字元座標、圖片一致；8 頁 96 DPI RGB 渲染像素差 0，見 [PHASE6_PDF_COMPARISON](PHASE6_PDF_COMPARISON.json) |
 
 證據：`.test-output/rust-migration/phase6-core-cli-tests.log`、`phase6-worker-tests.xml`、`phase6-cli-full/summary.json` 與 `phase6-pdf-comparison.json`。測試隔離 HOME／USERPROFILE／TEMP／PDF2ZH_APP_DIR，不讀取使用者真實設定或憑證。GUI／PDFium 尚未包含在上述 167 項中，離線資產維護操作仍待實作。
+
+## 第 6 階段原生 GUI／預覽／資產整合
+
+| 檢查 | 結果 |
+| --- | --- |
+| 完整 Rust workspace | **205 passed，0 failed，1 ignored**：bridge 23、CLI 9、config 22、core 112、tasks 9、app 17、preview 13 |
+| Native smoke | 預設 ignored 的測試另明確啟用：**1 passed**，使用 SHA256 已核對的 PDFium 8125；13 個 preview unit 亦通過。驗四頁原檔、Rotate／CropBox／RGBA／白底、上下頁界與獨占 handle 釋放 |
+| Python 回歸 | **285 passed**：`tests` + `python-worker/tests` 為 277（含 Worker 32），另 `test/test_cache.py` 8；未跳過舊 cache 案例 |
+| 靜態檢查 | fmt、workspace/all-targets Clippy `-D warnings`、Worker／smoke Ruff 全通過 |
+| Desktop UI | Terra xhigh 依 computer-use 操作：實際翻譯完成、原文／譯文／雙語、翻頁／縮放／Fit page、設定保存、取消後可繼續預覽、正常關閉；選檔去重與多檔新增／移除、另存新檔亦通過 |
+| GUI PDF 回歸 | 105 個 loopback identity 請求、36 個 batch；mono／dual 各 4 頁，文字、座標、圖片一致，8 頁渲染像素差 0；見 [GUI 比對](PHASE6_GUI_PDF_COMPARISON.json) |
+| 原子結果另存 | 同檔別名、來源無法讀取、目的檔不允許替換均有測試；保留舊目的 bytes 且清除暫存。桌面另存的原檔 SHA256 亦一致 |
+| Assets IPC | 不需 PDF／憑證；error、finished 後非零、錯 tag／越界名稱／缺檔／非法翻譯 RPC 不發布；持續 progress 不能續命 absolute deadline；取消立即驗固定 root／descendant HANDLE 已退出 |
+| 真 Assets API | warmup、產生 ZIP、空白 home 還原通過；ZIP 及還原 182 項各自 SHA3 相符，清單見 ENGINE_ASSET_INVENTORY |
+
+證據：`phase6-native-verified-tests.log`、`phase6-native-verified-clippy.log`、`phase6-preview-native-tests.log`、`phase6-python-regression.xml`、`phase6-python-cache.xml`、`phase6-gui-qa2/summary.json`、`phase6-gui-qa3/summary.json`，均在 `.test-output/rust-migration/`。GUI 進度走原生 watch，沒有 CLI stdout terminal；summary 的 stdout 事件 0 不作 GUI 成敗判斷。實際操作及界限另見 [GUI_TEST_REPORT](GUI_TEST_REPORT.md)。
+
+失敗紀錄保留：最初 GUI fixture 在額度中斷期間達 300 秒期限，未列為正常關閉成功；新 fixture 已在 1200 秒期限內完成並 exit 0。最初 warmup 測試漏傳 Windows SystemRoot，ready 前失敗；修正隔離啟動環境後真實 API 通過。PDFium private module import、egui 0.37 API 與 term fallback oracle 的編譯／測試失敗均已修正，沒有把舊失敗 log 改成成功。
 
 ## 第5階段實測
 
@@ -74,4 +94,4 @@ Rust 指令：`cargo test --workspace --locked`。Python 指令：`.venv/Scripts
 
 ## 尚未驗收
 
-原 34 項 Python retry 案例仍保留，Rust 現在已有對應 runtime／transport 證據，詳 PROVIDER_TEST_MATRIX；未把原 policy 宣告物件的每個負例重建成完整逐列矩陣，也未證明 HTTPX write／pool 逐階段 timeout 完全等價。GUI、預覽、資產維護、真實免費 API、長時間／大型／並行 PDF、乾淨 Windows、正式打包、安全與再散布授權仍需驗證。沒有將舊輪次數字當成新功能的測試結果。
+原 34 項 Python retry 案例仍保留，Rust 現在已有對應 runtime／transport 證據，詳 PROVIDER_TEST_MATRIX；未把原 policy 宣告物件的每個負例重建成完整逐列矩陣，也未證明 HTTPX write／pool 逐階段 timeout 完全等價。全部服務的真 API、長時間／大型／並行 PDF、乾淨 Windows、正式打包、安全與再散布授權仍需驗證。GUI／預覽／資產已完成上列開發驗收，未外推所有選項、錯誤注入或乾淨機器條件。

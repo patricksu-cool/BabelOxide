@@ -1,6 +1,6 @@
 # Rust／BabelDOC 混合架構與引擎契約
 
-更新：2026-10-30。目標分支：`feature/rust-babeldoc-hybrid`。Python 回歸基準為 `d18165e`，保留標籤 `rust-python-baseline-20261026`、`pre-rust-main-20261026`。本文描述已核對的 Python 基準與分階段移植設計；**架構圖不代表 GUI 或 Windows 發行流程已完成**。PoC 已驗證固定回應端點與真實 PDF 引擎，第 5 階段實作 16 種 Rust 服務，第 6 階段完成設定、CLI、快取與共用任務管理；GUI、預覽與發行仍待驗收。
+更新：2026-10-30。目標分支：`feature/rust-babeldoc-hybrid`。Python 回歸基準為 `d18165e`，保留標籤 `rust-python-baseline-20261026`、`pre-rust-main-20261026`。第 6 階段已完成設定、CLI、快取、共用任務管理、eframe GUI、PDFium 預覽與資產 API 的開發驗收；**架構圖不代表正式發行或乾淨 Windows 驗收已完成**。
 
 第5階段的`core`依獨立職責拆為providers、transport、retry、limiter、metrics、error及共用process模組，未為每個模組增加crate。`TranslationService`負責一次logical call的preflight、admission與provider dispatch，provider保留各自SDK內層重試。外部CLI使用共用程序樹封裝；薄Python adapter不含上述應用邏輯。行為證據與差異見 [測試矩陣](PROVIDER_TEST_MATRIX.md)。
 
@@ -40,6 +40,7 @@ flowchart LR
     App --> Config
     CLI --> Tasks["tasks：共用 factory／批次排程／取消／最新狀態"]
     App --> Tasks
+    App --> Preview["pdf-preview：有界最新請求／專用 PDFium 執行緒"]
     Tasks --> Core["core：模型／服務／HTTP／SQLite cache"]
     Tasks --> Bridge["babeldoc-bridge：程序與 IPC"]
     Bridge --> Core
@@ -56,11 +57,12 @@ flowchart LR
 | `config` | 235 項設定描述、24 個服務選項、CLI／環境／檔案優先序、舊 TOML 遷移、程式目錄原子保存與 engine kwargs 正規化 | 22 項設定／儲存測試；缺口見 CONFIG_MIGRATION |
 | `tasks` | 共用 task_from_settings 建立主／術語服務、批次排程、取消與 shutdown、watch 最新狀態 | 9 項測試；不 abort bridge，等待正常程序與 cache 清理 |
 | `babeldoc-bridge` | worker 啟停、版本握手、雙向 IPC、請求關聯、任務狀態、取消、程序回收、輸出路徑驗證 | 先單 worker／單文件；多文件排程另外驗收 |
-| `cli` | 動態 clap 參數、載入設定、多檔批次、進度與 exit code | 使用共用 tasks；7 項測試；資產維護仍待接線 |
-| `app` | eframe 介面、進度、取消、設定與結果呈現 | 規劃；不得因選定框架即聲稱舊 GUI 的所有選項與預覽等價 |
+| `cli` | 動態 clap 參數、載入設定、多檔批次、進度與 exit code、資產維護 | 使用共用 tasks；9 項測試；assets 不需 PDF 或 translator |
+| `app` | eframe 介面、進度、取消、設定與結果呈現、原子另存 | 17 項測試及原生桌面操作；不啟動 Python UI server |
+| `pdf-preview` | 專用執行緒持有 PDFium、有界 request/result、generation 去除過期畫面、RGBA | 13 unit 與明確啟用的 native smoke；只載入 bundle 絕對路徑 DLL |
 | Python Worker | 引擎呼叫與資料轉接 | 不 import `pdf2zh_next`；key 不進 worker；只接受有限 engine options |
 
-CLI 與 GUI 共用 Rust 設定與任務模型。UI 不直接組裝 Python kwargs，也不直接持有 provider client。原本 GUI 產生的隱含值、翻譯／術語設定共用規則及負向選項（例如 `no_auto_extract_glossary`）必須在 core 明確映射；Worker 只接受正規化後的引擎值。Preview 初期可以開啟已產生的 PDF；要重建內嵌翻頁／縮放時，先另定渲染介面，不把舊 Gradio／Pillow UI 搬回 Worker。
+CLI 與 GUI 共用 `config`／`tasks` 模型與 factory。UI 不直接組裝 Python kwargs 或持有 provider client；Worker 只接受正規化引擎值。內嵌翻頁／縮放由 Rust/PDFium 完成，未將舊 Gradio／Pillow UI 放入 Worker。GUI 關閉先停新動作，背景等待 TaskManager 清理及 PDFium join，再允許視窗關閉；同步 native hang 的界限見 GUI_PREVIEW_REVIEW。
 
 ## BabelDOC 0.6.3 已核對介面
 
