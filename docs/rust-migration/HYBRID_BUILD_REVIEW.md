@@ -14,3 +14,5 @@
 整合發現並保留的失敗：長 work 名稱讓 28 個 ONNX 參考資料路徑達 260–268 字元；縮短 fresh work 名稱後繼續。Git CRLF 授權文字與舊 LF hash 不同，只接受經相同 LF digest 證明的換行轉換。現有 Cargo cache 缺 `.cargo-checksum.json`，改從 hash 已驗的 `.crate` 原文取 notice；未驗證快取不作來源。上述均未刪除或改動舊 `dist/release`。
 
 完整 PE 盤點已到達 380 個檔案。Microsoft PDH 為 OS 元件；ONNXRuntime 尚缺 MSVCP140_1，預設 build 正確拒絕發佈。另有明確 diagnostic 模式供本機查核，保留缺項及 `release_ready=false`。正式包還需 runtime來源／載入路徑、asset notices、缺少的 crate license texts、對應來源、乾淨機與實際 PDF／GUI／取消驗收；不能用合成測試清空這些門檻。
+
+後續修正：inventory／uv.lock 在本機為 CRLF、Git blob 為 LF，raw digest 會讓跨 checkout 的同內容 lock 假 stale。owned requirements 現使用明列的 LF 文字 fingerprint，release manifest 與 BUILD_INFO 仍 hash 真正原始 bytes；新增 captured-input LF／CRLF 成功、內容變更拒絕 oracle，**25 tests**／Ruff 通過。v3 已另建立，原始 13,042 records 全驗證；在非來源 CWD 的中文空格路徑測試複本完成 107-request PDF 且八頁零差異。Astra 尚未對此後續變更作最終複審。

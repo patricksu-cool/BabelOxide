@@ -17,9 +17,10 @@
 11. 新 CLI 再次完成四頁 PDF：105 個固定回應請求、36 個 batch、68 個進度與單一 finish。mono／dual 共八頁文字、座標、圖片及渲染像素差皆為 0，見 [第 6 階段比對](PHASE6_PDF_COMPARISON.json)。這仍是受控 identity 回應驗證。
 12. 原生 GUI 已實際完成四頁翻譯、譯文／雙語預覽、翻頁與縮放、設定保存、取消及正常關閉；產物與 main 八頁像素差 0。選檔去重／新增／移除與另存新檔已操作，另存 SHA256 與原檔一致。computer-use 操作依使用者指定由 GPT-6.1 Terra、xhigh 子代理執行；詳見 [GUI 驗收](GUI_TEST_REPORT.md) 與 [Astra 審查](GUI_PREVIEW_REVIEW.md)。
 13. 共用 Worker session 接通 warmup、generate／restore offline assets，不建立假 PDF 或 translator。真實 CLI 產生官方格式離線包，空白 home 還原後 182 項 SHA3 全相符。先前 186 項是靜態盤點未扣除 import 時剔除的四個未引用字型，已更正；見 [實際清單](ENGINE_ASSET_INVENTORY.json)。
-14. 最新整合回歸為 **214 Rust passed、1 ignored**、**285 Python passed**，fmt／Clippy／Ruff 通過；預設略過的 native smoke 已另明確啟用且通過。新增真 wire compression／cookie 與 Worker bytecode 旗標測試，見測試報告。
+14. 原生／transport 整合檢查點為 **214 Rust passed、1 ignored**、**285 Python passed**，fmt／Clippy／Ruff 通過；預設略過的 native smoke 已另明確啟用且通過。新增真 wire compression／cookie 與 Worker bytecode 旗標測試，見測試報告。
 15. 新 Windows 診斷包已包含 85 項獨立 Worker runtime、Pillow 13、PDFium 及 182 項資產，沒有 Gradio／舊 app／測試 PDF／翻譯 DB。24 項 builder 邊界測試、搬移後 native imports／依賴條件／資產還原、全樹 13,042 檔 hash 通過。中文空格路徑的包內 CLI／GUI 完成翻譯及預覽／取消；CLI 八頁 PDF 與 main 像素差 0。尚缺正式 native／授權／乾淨機門檻，詳 [發行報告](RELEASE_REPORT.md) 與 [安全查核](SECURITY_REPORT.md)。
 16. 恢復舊 factory 的每 PDF main／term Hello、raw term QPS 共享與服務生命週期，225 項 Rust／Clippy 通過。四頁 PDF 回到 107 次固定回應、36 batch，八頁排版零差異；詳 [初始化驗證](FACTORY_INITIALIZATION.md)。診斷包 v2 保留其原 `f17abb8` EXE；此項是後續開發建置，不混作 v2 內容。
+17. 含初始化修正的 release 診斷包 v3 已建立並逐檔驗證；中文空格路徑、空白非來源 CWD、包內預設 runtime 完成完整 PDF，107 requests、八頁零差異。Builder 另修正跨 Git checkout 換行差異造成的 lock 假 stale，25 項 self-tests 通過。正式 MSVCP／授權／乾淨機等門檻保留，詳發行報告。
 
 ## 已修正的整合問題
 

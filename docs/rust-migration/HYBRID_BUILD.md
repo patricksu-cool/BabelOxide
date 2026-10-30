@@ -65,6 +65,8 @@ $hybridRevision = (& git rev-parse HEAD).Trim()
 
 這只更新上述 owned lock；不變更 `uv.lock`／Cargo.lock。基準版本、替換 wheel 的名稱／版本／平台／hash／bytes／官方 metadata URL 均檢查，profile digest 也寫入 lock。更新會拒絕連結，以同目錄暫存檔、flush／fsync、atomic replace 保留舊檔直到新內容寫完。平常組包若看到 lock 與 inventory／uv.lock／profile 不符，會停止，不自行更新；安裝後只讀已捕獲的 provenance 快照。
 
+lock 內三個來源文字 fingerprint 將 CRLF 正規為 LF，避免相同 Git source 在不同 `core.autocrlf` 設定下變成假 stale。實際 `BUILD_INFO.inputs`／`RELEASE_FILES.json` 的 bytes／SHA256 仍針對捕獲的原始檔案；沒有用換行正規化放寬 wheel、DLL、ZIP 或 release-file 驗證。LF／CRLF 都能通過 captured-input oracle，內容改動仍拒絕；目前 **25 個 self-tests** 通過。
+
 ## Staging 與執行隔離
 
 輸出同層建立唯一 `.w-<uuid>/stage`，成功時在同一個磁碟區把完整 stage rename 為新輸出。工作名稱刻意縮短：首輪帶完整 output 名稱時，28 個 ONNX 參考資料路徑達 260–268 字元而失敗；保留失敗 stage，不更改全域長路徑政策或刪除 package 資料。Windows destination 已存在時 rename 失敗。沒有覆寫／合併成品，也沒有遞迴刪除舊目錄。成功或失敗均保留 work 的 log／uv cache；失敗 stage 不作成功成品。
@@ -134,3 +136,5 @@ RELEASE_FILES.json
 首版的完整安裝／搬移／import／還原與 bundle CLI／GUI 證據已完成；其 EXE 來源為 `6187d9b`、Pillow 仍為 12.3.0。Pillow 13 profile、新版 HTTP transport 與 `-B` Worker 須透過新輸出另建，不改寫首版證據。合成測試現為 24 項通過、Ruff 通過；後續實際新包結果另記錄。
 
 新版已建立於 `dist/hybrid-diagnostic-20261030-v2`，EXE 來源 `f17abb8`，Pillow 13.0.0；搬移後 active metadata closure／native imports／restore／versions 通過。manifest 為 13,042 檔、1,248,017,820 bytes（排除自身），SHA256 `3086c43405de7442f47c1cdad1b50515d5929f8f9adbc3e4758bf7d98b276094`。另對發布目錄重讀集合與逐檔 hash 全過、沒有 DB／loose bytecode，再以中文空格路徑測試複本執行 CLI／GUI。兩條入口的八頁 PDF 與 main 文字、座標、圖片、像素差均為零；Terra xhigh 實測 GUI 預覽與處理中關閉，fixture exit 0、特定 Worker 無殘留。見 [RELEASE_REPORT](RELEASE_REPORT.md)。這仍是帶兩個未解析 CRT import 及授權缺項的本機診斷包。
+
+最新 `dist/hybrid-diagnostic-20261030-v3` 使用 `c1722e3` release EXE，包含每 PDF Hello／instance lifetime 修正。13,042 個 manifest records、1,248,371,853 bytes、SHA256 `624deadbf9c8bd24483360a8df76e7b72df985b5fd4f2f42177596182325380e`。全樹 bytes／hash 與搬移後非來源 CWD 的 CLI 完整 PDF 都通過（107 requests、36 batch、八頁零差異）；實際紀錄見 RELEASE_REPORT。v3 的 builder／requirements 仍是該次捕獲的快照；後續 LF fingerprint 修正沒有改寫既有成品。所有診斷版的 `release_ready` 仍為 false。

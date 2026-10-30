@@ -1,0 +1,13 @@
+{
+  "artifact": "hybrid-diagnostic-20261030-v3",
+  "source_commit": "c1722e3",
+  "manifest_files": 13042,
+  "bytes_excluding_manifest": 1248371853,
+  "manifest_sha256": "624deadbf9c8bd24483360a8df76e7b72df985b5fd4f2f42177596182325380e",
+  "coverage": "exact including nested files; root manifest excluded from its own hashes",
+  "all_file_hashes": "passed",
+  "no_generated_database_or_loose_bytecode": true,
+  "dependency_and_worker_inputs_match_audited_v2": true,
+  "test_copy": "r \u5305 v3",
+  "maximum_test_path_characters": 212
+}

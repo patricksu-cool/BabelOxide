@@ -6,6 +6,8 @@
 
 後續初始化修正：**225 passed、0 failed、1 ignored**，Clippy 通過；每份 PDF 的 Hello／term sharing、Free 推薦、cache／QPS／usage、HTTP 與原生 CLI 健康檢查取消均已驗證。四頁 PDF 回到 107 次 identity 請求、八頁零差異。詳 [FACTORY_INITIALIZATION](FACTORY_INITIALIZATION.md)；下表 214 是先前整包 EXE 的檢查點。
 
+最新 release 診斷包 v3（Rust `c1722e3`）亦完成搬移後的非來源 CWD 測試：107 requests、36 batch、65 progress、單一 finish、exit 0，八頁零差異；全樹 13,042 records 的 bytes／hash 全通過，見 [v3 integrity](PHASE6_V3_BUNDLE_INTEGRITY.json)、[v3 PDF](PHASE6_V3_BUNDLE_PDF_COMPARISON.json)。Builder 後續 LF／CRLF fingerprint 測試增為 **25 passed**，Ruff 通過；證據 `builder-portable-lock-tests.log`。v3 引擎自己回報 peak memory 3,270.79 MiB，這不是獨立量測的效能等價基準；長時間／大型／並行資源測試仍未完成。
+
 | 檢查 | 結果 |
 | --- | --- |
 | 最新完整 Rust workspace | **214 passed，0 failed，1 ignored**；205 項原生整合後新增 compression 6、cookie 2、Worker 旗標 1；all-targets Clippy 通過 |

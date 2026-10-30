@@ -27,6 +27,7 @@ def main():
     )
     parser.add_argument("--worker-home", type=Path)
     parser.add_argument("--packaged", action="store_true")
+    parser.add_argument("--isolated-cwd", action="store_true")
     parser.add_argument("--pages")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--timeout-seconds", type=int, default=300)
@@ -120,6 +121,9 @@ def main():
         directory.mkdir(parents=True)
     for directory in ("Desktop", "Documents", "Downloads"):
         (isolated_home / directory).mkdir()
+    child_cwd = isolated / "working-directory" if args.isolated_cwd else ROOT
+    if args.isolated_cwd:
+        child_cwd.mkdir()
     environment["HOME"] = environment["USERPROFILE"] = str(isolated_home)
     environment["TEMP"] = environment["TMP"] = str(isolated_temp)
     environment["PDF2ZH_APP_DIR"] = str(isolated_app)
@@ -166,7 +170,7 @@ def main():
         ):
             completed = subprocess.run(
                 command,
-                cwd=ROOT,
+                cwd=child_cwd,
                 env=environment,
                 stdout=stdout_file,
                 stderr=stderr_file,
@@ -190,6 +194,7 @@ def main():
         "pages": args.pages or "all",
         "provider": "loopback identity fixture",
         "worker_runtime": "bundle defaults" if args.packaged else "explicit development paths",
+        "working_directory": "isolated non-source directory" if args.isolated_cwd else "repository root",
         "contains_synthetic_key": synthetic in stdout + stderr,
         "progress_events": sum(
             event.get("type", "").startswith("progress") for event in events

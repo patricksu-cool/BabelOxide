@@ -4,6 +4,12 @@
 
 ## 目前可執行產物
 
+最新診斷包是 **`dist/hybrid-diagnostic-20261030-v3`**，Rust EXE 來源 `c1722e3`，含每 PDF Hello／term sharing 修正及 Pillow 13 profile。manifest 列 13,042 檔、1,248,371,853 bytes（不含自身），SHA256 `624deadbf9c8bd24483360a8df76e7b72df985b5fd4f2f42177596182325380e`。發布後完整集合與逐檔 bytes／SHA256 再驗全過，沒有生成 DB／loose bytecode；見 [v3 完整性](PHASE6_V3_BUNDLE_INTEGRITY.json)。
+
+完整複製至中文空格路徑 `.test-output/r 包 v3`，再從空白、非來源 CWD 執行 CLI，不指定外部 Python／Worker／home：exit 0、107 loopback requests（main 106／term 1）、36 batch、65 progress、1 finish，無合成 key。單語／雙語各四頁與 main 文字、座標、圖片及 96 DPI RGB 像素差為零，見 [v3 PDF 比對](PHASE6_V3_BUNDLE_PDF_COMPARISON.json)；對應 Worker 已退出。GUI 的相同 source／Pillow 13 已由 Terra xhigh 操作翻譯／預覽／取消關閉，見 FACTORY_INITIALIZATION；未把該 debug EXE 操作誤稱為 v3 release EXE 的新增桌面操作。
+
+v3 捕獲的 Cargo／Worker／wheel profile inputs 與已掃描的 v2 相同，因此沿用 372 項 OSV 版本查核。後續 builder 另修正 Git CRLF／LF 的來源文字 fingerprint：25 個 self-tests 與 Ruff 通過，實際 release manifests 仍驗原始 bytes。這是 build tooling 的後續變更，沒有回寫 v3 的 immutable provenance 或改變其 85 項版本。
+
 `target/debug/pdf2zh.exe` 為 Rust GNU x64 開發建置。`--version` 純 Rust 可執行；PDF 翻譯須明確指定開發 `.venv` Python、`python-worker/worker.py` 與資產 home。這不能證明使用者不需另裝 Python。
 
 `target/debug/pdf2zh-gui.exe` 已實際以原生視窗完成翻譯、預覽、設定保存、取消、選檔與另存；它不需要 Python 啟動 UI。開發預覽使用固定 PDFium 8125，archive／DLL hash 與 native smoke 皆通過，見 NATIVE_DEPENDENCIES、GUI_TEST_REPORT。翻譯引擎仍需隨包提供隔離 Python，尚未以正式 bundle 驗證。
@@ -28,5 +34,6 @@ Rust 依賴由 `Cargo.lock` 鎖定；本機 Rust 1.99.1，使用 `.cargo/config.
 - 新包未複製個人設定／API key／翻譯 cache／測試 PDF；正式發布仍須最後重核交付內容。
 - Pillow 13 已通過固定 PDF 回歸，372 項依賴 OSV 查詢的唯一命中依 upstream range 為誤報；native 內嵌 library 公告與全部可達選項仍須另查。
 - 乾淨 Windows Sandbox／VM 的無 Python、無 Rust、無開發工具驗收。本機開發測試無法替代；目前未執行。
+- 目前 Worker home 預設在包內 `resources/worker-home`，BabelDOC import／執行會建立自己的 cache DB；使用中的 portable 目錄需要可寫。唯讀安裝位置尚未驗收，沒有將 build 時移除空 DB 說成引擎執行時完全不寫入。
 
 新包的大小與本機測試均有上述證據；`BUILD_INFO.release_ready=false` 保留兩個 ONNXRuntime 模組對未內附 `msvcp140_1.dll` 的依賴、asset notices／crate texts／對應來源與乾淨機缺項。沒有從 System32 複製再散布 DLL。後續組包仍須另建輸出目錄，保留現有候選包及使用者設定。
