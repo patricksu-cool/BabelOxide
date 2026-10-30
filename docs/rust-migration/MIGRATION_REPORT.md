@@ -17,7 +17,8 @@
 11. 新 CLI 再次完成四頁 PDF：105 個固定回應請求、36 個 batch、68 個進度與單一 finish。mono／dual 共八頁文字、座標、圖片及渲染像素差皆為 0，見 [第 6 階段比對](PHASE6_PDF_COMPARISON.json)。這仍是受控 identity 回應驗證。
 12. 原生 GUI 已實際完成四頁翻譯、譯文／雙語預覽、翻頁與縮放、設定保存、取消及正常關閉；產物與 main 八頁像素差 0。選檔去重／新增／移除與另存新檔已操作，另存 SHA256 與原檔一致。computer-use 操作依使用者指定由 GPT-6.1 Terra、xhigh 子代理執行；詳見 [GUI 驗收](GUI_TEST_REPORT.md) 與 [Astra 審查](GUI_PREVIEW_REVIEW.md)。
 13. 共用 Worker session 接通 warmup、generate／restore offline assets，不建立假 PDF 或 translator。真實 CLI 產生官方格式離線包，空白 home 還原後 182 項 SHA3 全相符。先前 186 項是靜態盤點未扣除 import 時剔除的四個未引用字型，已更正；見 [實際清單](ENGINE_ASSET_INVENTORY.json)。
-14. 最新整合回歸為 **205 Rust passed**、**285 Python passed**，fmt／Clippy／Ruff 通過；預設略過的 native smoke 已另明確啟用且通過。沒有將一個 ignored 測試當作一般 workspace 已執行。
+14. 最新整合回歸為 **214 Rust passed、1 ignored**、**285 Python passed**，fmt／Clippy／Ruff 通過；預設略過的 native smoke 已另明確啟用且通過。新增真 wire compression／cookie 與 Worker bytecode 旗標測試，見測試報告。
+15. 新 Windows 診斷包已包含 85 項獨立 Worker runtime、Pillow 13、PDFium 及 182 項資產，沒有 Gradio／舊 app／測試 PDF／翻譯 DB。24 項 builder 邊界測試、搬移後 native imports／依賴條件／資產還原、全樹 13,042 檔 hash 通過。中文空格路徑的包內 CLI／GUI 完成翻譯及預覽／取消；CLI 八頁 PDF 與 main 像素差 0。尚缺正式 native／授權／乾淨機門檻，詳 [發行報告](RELEASE_REPORT.md) 與 [安全查核](SECURITY_REPORT.md)。
 
 ## 已修正的整合問題
 
@@ -37,12 +38,12 @@
 | Config／舊格式遷移 | 已實作並測試；Tencent 自動憑證鏈等缺口見 CONFIG_MIGRATION |
 | 持久翻譯 cache／token 統計 | 已實作；舊庫受保護，取消等待 blocking writer 清理；證據界限見 CACHE_COMPATIBILITY |
 | 全部 CLI 參數／多檔批次 | 235 項設定、批次與資源維護已接線；尚有舊 SDK 相容性缺口 |
-| GUI／內嵌 PDF 預覽 | 已編譯、測試及原生互動驗收；正式包與乾淨 Windows 尚待驗證 |
+| GUI／內嵌 PDF 預覽 | 開發建置與診斷整包均已原生互動驗收；正式包與乾淨 Windows 尚待驗證 |
 | 不同術語服務／glossary／分割策略 | Bridge／worker已有接線與邊界測試，完整CLI／GUI及真PDF各選項驗收尚未完成 |
 | 長時間、多 Worker、大型 PDF | 尚未完成驗收 |
-| 最小 Python runtime／Windows 發行包 | 尚未建立新版本 |
+| 最小 Python runtime／Windows 發行包 | 獨立 runtime 診斷整包已建立並有全樹 manifest；MSVCP140_1／授權／乾淨機仍未關閉 |
 | 獨立乾淨 Windows／安全與授權驗收 | 尚未完成 |
 
 未刪除任何舊 Python 應用模組或 Gradio。原實作仍是功能與 retry 比對基準；不能因 PoC 成功便刪除。
 
-目前 Python 測試／盤點腳本是開發工具，不屬於規劃中的產品 runtime。最終 runtime 依賴盤點仍需對實際新發行包驗證；[目前 metadata 盤點](PYTHON_DEPENDENCY_INVENTORY.json)不是已完成打包的證明。
+目前 Python 測試／盤點／builder 腳本是開發工具，不作產品入口。基準 [metadata 盤點](PYTHON_DEPENDENCY_INVENTORY.json) 保留原版本；新診斷包另有實裝 `THIRD_PARTY_COMPONENTS.json`、捕獲的 `WHEELS.json` 與逐檔 manifest，實際 Worker profile 已驗證。這些證據仍不能取代正式發行的 native／授權／乾淨機門檻。

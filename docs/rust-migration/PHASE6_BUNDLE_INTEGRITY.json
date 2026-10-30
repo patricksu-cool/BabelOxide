@@ -1,0 +1,11 @@
+{
+  "artifact": "hybrid-diagnostic-20261030-v2",
+  "manifest_files": 13042,
+  "bytes_excluding_manifest": 1248017820,
+  "manifest_sha256": "3086c43405de7442f47c1cdad1b50515d5929f8f9adbc3e4758bf7d98b276094",
+  "coverage": "exact including nested files; root manifest excluded from its own hashes",
+  "all_file_hashes": "passed",
+  "no_generated_database_or_loose_bytecode": true,
+  "test_copy": "q \u5305 v2",
+  "maximum_test_path_characters": 212
+}

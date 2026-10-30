@@ -25,13 +25,16 @@ def main():
     parser.add_argument(
         "--python", type=Path, default=ROOT / ".venv/Scripts/python.exe"
     )
-    parser.add_argument("--worker-home", type=Path, required=True)
+    parser.add_argument("--worker-home", type=Path)
+    parser.add_argument("--packaged", action="store_true")
     parser.add_argument("--pages")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--timeout-seconds", type=int, default=300)
     args = parser.parse_args()
     if not 1 <= args.timeout_seconds <= 7200:
         parser.error("timeout must be between 1 and 7200 seconds")
+    if not args.packaged and args.worker_home is None:
+        parser.error("development smoke requires --worker-home")
     if not args.source.is_file():
         parser.error("source PDF does not exist or is not a file")
     if not args.label or any(
@@ -143,14 +146,15 @@ def main():
         "16",
         "--watermark-output-mode",
         "no_watermark",
-        "--python",
-        str(args.python.resolve()),
-        "--worker",
-        str(ROOT / "python-worker/worker.py"),
-        "--worker-home",
-        str(args.worker_home.resolve()),
-        "--json",
     ]
+    if not args.packaged:
+        command.extend([
+            "--python", str(args.python.resolve()),
+            "--worker", str(ROOT / "python-worker/worker.py"),
+        ])
+    if args.worker_home is not None:
+        command.extend(["--worker-home", str(args.worker_home.resolve())])
+    command.append("--json")
     if args.pages:
         command.extend(["--pages", args.pages])
     if args.debug:
@@ -185,6 +189,7 @@ def main():
         "batch_requests": sum(call["batch"] for call in calls),
         "pages": args.pages or "all",
         "provider": "loopback identity fixture",
+        "worker_runtime": "bundle defaults" if args.packaged else "explicit development paths",
         "contains_synthetic_key": synthetic in stdout + stderr,
         "progress_events": sum(
             event.get("type", "").startswith("progress") for event in events

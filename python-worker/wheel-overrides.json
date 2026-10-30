@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "packages": {
+    "pillow": {
+      "from_version": "12.3.0",
+      "version": "13.0.0",
+      "url": "https://files.pythonhosted.org/packages/d7/ed/1b16fb66a37e1b9e41370b93b2c614c7da761a5b2a41dc333f7af4639962/pillow-13.0.0-cp313-cp313-win_amd64.whl",
+      "sha256": "9dda0788a9932776a75d8bcc020076edc308ce2508b51f6739a45e3158b3fc42",
+      "bytes": 7284777,
+      "reason": "Pillow 13 security fixes; isolated BabelDOC imports, dependency constraints and full mono/dual PDF comparison passed. See SECURITY_REPORT.md.",
+      "metadata_source": "https://pypi.org/pypi/pillow/13.0.0/json"
+    }
+  }
+}

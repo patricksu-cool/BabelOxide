@@ -2,7 +2,23 @@
 
 更新：2026-10-30，Asia/Taipei。Python 穩定基準 `d18165e`，Rust 開發分支 `feature/rust-babeldoc-hybrid`。本報告驗收核心 PoC、第 5 階段翻譯服務及第 6 階段設定／快取／CLI／任務管理；不宣稱全面功能或所有 SDK 細節等價。
 
-## 第 6 階段核心與 CLI 實測
+## Windows 診斷整包與 HTTP 後續回歸
+
+| 檢查 | 結果 |
+| --- | --- |
+| 最新完整 Rust workspace | **214 passed，0 failed，1 ignored**；205 項原生整合後新增 compression 6、cookie 2、Worker 旗標 1；all-targets Clippy 通過 |
+| HTTP wire | 真 gzip／deflate／Brotli／zstd JSON／HTML、OpenAI 接線、解壓後 4 MiB、壞資料／取消；AnythingLLM／Dify 每次 operation cookie scope，redirect 保留、下次呼叫不保留 |
+| Builder | **24 passed**，Ruff 通過；來源重疊／reparse、原子 lock、capture provenance、archive/license hashes、PE normal/delay imports、非空 DB 保留、Worker-only Pillow replacement 邊界 |
+| 新包組裝 | release Rust EXE `f17abb8`；CPython 3.13.16、BabelDOC 0.6.3、Pillow 13、85 distributions。搬移後 native imports、active dependency/extras closure、Requires-Python／Requires-Dist、182 assets bytes／SHA3、兩 EXE version 通過 |
+| 完整性 | 新包 manifest 13,042 檔、1,248,017,820 bytes（不含 manifest）；另讀全樹集合與每檔 bytes／hash 全過，沒有生成 DB／loose bytecode；見 [integrity](PHASE6_BUNDLE_INTEGRITY.json) |
+| 包內 CLI | 中文空格路徑的測試複本，未指定外部 Python／Worker／home：exit 0、105 requests、36 batch、68 progress、1 finish；mono／dual 各四頁與 main 文字／座標／圖片／像素差均為零；見 [bundle comparison](PHASE6_BUNDLE_PDF_COMPARISON.json) |
+| 包內 GUI | 同複本由 Terra xhigh 操作，Complete 1/1 100%、Translated／Bilingual 第 2 頁、處理中 X 顯示取消／清理並退出；fixture exit 0。單獨詳見 GUI_TEST_REPORT |
+| 安全更新回歸 | 先在首版測試複本僅更新 Pillow 13，imports／metadata／完整八頁零差異，再納入獨立 Worker lock 建新包；舊 uv.lock／venv 保留 |
+| OSV | 287 Windows registry + 85 captured Worker distributions，共 372；Python 無命中，block-buffer 0.10.4 一筆聚合命中依維護者 affected range 為誤報。不是 native library 全面掃描，見 SECURITY_REPORT |
+
+證據：`.test-output/rust-migration/transport-cookie-bytecode-verified-tests.log`、`transport-cookie-bytecode-clippy.log`、`phase6-builder-profile-tests.log`、`phase6-hybrid-v2-build.log`、`phase6-v2-integrity.json`、`phase6-v2-cli/summary.json`、`phase6-v2-gui/summary.json`、`phase6-worker13-osv-audit/osv.json`。285 項 Python 回歸為前一整合節的開發環境紀錄，沒有把舊 `.venv` 宣稱為 Pillow 13。兩個 ONNXRuntime 模組仍依賴未內附 MSVCP140_1，完整授權／乾淨機／唯讀安裝待驗；此處不是正式發行通過。
+
+## 第 6 階段核心與 CLI 檢查點
 
 下表為 `e10173a` 核心／CLI 檢查點；後續原生整合結果見下一節。
 
