@@ -364,11 +364,53 @@ class EngineBoundary:
             raise RuntimeError("Engine ended without a result")
         return result
 
+    def run_assets(self, operation, path):
+        from babeldoc.assets import assets
+
+        if self.cancelled.is_set():
+            raise concurrent.futures.CancelledError()
+        resolved = None
+        if path is not None:
+            resolved = Path(path)
+            if not resolved.is_absolute():
+                raise ProtocolError("Resource path must be absolute")
+            resolved = resolved.resolve(strict=True)
+        self.send(
+            "progress",
+            event={"type": "progress_start", "stage": operation},
+        )
+        if operation == "warmup":
+            if resolved is not None:
+                raise ProtocolError("Warmup does not accept a path")
+            assets.warmup()
+        elif operation == "generate_offline_assets":
+            if resolved is None or not resolved.is_dir():
+                raise ProtocolError("Archive staging directory is unavailable")
+            assets.generate_offline_assets_package(resolved)
+        elif operation == "restore_offline_assets":
+            if resolved is None:
+                raise ProtocolError("Offline asset package is unavailable")
+            assets.restore_offline_assets_package(resolved)
+        else:
+            raise ProtocolError("Unsupported resource operation")
+        if self.cancelled.is_set():
+            raise concurrent.futures.CancelledError()
+        tag = assets.get_offline_assets_tag()
+        result = {"kind": operation, "tag": tag}
+        if operation == "generate_offline_assets":
+            result["archive_name"] = f"offline_assets_{tag}.zip"
+        return result
+
     def start(self, message):
         if self.started:
             raise ProtocolError("Only one job is allowed per worker")
         if message.get("task_id") != "job-1":
             raise ProtocolError("Invalid task ID")
+        operation = message.get("operation", "pdf")
+        if operation not in {
+            "pdf", "warmup", "generate_offline_assets", "restore_offline_assets"
+        }:
+            raise ProtocolError("Unsupported engine operation")
         capacity = message.get("max_outstanding", MAX_OUTSTANDING)
         if type(capacity) is not int or not 1 <= capacity <= 1_000_000:
             raise ProtocolError("Invalid outstanding request capacity")
@@ -379,23 +421,28 @@ class EngineBoundary:
             import faulthandler
 
             try:
-                if message["job"].get("debug", False):
-                    faulthandler.dump_traceback_later(20, repeat=True, file=sys.stderr)
-                self.send(
-                    "progress",
-                    event={
-                        "type": "progress_start",
-                        "stage": "Starting PDF engine",
-                        "overall_progress": 0,
-                    },
-                )
-                result = asyncio.run(
-                    self.run_engine(
-                        message["job"],
-                        message["translator"],
-                        message.get("term_translator"),
+                if operation == "pdf":
+                    if message["job"].get("debug", False):
+                        faulthandler.dump_traceback_later(20, repeat=True, file=sys.stderr)
+                    self.send(
+                        "progress",
+                        event={
+                            "type": "progress_start",
+                            "stage": "Starting PDF engine",
+                            "overall_progress": 0,
+                        },
                     )
-                )
+                    result = asyncio.run(
+                        self.run_engine(
+                            message["job"],
+                            message["translator"],
+                            message.get("term_translator"),
+                        )
+                    )
+                else:
+                    result = self.run_assets(operation, message.get("path"))
+                if self.cancelled.is_set():
+                    raise concurrent.futures.CancelledError()
                 self.send("finished", result=result)
             except BaseException as exc:
                 code = (
@@ -489,7 +536,10 @@ def main():
         version = importlib.metadata.version("babeldoc")
         if version != "0.6.3":
             raise ProtocolError("Worker requires locked BabelDOC 0.6.3")
-        boundary.send("ready", babeldoc_version=version)
+        boundary.send(
+            "ready", babeldoc_version=version,
+            operations=["pdf", "warmup", "generate_offline_assets", "restore_offline_assets"],
+        )
         while True:
             message = read_frame(protocol_input)
             if message is None or not boundary.handle(message):

@@ -66,6 +66,36 @@ def finish(job, scenario, **metrics):
     send("finished", result=result)
 
 
+def finish_assets(start, scenario):
+    if "job" in start or "translator" in start:
+        raise RuntimeError("Maintenance must not receive PDF or translator options")
+    operation = start["operation"]
+    tag = "a" * 64
+    name = f"offline_assets_{tag}.zip"
+    if operation == "generate_offline_assets" and scenario != "asset_missing":
+        (Path(start["path"]) / name).write_bytes(b"complete controlled asset archive")
+    if scenario == "asset_error":
+        send("error", code="engine_failed")
+        return
+    if scenario == "asset_hang":
+        spawn_descendant()
+        send("progress", event={"stage": "assets blocked"})
+        hang()
+    if scenario == "asset_progress_forever":
+        while True:
+            send("progress", event={"stage": "still busy"})
+            time.sleep(0.01)
+    if scenario == "asset_translation":
+        send("translate", id="w-1", text="must reject", method="translate")
+        hang()
+    result = {"kind": operation, "tag": "bad" if scenario == "asset_bad_tag" else tag}
+    if operation == "generate_offline_assets":
+        result["archive_name"] = "../outside.zip" if scenario == "asset_escape" else name
+    send("finished", result=result)
+    if scenario == "asset_nonzero":
+        os._exit(23)
+
+
 def main():
     if "--descendant" in sys.argv:
         (ROOT / "descendant.pid").write_text(str(os.getpid()), encoding="ascii")
@@ -80,10 +110,15 @@ def main():
     if scenario == "startup_hang":
         hang()
 
-    send("ready", babeldoc_version="0.6.3")
+    send("ready", babeldoc_version="0.6.3", operations=[
+        "pdf", "warmup", "generate_offline_assets", "restore_offline_assets"
+    ])
     start = json.loads(sys.stdin.buffer.readline())
     if start.get("type") != "start" or start.get("session") != SESSION:
         raise RuntimeError("Fixture expected a valid start frame")
+    if start.get("operation", "pdf") != "pdf":
+        finish_assets(start, scenario)
+        return 0
     if scenario == "progress_flood":
         for number in range(2000):
             send("progress", event={"stage": "progress flood", "number": number})

@@ -222,17 +222,19 @@
 
 BabelDOC 不只有 Python wheels。`babeldoc/assets/embedding_assets_metadata.py` 列出 ONNX 模型（行 3）、tokenizer cache（行 7）、字型（行 39 起）與 CMap（行 536 起）。`assets/assets.py:465–498` 形成資產 manifest，`verify_file` 用 SHA3-256；`generate_offline_assets_package`／`restore_offline_assets_package` 有官方 ZIP 與 manifest tag 流程（同檔 501–599）。這些函式可能讀寫 cache 或下載，不能把呼叫 `init()` 當離線資產驗證。
 
-2026-10-26 直接讀取本機 `~/.cache/babeldoc`，未下載／改動，逐一按安裝 metadata 的 SHA3-256 核對：
+2026-10-30 以實際 `generate_all_assets_file_list()` 重新核對，並經 Rust CLI 產生官方 ZIP、從空白 Worker home 還原後逐檔驗證 SHA3-256：
 
 | 資源 | manifest 應有 | 本機有 | 已有檔案 bytes | hash 不符 |
 |---|---:|---:|---:|---:|
-| fonts | 38 | 34 | 265,807,784 | 0 |
+| fonts | 34 | 34 | 265,807,784 | 0 |
 | cmap | 146 | 146 | 7,705,262 | 0 |
 | tiktoken | 1 | 1 | 3,613,922 | 0 |
 | models | 1 | 1 | 75,324,598 | 0 |
-| 合計 | 186 | 182 | 352,451,566 | 0 |
+| 合計 | 182 | 182 | 352,451,566 | 0 |
 
-缺少 `LXGWWenKai-Regular.1.520.ttf`、`LXGWWenKaiGB-Regular.ttf`、`LXGWWenKaiMonoTC-Regular.ttf`、`LXGWWenKaiTC-Regular.ttf`。指定四頁 PDF 可用現有字型完成，不代表完整離線資產包已備妥，更不代表其他字型選項在離線新機可用。不能將開發者的整份 cache 當作乾淨交付。
+先前 10/26 靜態盤點將 38 個字型宣告全部算入；`embedding_assets_metadata.py:1399–1414` 在 import 時會剔除四個不被任何字型家族引用的項目。它們是 `LXGWWenKai-Regular.1.520.ttf`、`LXGWWenKaiGB-Regular.ttf`、`LXGWWenKaiMonoTC-Regular.ttf`、`LXGWWenKaiTC-Regular.ttf`，因此先前「缺四個必要字型」的結論不正確。實際引擎 manifest 為 182 項，沒有藉新增下載或修改上游來改變此數量。
+
+官方離線 tag 為 `b485a82328a20d1e4b5c37bb9c6472e7af9943333bdffd39a05b1f57d6d7a1da`。本輪產生的 ZIP 為 223,571,497 bytes，SHA256 `b32dfc00c5ade7b59094f82b774fef31b5b504e9c2aab783b842bf9a5792ba98`；ZIP 與全新 home 還原的 182 項內容皆符合上游 SHA3。詳見 [實際資產清單](ENGINE_ASSET_INVENTORY.json)。這證明固定引擎資產完整，仍不等於新發行包或乾淨 Windows 驗收。
 
 `babeldoc/const.py:11` 將 cache 根固定為 `Path.home() / ".cache" / "babeldoc"`；`42–44` 在 import 時建立 tokenizer 目錄並覆寫 `TIKTOKEN_CACHE_DIR`。僅設定 `XDG_CACHE_HOME` 不能改變此路徑。在不改上游的前提下，Windows 選擇正常的 per-user cache 或明確、僅對 worker 子程序生效的 profile 環境；後者須在匯入前設定並另驗證 Path.home 與資產還原行為，不能全域改系統環境。
 

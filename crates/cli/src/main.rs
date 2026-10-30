@@ -1,4 +1,5 @@
 use anyhow::{Context, Result, bail};
+use babeldoc_bridge::{AssetOperation, WorkerOptions, maintain_assets};
 use pdf2zh_cli::Invocation;
 use pdf2zh_core::{CacheBackend, CacheStore};
 use pdf2zh_tasks::{TaskManager, TaskStatus, task_from_settings};
@@ -41,6 +42,37 @@ fn prepare_and_run(invocation: Invocation) -> Result<TaskStatus> {
     let environment: BTreeMap<String, String> = std::env::vars().collect();
     let (store, settings) = invocation.load(&environment)?;
     let basic = settings.basic()?;
+    if !basic.warmup
+        && basic.generate_offline_assets.is_some()
+        && basic.restore_offline_assets.is_some()
+    {
+        bail!("Generating and restoring offline assets are mutually exclusive");
+    }
+    // Match the legacy maintenance precedence without constructing services.
+    let resource_operation = if basic.warmup {
+        Some(AssetOperation::Warmup)
+    } else if let Some(output_dir) = &basic.generate_offline_assets {
+        Some(AssetOperation::GenerateOfflineAssets {
+            output_dir: output_dir.into(),
+        })
+    } else {
+        basic
+            .restore_offline_assets
+            .as_ref()
+            .map(|input| AssetOperation::RestoreOfflineAssets {
+                input: input.into(),
+            })
+    };
+    if let Some(operation) = resource_operation {
+        return tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()?
+            .block_on(run_resources(
+                &invocation.worker,
+                operation,
+                invocation.json,
+            ));
+    }
     if basic.gui || (basic.input_files.is_empty() && std::env::args_os().len() == 1) {
         let executable = std::env::current_exe()?;
         let gui = executable
@@ -60,12 +92,6 @@ fn prepare_and_run(invocation: Invocation) -> Result<TaskStatus> {
         } else {
             TaskStatus::Failed
         });
-    }
-    if basic.warmup
-        || basic.generate_offline_assets.is_some()
-        || basic.restore_offline_assets.is_some()
-    {
-        bail!("Engine asset maintenance has not yet been connected in this migration build");
     }
     if invocation.save_config {
         store.save_user_defaults(&settings)?;
@@ -102,6 +128,66 @@ fn prepare_and_run(invocation: Invocation) -> Result<TaskStatus> {
         .enable_all()
         .build()?
         .block_on(run(spec, invocation.json))
+}
+
+async fn run_resources(
+    worker: &WorkerOptions,
+    operation: AssetOperation,
+    json_output: bool,
+) -> Result<TaskStatus> {
+    let cancel = tokio_util::sync::CancellationToken::new();
+    let interrupt_cancel = cancel.clone();
+    let interrupt = tokio::spawn(async move {
+        if tokio::signal::ctrl_c().await.is_ok() {
+            interrupt_cancel.cancel();
+        }
+    });
+    let (events, mut progress) = tokio::sync::mpsc::channel(16);
+    let operation = maintain_assets(worker, operation, cancel.clone(), Some(events));
+    tokio::pin!(operation);
+    let mut output_error = None;
+    let mut progress_open = true;
+    let result = loop {
+        tokio::select! {
+            result = &mut operation => break result,
+            event = progress.recv(), if progress_open => {
+                if let Some(event) = event {
+                    if json_output {
+                        if let Err(error) = write_json(&event) {
+                            output_error = Some(error);
+                            cancel.cancel();
+                            progress_open = false;
+                        }
+                    } else if let Some(stage) = event["stage"].as_str() {
+                        eprintln!("{stage}");
+                    }
+                } else { progress_open = false; }
+            }
+        }
+    };
+    interrupt.abort();
+    let _ = interrupt.await;
+    // The operation has finished cleanup even when stdout is broken.
+    if let Some(error) = output_error {
+        return Err(error);
+    }
+    match result {
+        Ok(result) => {
+            if json_output {
+                write_json(&json!({"type":"finish","result":result}))?;
+            } else if let Some(path) = result["archive_path"].as_str() {
+                println!("{}", PathBuf::from(path).display());
+            } else {
+                eprintln!("BabelDOC resources are ready");
+            }
+            Ok(TaskStatus::Succeeded)
+        }
+        Err(_) if cancel.is_cancelled() => {
+            report(json_output, "cancelled", "Resource operation cancelled");
+            Ok(TaskStatus::Cancelled)
+        }
+        Err(error) => Err(error),
+    }
 }
 
 async fn run(spec: pdf2zh_tasks::TaskSpec, json_output: bool) -> Result<TaskStatus> {

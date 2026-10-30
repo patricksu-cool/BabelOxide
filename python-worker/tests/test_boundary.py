@@ -128,6 +128,58 @@ def test_session_mismatch_does_not_start_the_engine():
     assert not boundary.started
 
 
+@pytest.mark.parametrize("operation", ["warmup", "generate_offline_assets", "restore_offline_assets"])
+def test_asset_api_receipts_need_no_translator(monkeypatch, tmp_path, operation):
+    boundary = worker.EngineBoundary(io.BytesIO())
+    calls = []
+    assets = SimpleNamespace(
+        warmup=lambda: calls.append(("warmup", None)),
+        generate_offline_assets_package=lambda path: calls.append(("generate_offline_assets", path)),
+        restore_offline_assets_package=lambda path: calls.append(("restore_offline_assets", path)),
+        get_offline_assets_tag=lambda: "a" * 64,
+    )
+    monkeypatch.setitem(sys.modules, "babeldoc.assets", SimpleNamespace(assets=assets))
+    path = None if operation == "warmup" else str(tmp_path)
+    result = boundary.run_assets(operation, path)
+    assert calls == [(operation, None if path is None else tmp_path.resolve())]
+    assert result["kind"] == operation and result["tag"] == "a" * 64
+    if operation == "generate_offline_assets":
+        assert result["archive_name"] == f"offline_assets_{'a' * 64}.zip"
+    assert not boundary.pending
+
+
+def test_asset_api_return_after_cancel_cannot_report_success(monkeypatch):
+    boundary = worker.EngineBoundary(io.BytesIO())
+    assets = SimpleNamespace(warmup=boundary.cancel)
+    monkeypatch.setitem(sys.modules, "babeldoc.assets", SimpleNamespace(assets=assets))
+    with pytest.raises(concurrent.futures.CancelledError):
+        boundary.run_assets("warmup", None)
+
+
+def test_asset_system_exit_is_a_safe_terminal_error(monkeypatch):
+    boundary = worker.EngineBoundary(io.BytesIO())
+
+    def fail():
+        raise SystemExit("sensitive engine diagnostic")
+
+    monkeypatch.setitem(sys.modules, "babeldoc.assets", SimpleNamespace(assets=SimpleNamespace(warmup=fail)))
+    boundary.start({"task_id": "job-1", "operation": "warmup"})
+    boundary.task.join(timeout=5)
+    assert boundary.terminal
+    messages = [json.loads(line) for line in boundary.output.getvalue().splitlines()]
+    assert messages[-1]["type"] == "error"
+    assert messages[-1]["code"] == "engine_failed"
+    assert not any(message["type"] == "finished" for message in messages)
+    assert b"sensitive engine diagnostic" not in boundary.output.getvalue()
+
+
+def test_unknown_operation_does_not_start_engine():
+    boundary = worker.EngineBoundary(io.BytesIO())
+    with pytest.raises(worker.ProtocolError):
+        boundary.start({"task_id": "job-1", "operation": "arbitrary-import"})
+    assert not boundary.started
+
+
 def test_partial_pipe_writes_are_completed():
     class PartialWriter(io.BytesIO):
         def write(self, value):

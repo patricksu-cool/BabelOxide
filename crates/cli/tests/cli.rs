@@ -114,6 +114,77 @@ fn events(output: &Output) -> Result<Vec<Value>> {
 }
 
 #[test]
+fn resource_cli_operations_need_no_pdf_or_provider_credentials() -> Result<()> {
+    for flag in [
+        "--warmup",
+        "--generate-offline-assets",
+        "--restore-offline-assets",
+    ] {
+        let fixture = Fixture::new("asset_success", 0)?;
+        let mut command = fixture.command();
+        command.arg(flag);
+        if flag == "--generate-offline-assets" {
+            command.arg(&fixture.output);
+        }
+        if flag == "--restore-offline-assets" {
+            let archive = fixture.directory.path().join("offline.zip");
+            fs::write(&archive, b"controlled restore fixture")?;
+            command.arg(archive);
+        }
+        let output = command
+            .arg("--python")
+            .arg(&fixture.python)
+            .arg("--worker")
+            .arg(&fixture.script)
+            .arg("--worker-home")
+            .arg(fixture.directory.path().join("assets"))
+            .arg("--json")
+            .output()?;
+        ensure!(
+            output.status.success(),
+            "{flag}: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let terminal = events(&output)?;
+        ensure!(
+            terminal
+                .iter()
+                .filter(|event| event["type"] == "finish")
+                .count()
+                == 1
+        );
+        ensure!(!fixture.app.join("config/config.v3.toml").exists());
+    }
+    Ok(())
+}
+
+#[test]
+fn conflicting_asset_operations_fail_before_worker_starts() -> Result<()> {
+    let fixture = Fixture::new("asset_success", 0)?;
+    let output = fixture
+        .command()
+        .arg("--generate-offline-assets")
+        .arg(&fixture.output)
+        .arg("--restore-offline-assets")
+        .arg(fixture.directory.path())
+        .arg("--python")
+        .arg(&fixture.python)
+        .arg("--worker")
+        .arg(&fixture.script)
+        .arg("--json")
+        .output()?;
+    ensure!(!output.status.success());
+    ensure!(!fixture.directory.path().join("worker-starts.log").exists());
+    ensure!(!fixture.output.exists());
+    ensure!(
+        events(&output)?
+            .iter()
+            .all(|event| event["type"] != "finish")
+    );
+    Ok(())
+}
+
+#[test]
 fn version_and_help_need_no_python_and_never_create_configuration() -> Result<()> {
     let fixture = Fixture::new("startup_crash", 0)?;
     for flag in ["--version", "--help"] {

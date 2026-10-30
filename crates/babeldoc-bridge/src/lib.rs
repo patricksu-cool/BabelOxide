@@ -1,9 +1,18 @@
 //! Private, bounded, bidirectional stdio transport for the BabelDOC engine.
 
+mod assets;
+pub use assets::maintain_assets;
+
 use anyhow::{Context, Result, bail, ensure};
 use pdf2zh_core::{PdfJob, TranslationRequest, TranslationService, process};
 use serde_json::{Value, json};
-use std::{collections::HashSet, path::PathBuf, process::Stdio, sync::Arc, time::Duration};
+use std::{
+    collections::HashSet,
+    path::{Path, PathBuf},
+    process::Stdio,
+    sync::Arc,
+    time::Duration,
+};
 use tokio::{
     io::{AsyncBufRead, AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader},
     process::Command,
@@ -15,6 +24,28 @@ use tokio_util::sync::CancellationToken;
 
 pub const MAX_FRAME_BYTES: usize = 1024 * 1024;
 const MAX_OUTSTANDING: usize = 128;
+
+/// Engine resource operations do not construct a PDF job or a translator.
+#[derive(Clone, Debug)]
+pub enum AssetOperation {
+    Warmup,
+    GenerateOfflineAssets { output_dir: PathBuf },
+    RestoreOfflineAssets { input: PathBuf },
+}
+
+struct SessionServices {
+    main: Arc<TranslationService>,
+    term: Option<Arc<TranslationService>>,
+}
+
+struct SessionPlan {
+    start: Value,
+    services: Option<SessionServices>,
+    temporary_root: PathBuf,
+    diagnostics: bool,
+    capacity: usize,
+    operation: &'static str,
+}
 
 #[derive(Clone, Debug)]
 pub struct WorkerOptions {
@@ -161,14 +192,6 @@ pub async fn translate_pdf_with_services(
         require_mono || require_dual,
         "At least one PDF output must be enabled"
     );
-    let python = worker
-        .python
-        .canonicalize()
-        .context("Worker Python is unavailable; provide --python for development")?;
-    let script = worker
-        .script
-        .canonicalize()
-        .context("Worker adapter is unavailable")?;
     // Preflight can probe a service or validate an external executable. Await it
     // cooperatively so cancellation cannot discard its process cleanup future.
     translator.prepare(&cancel).await?;
@@ -228,17 +251,107 @@ pub async fn translate_pdf_with_services(
     let capacity = u64::from(job.pool_max_workers)
         .saturating_add(term_pool)
         .clamp(MAX_OUTSTANDING as u64, 1_000_000) as usize;
-    let cooperative_cleanup = translator.requires_cooperative_cleanup()
-        || term_translator
-            .as_ref()
-            .is_some_and(|term| term.requires_cooperative_cleanup());
+    let term_metadata = term_translator
+        .as_ref()
+        .map(|term| json!({"name":term.name(),"llm":term.is_llm()}));
+    let diagnostics = job
+        .extra
+        .get("debug")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let mut result = run_session(worker, SessionPlan {
+        start: json!({"operation":"pdf", "job":job, "translator":{"name":translator.name(),"llm":translator.is_llm()}, "term_translator":term_metadata, "max_outstanding":capacity}),
+        services: Some(SessionServices { main:translator.clone(), term:term_translator.clone() }),
+        temporary_root: output_root.clone(), diagnostics, capacity, operation:"pdf",
+    }, cancel, events).await?;
+    validate_pdf_result(&result, &output_root, require_mono, require_dual)?;
+    // Service-lifetime counters; shared main/term instances appear only once.
+    result["translation_metrics"] = json!({
+        "main": translator.metrics(),
+        "term": separate_term.map(|term| term.metrics()),
+        "shared_service": separate_term.is_none(),
+    });
+    Ok(result)
+}
+
+fn validate_pdf_result(
+    result: &Value,
+    output_root: &Path,
+    require_mono: bool,
+    require_dual: bool,
+) -> Result<()> {
+    let mut output_count = 0;
+    for key in [
+        "mono_pdf_path",
+        "dual_pdf_path",
+        "no_watermark_mono_pdf_path",
+        "no_watermark_dual_pdf_path",
+    ] {
+        if let Some(path) = result[key].as_str() {
+            let path = PathBuf::from(path)
+                .canonicalize()
+                .context("Worker output does not exist")?;
+            ensure!(
+                path.is_file() && path.starts_with(output_root),
+                "Worker output escaped the requested directory"
+            );
+            output_count += 1;
+        }
+    }
+    ensure!(output_count > 0, "Worker returned no PDF output");
+    ensure!(
+        !require_mono
+            || result["mono_pdf_path"].is_string()
+            || result["no_watermark_mono_pdf_path"].is_string(),
+        "Worker omitted the requested monolingual PDF"
+    );
+    ensure!(
+        !require_dual
+            || result["dual_pdf_path"].is_string()
+            || result["no_watermark_dual_pdf_path"].is_string(),
+        "Worker omitted the requested bilingual PDF"
+    );
+    if let Some(path) = result["auto_extracted_glossary_path"].as_str() {
+        let path = PathBuf::from(path)
+            .canonicalize()
+            .context("Worker glossary does not exist")?;
+        ensure!(
+            path.is_file() && path.starts_with(output_root),
+            "Worker glossary escaped the requested directory"
+        );
+    }
+    Ok(())
+}
+
+async fn run_session(
+    worker: &WorkerOptions,
+    plan: SessionPlan,
+    cancel: CancellationToken,
+    events: Option<mpsc::Sender<Value>>,
+) -> Result<Value> {
+    let python = worker
+        .python
+        .canonicalize()
+        .context("Worker Python is unavailable; provide --python for development")?;
+    let script = worker
+        .script
+        .canonicalize()
+        .context("Worker adapter is unavailable")?;
+    let capacity = plan.capacity;
+    let cooperative_cleanup = plan.services.as_ref().is_some_and(|services| {
+        services.main.requires_cooperative_cleanup()
+            || services
+                .term
+                .as_ref()
+                .is_some_and(|term| term.requires_cooperative_cleanup())
+    });
     ensure!(!cancel.is_cancelled(), "Translation cancelled");
     let temporary =
-        tempfile::tempdir_in(&output_root).context("Create engine temporary directory")?;
+        tempfile::tempdir_in(&plan.temporary_root).context("Create engine temporary directory")?;
     let home = worker
         .home
         .clone()
-        .unwrap_or_else(|| output_root.join("worker-home"));
+        .unwrap_or_else(|| plan.temporary_root.join("worker-home"));
     std::fs::create_dir_all(&home).context("Create worker resource directory")?;
     let home = home.canonicalize()?;
     let mut command = Command::new(python);
@@ -279,12 +392,9 @@ pub async fn translate_pdf_with_services(
     let mut frame_buffer = Vec::new();
     let mut stderr = child.stderr.take().context("Capture worker stderr")?;
     // Diagnostics are opt-in and bounded. Credentials never enter this process.
-    let debug_log = job
-        .extra
-        .get("debug")
-        .and_then(Value::as_bool)
-        .unwrap_or(false)
-        .then(|| output_root.join("worker-diagnostics.log"));
+    let debug_log = plan
+        .diagnostics
+        .then(|| plan.temporary_root.join("worker-diagnostics.log"));
     let mut diagnostics = tokio::spawn(async move {
         if let Some(path) = debug_log {
             let mut file = tokio::fs::File::create(path).await?;
@@ -318,17 +428,22 @@ pub async fn translate_pdf_with_services(
         ensure!(hello["type"] == "ready" && hello["babeldoc_version"] == "0.6.3", "Worker initialization failed or engine version differs");
         session = hello["session"].as_str().context("Missing worker session")?.to_owned();
         ensure!(session.len() == 32 && session.bytes().all(|b| b.is_ascii_hexdigit()), "Invalid worker session");
-        let term_metadata = term_translator.as_ref().map(|term| json!({"name":term.name(),"llm":term.is_llm()}));
-        enqueue(&tx, frame("start", &session, json!({"job": job, "translator": {"name":translator.name(),"llm":translator.is_llm()}, "term_translator":term_metadata, "max_outstanding":capacity}))).await?;
+        if plan.operation != "pdf" {
+            ensure!(hello["operations"].as_array().is_some_and(|operations| operations.iter().any(|operation| operation == plan.operation)), "Worker does not support the requested resource operation");
+        }
+        enqueue(&tx, frame("start", &session, plan.start)).await?;
         let mut active = HashSet::new();
         let mut seen = HashSet::new();
         let mut activity = Instant::now();
+        // Resource APIs have no byte-progress callback. Their timeout is an
+        // absolute operation deadline; incidental progress cannot renew it.
+        let operation_deadline = (plan.operation != "pdf").then(|| activity + worker.idle_timeout);
         let mut exit_deadline = None;
         loop {
             tokio::select! {
                 biased;
                 _ = cancel.cancelled() => bail!("Translation cancelled"),
-                _ = tokio::time::sleep_until(exit_deadline.unwrap_or(activity + worker.idle_timeout)) => bail!("Worker idle timeout or exit without terminal result"),
+                _ = tokio::time::sleep_until(exit_deadline.unwrap_or(operation_deadline.unwrap_or(activity + worker.idle_timeout))) => bail!("Worker idle timeout or exit without terminal result"),
                 _ = &mut writer => { writer_finished = true; bail!("Worker writer failed"); },
                 status = child.wait(), if exit_deadline.is_none() => {
                     ensure!(status.context("Observe worker exit")?.success(), "Worker crashed");
@@ -351,14 +466,15 @@ pub async fn translate_pdf_with_services(
                     activity = Instant::now();
                     match message["type"].as_str().unwrap_or("") {
                         "translate" => {
+                            let services = plan.services.as_ref().context("Resource worker requested a translation")?;
                             let request: TranslationRequest = serde_json::from_value(message).map_err(|_| anyhow::anyhow!("Malformed translation request"))?;
                             ensure!(seen.len() < 1_000_000, "Task exceeded the request ID budget");
                             ensure!(request.id.len() <= 64 && !request.id.is_empty() && seen.insert(request.id.clone()), "Invalid or repeated request ID");
                             ensure!(active.len() < capacity, "Worker exceeded request capacity");
                             active.insert(request.id.clone());
                             let service = match request.translator.as_str() {
-                                "main" => translator.clone(),
-                                "term" => term_translator.clone().unwrap_or_else(|| translator.clone()),
+                                "main" => services.main.clone(),
+                                "term" => services.term.clone().unwrap_or_else(|| services.main.clone()),
                                 _ => bail!("Worker requested an unknown translation service"),
                             };
                             let request_cancel = requests_cancel.clone();
@@ -371,30 +487,8 @@ pub async fn translate_pdf_with_services(
                         "progress" => if let Some(events) = &events { let _ = events.try_send(message["event"].clone()); },
                         "finished" => {
                             ensure!(active.is_empty(), "Worker finished with pending translations");
-                            let mut result = message["result"].clone();
+                            let result = message["result"].clone();
                             ensure!(result.is_object(), "Worker result must be an object");
-                            let mut output_count = 0;
-                            for key in ["mono_pdf_path", "dual_pdf_path", "no_watermark_mono_pdf_path", "no_watermark_dual_pdf_path"] {
-                                if let Some(path) = result[key].as_str() {
-                                    let path = PathBuf::from(path).canonicalize().context("Worker output does not exist")?;
-                                    ensure!(path.is_file() && path.starts_with(&output_root), "Worker output escaped the requested directory");
-                                    output_count += 1;
-                                }
-                            }
-                            ensure!(output_count > 0, "Worker returned no PDF output");
-                            ensure!(!require_mono || result["mono_pdf_path"].is_string() || result["no_watermark_mono_pdf_path"].is_string(), "Worker omitted the requested monolingual PDF");
-                            ensure!(!require_dual || result["dual_pdf_path"].is_string() || result["no_watermark_dual_pdf_path"].is_string(), "Worker omitted the requested bilingual PDF");
-                            if let Some(path) = result["auto_extracted_glossary_path"].as_str() {
-                                let path = PathBuf::from(path).canonicalize().context("Worker glossary does not exist")?;
-                                ensure!(path.is_file() && path.starts_with(&output_root), "Worker glossary escaped the requested directory");
-                            }
-                            // Service-lifetime counters; shared main/term instances
-                            // appear once, so usage cannot be counted twice.
-                            result["translation_metrics"] = json!({
-                                "main": translator.metrics(),
-                                "term": separate_term.map(|term| term.metrics()),
-                                "shared_service": separate_term.is_none(),
-                            });
                             return Ok(result);
                         }
                         "error" => bail!("BabelDOC worker failed ({})", message["code"].as_str().filter(|s| s.len() < 64 && s.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_')).unwrap_or("engine_failed")),

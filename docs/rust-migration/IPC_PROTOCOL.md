@@ -1,6 +1,6 @@
 # Rust / BabelDOC IPC v1
 
-更新：2026-10-28；Python對照基準：`d18165e`。本文描述目前公開wire contract、程式審查結論與待驗證項目。**核心整合成功不等於完整provider等價、正式發行或乾淨Windows驗證。** 測試是否實際通過以TEST_REPORT為準。
+更新：2026-10-30；Python對照基準：`d18165e`。本文描述目前公開wire contract、程式審查結論與待驗證項目。**核心整合成功不等於完整provider等價、正式發行或乾淨Windows驗證。** 測試是否實際通過以TEST_REPORT為準。
 
 最初PoC審查曾因graph連線不可用而採直接source fallback；本輪工具已恢復。2026-10-28T12:16:29Z的coverage對bridge、process、CLI、worker與相關測試皆為metadata_match／no_recorded_issue；這是best-effort freshness訊號，關鍵協定與程序保證仍以source及實測核對。既有Python的34案例對照見RETRY_COMPATIBILITY。
 
@@ -57,6 +57,14 @@ flowchart LR
 `glossary_files`與`max_pages_per_part`只轉換成BabelDOC既有Glossary／split strategy；worker不自行實作術語管理或PDF分割。`term_qps`由Rust消費，不進引擎config；pool設定可進BabelDOC。服務建議的QPS／pool在引擎啟動前套用；SiliconFlowFree設定探測失敗時的10／100建議不額外改變原有Rust limiter，保留Python的細節差異。
 
 ## Framing 與並行
+
+### 引擎資產操作
+
+`start.operation` 可為 `pdf`（省略時亦是 PDF）、`warmup`、`generate_offline_assets`、`restore_offline_assets`。ready 新增 operations capability；維護操作啟動前必須確認支援。三種維護操作不含 job／translator／credential，只傳必要的絕對 path；任何 translate RPC 都是 protocol error。它們與 PDF 共用同一私有程序、framing、exit 觀察、取消及 kill／wait，沒有第二份程序控制器。
+
+Worker 直接呼叫 BabelDOC assets API，返回 kind 與官方 manifest 的 64 hex tag；generate 額外回 archive_name。Rust 只在 finished、exit 0、程序樹清理均成功後，驗 staging canonical 路徑與精確 basename，再分塊複製至同目的目錄的暫存檔、flush／sync、原子 persist。commit 前取消或錯誤保留舊檔；最後檢查到 persist 的競速可能由完整新檔提交獲勝。
+
+資產操作的 `WorkerOptions.idle_timeout` 是 start 後的絕對期限，progress 不續命；PDF 仍為 activity idle deadline。資源 API 沒有 byte progress callback，不虛構下載百分比。restore 沿用 BabelDOC 逐檔 manifest＋SHA3 流程，並非整個 cache 的交易；中斷後可重跑修復。詳見 [維護審查](ASSET_OPERATIONS_REVIEW.md) 與 [實際資產驗證](ENGINE_ASSET_INVENTORY.json)。
 
 Host逐段讀取並限制buffer；partial-frame bytes保存在外層Vec，避免Tokio select取消read future時丟資料。EOF仍有半行、無效UTF-8/JSON、非object、不支援v、錯session/task及未知type都失敗；不能以「忽略不像JSON的stdout」掩蓋污染。Worker用有界binary readline；sender須檢查序列化後byte長度。
 

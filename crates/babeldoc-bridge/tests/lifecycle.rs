@@ -4,7 +4,9 @@
 use std::{collections::BTreeMap, fs, path::PathBuf, sync::Arc, time::Duration};
 
 use anyhow::{Context, Result, bail, ensure};
-use babeldoc_bridge::{WorkerOptions, translate_pdf, translate_pdf_with_services};
+use babeldoc_bridge::{
+    AssetOperation, WorkerOptions, maintain_assets, translate_pdf, translate_pdf_with_services,
+};
 use pdf2zh_core::{
     CacheBackend, CacheError, CacheFuture, CacheKey, PdfJob, TranslationService, TranslatorConfig,
 };
@@ -121,6 +123,177 @@ async fn startup_crash_is_reported_without_waiting_for_startup_timeout() -> Resu
         !format!("{error:#}").contains("Fixture exceeded"),
         "startup crash was only noticed by the test deadline: {error:#}"
     );
+    Ok(())
+}
+
+#[tokio::test]
+async fn resource_operations_need_no_pdf_or_translator() -> Result<()> {
+    for operation_name in ["warmup", "generate", "restore"] {
+        let fixture = Fixture::new("asset_success")?;
+        fs::remove_file(&fixture.job.input_file)?;
+        let archive = fixture.directory.path().join("offline.zip");
+        fs::write(&archive, b"controlled restore fixture")?;
+        let operation = match operation_name {
+            "warmup" => AssetOperation::Warmup,
+            "generate" => AssetOperation::GenerateOfflineAssets {
+                output_dir: fixture.job.output_dir.clone(),
+            },
+            _ => AssetOperation::RestoreOfflineAssets { input: archive },
+        };
+        let result = timeout(
+            DEADLINE,
+            maintain_assets(&fixture.worker, operation, CancellationToken::new(), None),
+        )
+        .await??;
+        if operation_name == "generate" {
+            ensure!(
+                fs::read(
+                    result["archive_path"]
+                        .as_str()
+                        .context("missing archive path")?
+                )? == b"complete controlled asset archive"
+            );
+        }
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn incomplete_or_invalid_resource_output_preserves_existing_archive() -> Result<()> {
+    for scenario in [
+        "asset_error",
+        "asset_nonzero",
+        "asset_bad_tag",
+        "asset_escape",
+        "asset_missing",
+        "asset_translation",
+    ] {
+        let fixture = Fixture::new(scenario)?;
+        let archive = fixture
+            .job
+            .output_dir
+            .join(format!("offline_assets_{}.zip", "a".repeat(64)));
+        fs::write(&archive, b"previous complete archive")?;
+        let error = timeout(
+            DEADLINE,
+            maintain_assets(
+                &fixture.worker,
+                AssetOperation::GenerateOfflineAssets {
+                    output_dir: fixture.job.output_dir.clone(),
+                },
+                CancellationToken::new(),
+                None,
+            ),
+        )
+        .await?
+        .expect_err("invalid resource operation must fail");
+        ensure!(!format!("{error:#}").contains("Fixture exceeded"));
+        ensure!(
+            fs::read(&archive)? == b"previous complete archive",
+            "{scenario} replaced the old archive"
+        );
+        ensure!(
+            fs::read_dir(&fixture.job.output_dir)?.count() == 1,
+            "{scenario} left a staging file"
+        );
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn successful_resource_generation_atomically_replaces_old_archive() -> Result<()> {
+    let fixture = Fixture::new("asset_success")?;
+    let archive = fixture
+        .job
+        .output_dir
+        .join(format!("offline_assets_{}.zip", "a".repeat(64)));
+    fs::write(&archive, b"previous complete archive")?;
+    maintain_assets(
+        &fixture.worker,
+        AssetOperation::GenerateOfflineAssets {
+            output_dir: fixture.job.output_dir.clone(),
+        },
+        CancellationToken::new(),
+        None,
+    )
+    .await?;
+    ensure!(fs::read(&archive)? == b"complete controlled asset archive");
+    ensure!(fs::read_dir(&fixture.job.output_dir)?.count() == 1);
+    Ok(())
+}
+
+#[tokio::test]
+async fn resource_progress_cannot_extend_the_operation_deadline() -> Result<()> {
+    let mut fixture = Fixture::new("asset_progress_forever")?;
+    fixture.worker.idle_timeout = Duration::from_millis(150);
+    let archive = fixture
+        .job
+        .output_dir
+        .join(format!("offline_assets_{}.zip", "a".repeat(64)));
+    fs::write(&archive, b"previous complete archive")?;
+    let (events, received) = mpsc::channel(1);
+    let error = timeout(
+        DEADLINE,
+        maintain_assets(
+            &fixture.worker,
+            AssetOperation::GenerateOfflineAssets {
+                output_dir: fixture.job.output_dir.clone(),
+            },
+            CancellationToken::new(),
+            Some(events),
+        ),
+    )
+    .await?
+    .expect_err("Resource deadline must not renew with progress");
+    ensure!(format!("{error:#}").contains("timeout"));
+    ensure!(received.len() == 1);
+    ensure!(fs::read(&archive)? == b"previous complete archive");
+    ensure!(fs::read_dir(&fixture.job.output_dir)?.count() == 1);
+    Ok(())
+}
+
+#[tokio::test]
+async fn resource_cancellation_waits_for_worker_tree_and_preserves_archive() -> Result<()> {
+    let fixture = Fixture::new("asset_hang")?;
+    let archive = fixture
+        .job
+        .output_dir
+        .join(format!("offline_assets_{}.zip", "a".repeat(64)));
+    fs::write(&archive, b"previous complete archive")?;
+    let cancel = CancellationToken::new();
+    let (events, mut progress) = mpsc::channel(2);
+    let operation = maintain_assets(
+        &fixture.worker,
+        AssetOperation::GenerateOfflineAssets {
+            output_dir: fixture.job.output_dir.clone(),
+        },
+        cancel.clone(),
+        Some(events),
+    );
+    tokio::pin!(operation);
+    tokio::select! {
+        event = timeout(DEADLINE, progress.recv()) => { ensure!(event?.context("progress closed")?["stage"] == "assets blocked"); }
+        result = &mut operation => bail!("Resource operation ended before cancel: {result:?}"),
+    }
+    #[cfg(windows)]
+    let worker = windows_process::ObservedProcess::from_pid_file(
+        fixture.directory.path().join("worker.pid"),
+    )?;
+    #[cfg(windows)]
+    let descendant = windows_process::ObservedProcess::from_pid_file(
+        fixture.directory.path().join("descendant.pid"),
+    )?;
+    cancel.cancel();
+    timeout(DEADLINE, &mut operation)
+        .await?
+        .expect_err("cancel must fail");
+    #[cfg(windows)]
+    {
+        worker.assert_exited_now()?;
+        descendant.assert_exited_now()?;
+    }
+    ensure!(fs::read(archive)? == b"previous complete archive");
+    ensure!(fs::read_dir(&fixture.job.output_dir)?.count() == 1);
     Ok(())
 }
 

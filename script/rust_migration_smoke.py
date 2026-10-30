@@ -28,7 +28,10 @@ def main():
     parser.add_argument("--worker-home", type=Path, required=True)
     parser.add_argument("--pages")
     parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--timeout-seconds", type=int, default=300)
     args = parser.parse_args()
+    if not 1 <= args.timeout_seconds <= 7200:
+        parser.error("timeout must be between 1 and 7200 seconds")
     if not args.source.is_file():
         parser.error("source PDF does not exist or is not a file")
     if not args.label or any(
@@ -112,6 +115,8 @@ def main():
     isolated_app = isolated / "app"
     for directory in (isolated_home, isolated_temp, isolated_app):
         directory.mkdir(parents=True)
+    for directory in ("Desktop", "Documents", "Downloads"):
+        (isolated_home / directory).mkdir()
     environment["HOME"] = environment["USERPROFILE"] = str(isolated_home)
     environment["TEMP"] = environment["TMP"] = str(isolated_temp)
     environment["PDF2ZH_APP_DIR"] = str(isolated_app)
@@ -161,7 +166,7 @@ def main():
                 env=environment,
                 stdout=stdout_file,
                 stderr=stderr_file,
-                timeout=300,
+                timeout=args.timeout_seconds,
             )
     except subprocess.TimeoutExpired:
         completed = subprocess.CompletedProcess(command, 124)
