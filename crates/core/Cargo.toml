@@ -7,7 +7,7 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
-reqwest = { workspace = true, features = ["cookies"] }
+reqwest = { workspace = true, features = ["cookies", "gzip", "deflate", "brotli", "zstd"] }
 rustls.workspace = true
 serde.workspace = true
 serde_json.workspace = true
