@@ -119,6 +119,14 @@ def main():
     if start.get("operation", "pdf") != "pdf":
         finish_assets(start, scenario)
         return 0
+    if scenario == "runtime_flags":
+        finish(start["job"], scenario, runtime_flags={
+            "isolated": sys.flags.isolated,
+            "ignore_environment": sys.flags.ignore_environment,
+            "no_user_site": sys.flags.no_user_site,
+            "dont_write_bytecode": sys.flags.dont_write_bytecode,
+        })
+        return 0
     if scenario == "progress_flood":
         for number in range(2000):
             send("progress", event={"stage": "progress flood", "number": number})

@@ -325,6 +325,19 @@ async fn buffered_finished_before_exit_zero_is_accepted() -> Result<()> {
 }
 
 #[tokio::test]
+async fn worker_runtime_ignores_user_paths_and_does_not_write_package_bytecode() -> Result<()> {
+    let fixture = Fixture::new("runtime_flags")?;
+    let result = fixture.run().await?;
+    ensure!(
+        result["runtime_flags"]
+            == json!({
+                "isolated":1,"ignore_environment":1,"no_user_site":1,"dont_write_bytecode":1
+            })
+    );
+    Ok(())
+}
+
+#[tokio::test]
 async fn unread_bounded_progress_does_not_block_a_terminal_result() -> Result<()> {
     let fixture = Fixture::new("progress_flood")?;
     let (events, mut received) = mpsc::channel(2);

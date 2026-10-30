@@ -356,7 +356,7 @@ async fn run_session(
     let home = home.canonicalize()?;
     let mut command = Command::new(python);
     command
-        .args(["-I", "-u"])
+        .args(["-I", "-B", "-u"])
         .arg(&script)
         .current_dir(script.parent().context("Worker script parent")?)
         .stdin(Stdio::piped())
