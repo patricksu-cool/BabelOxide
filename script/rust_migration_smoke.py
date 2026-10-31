@@ -34,9 +34,25 @@ def main():
     )
     parser.add_argument("--isolated-cwd", action="store_true")
     parser.add_argument("--pages")
+    parser.add_argument(
+        "--fixed-text",
+        help="Fixed local response for font/output smoke; default is identity",
+    )
+    parser.add_argument("--lang-out", default="zh-CN")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--timeout-seconds", type=int, default=300)
     args = parser.parse_args()
+    executable = str(args.exe.absolute())
+    if (
+        os.name == "nt"
+        and len(executable) >= 260
+        and not executable.startswith("\\\\?\\")
+    ):
+        executable = (
+            "\\\\?\\UNC\\" + executable[2:]
+            if executable.startswith("\\\\")
+            else "\\\\?\\" + executable
+        )
     if not 1 <= args.timeout_seconds <= 7200:
         parser.error("timeout must be between 1 and 7200 seconds")
     if not args.packaged and args.worker_home is None:
@@ -76,9 +92,19 @@ def main():
             if batch:
                 items = json.loads(translated.rsplit(batch_marker, 1)[-1])
                 translated = json.dumps(
-                    [{"id": item["id"], "output": item["input"]} for item in items],
+                    [
+                        {
+                            "id": item["id"],
+                            "output": args.fixed_text
+                            if args.fixed_text is not None
+                            else item["input"],
+                        }
+                        for item in items
+                    ],
                     ensure_ascii=False,
                 )
+            elif args.fixed_text is not None:
+                translated = args.fixed_text
             calls.append({"batch": batch, "model": body.get("model")})
             reply = {
                 "id": "local-fixture",
@@ -137,14 +163,14 @@ def main():
         environment["PDF2ZH_APP_DIR"] = str(isolated_app)
     environment["NO_PROXY"] = environment["no_proxy"] = "127.0.0.1,localhost"
     command = [
-        str(args.exe.resolve()),
+        executable,
         str(args.source.resolve()),
         "--output",
         str(output),
         "--lang-in",
         "en",
         "--lang-out",
-        "zh-CN",
+        args.lang_out,
         "--openai",
         "--openai-base-url",
         f"http://127.0.0.1:{server.server_port}/v1",
@@ -182,6 +208,7 @@ def main():
         ):
             completed = subprocess.run(
                 command,
+                executable=executable,
                 cwd=child_cwd,
                 env=environment,
                 stdout=stdout_file,
@@ -204,7 +231,11 @@ def main():
         "api_requests": len(calls),
         "batch_requests": sum(call["batch"] for call in calls),
         "pages": args.pages or "all",
-        "provider": "loopback identity fixture",
+        "provider": "loopback fixed-text fixture"
+        if args.fixed_text is not None
+        else "loopback identity fixture",
+        "response_mode": "fixed text" if args.fixed_text is not None else "identity",
+        "executable_argument": executable,
         "worker_runtime": "bundle defaults"
         if args.packaged
         else "explicit development paths",

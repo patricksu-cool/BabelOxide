@@ -344,6 +344,31 @@ async fn worker_runtime_ignores_user_paths_and_does_not_write_package_bytecode()
     Ok(())
 }
 
+#[cfg(windows)]
+#[tokio::test]
+async fn worker_script_in_long_package_path_uses_a_launchable_working_directory() -> Result<()> {
+    use std::os::windows::ffi::OsStrExt;
+
+    let mut fixture = Fixture::new("finished_then_exit")?;
+    let package = fixture
+        .directory
+        .path()
+        .join("a".repeat(100))
+        .join("b".repeat(100))
+        .join("c".repeat(100));
+    ensure!(package.as_os_str().encode_wide().count() > 260);
+    fs::create_dir_all(&package)?;
+    for name in ["fake_worker.py", "scenario.json"] {
+        fs::copy(fixture.directory.path().join(name), package.join(name))?;
+    }
+    fixture.worker.script = package.join("fake_worker.py");
+    let result = fixture.run().await?;
+    for key in ["mono_pdf_path", "dual_pdf_path"] {
+        ensure!(PathBuf::from(result[key].as_str().context("missing output")?).is_file());
+    }
+    Ok(())
+}
+
 #[tokio::test]
 async fn unread_bounded_progress_does_not_block_a_terminal_result() -> Result<()> {
     let fixture = Fixture::new("progress_flood")?;

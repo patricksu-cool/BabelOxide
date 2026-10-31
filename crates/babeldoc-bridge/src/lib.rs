@@ -423,11 +423,18 @@ async fn run_session(
             .await
             .context("Join bundled asset initialization")??;
     }
+    // CreateProcess still limits lpCurrentDirectory even when executable/script
+    // paths use Windows extended-length syntax. No engine input depends on CWD.
+    // Keep this directory alive until the contained worker has been reaped.
+    let launch_directory = tempfile::Builder::new()
+        .prefix("pdf2zh-worker-")
+        .tempdir()
+        .context("Create worker launch directory")?;
     let mut command = Command::new(python);
     command
         .args(["-I", "-B", "-u"])
         .arg(&script)
-        .current_dir(script.parent().context("Worker script parent")?)
+        .current_dir(launch_directory.path())
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

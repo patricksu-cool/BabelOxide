@@ -26,6 +26,17 @@ def main():
     )
     parser.add_argument("--timeout", type=int, default=2400)
     args = parser.parse_args()
+    executable = str(args.exe.absolute())
+    if (
+        os.name == "nt"
+        and len(executable) >= 260
+        and not executable.startswith("\\\\?\\")
+    ):
+        executable = (
+            "\\\\?\\UNC\\" + executable[2:]
+            if executable.startswith("\\\\")
+            else "\\\\?\\" + executable
+        )
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     control = output / "control.json"
@@ -128,7 +139,7 @@ def main():
     if args.portable_config:
         environment.pop("PDF2ZH_APP_DIR", None)
     args_first = [
-        str(args.exe.resolve()),
+        executable,
         "--openai",
         "--openai-base-url",
         f"http://127.0.0.1:{server.server_port}/v1",
@@ -159,7 +170,12 @@ def main():
         log = (output / f"gui-{len(handles)}.log").open("wb")
         handles.append(log)
         return subprocess.Popen(
-            command, cwd=cwd, env=environment, stdout=log, stderr=log
+            command,
+            executable=executable,
+            cwd=cwd,
+            env=environment,
+            stdout=log,
+            stderr=log,
         )
 
     try:
@@ -182,7 +198,7 @@ def main():
             if requested.get("action") == "stop":
                 break
             if requested.get("action") == "reopen" and process is None:
-                process = launch([str(args.exe.resolve())])
+                process = launch([executable])
                 control.write_text(
                     json.dumps({"mode": requested.get("mode", "identity")}),
                     encoding="utf-8",
@@ -203,7 +219,7 @@ def main():
         for handle in handles:
             handle.close()
         summary = {
-            "exe_sha256": hashlib.sha256(args.exe.read_bytes()).hexdigest(),
+            "exe_sha256": hashlib.sha256(Path(executable).read_bytes()).hexdigest(),
             "api_requests": len(calls),
             "batch_requests": sum(call["batch"] for call in calls),
             "modes": {

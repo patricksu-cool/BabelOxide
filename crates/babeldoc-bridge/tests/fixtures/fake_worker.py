@@ -46,6 +46,14 @@ def hang():
         time.sleep(1)
 
 
+def publish_pid(name):
+    # Existence is the readiness gate: never expose a created-but-empty file.
+    path = ROOT / name
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_text(str(os.getpid()), encoding="ascii")
+    temporary.replace(path)
+
+
 def spawn_descendant():
     # No CREATE_BREAKAWAY_FROM_JOB: the bridge must contain this process too.
     subprocess.Popen([sys.executable, "-I", "-u", str(Path(__file__).resolve()), "--descendant"])
@@ -98,11 +106,11 @@ def finish_assets(start, scenario):
 
 def main():
     if "--descendant" in sys.argv:
-        (ROOT / "descendant.pid").write_text(str(os.getpid()), encoding="ascii")
+        publish_pid("descendant.pid")
         hang()
 
     scenario = json.loads((ROOT / "scenario.json").read_text(encoding="utf-8"))["scenario"]
-    (ROOT / "worker.pid").write_text(str(os.getpid()), encoding="ascii")
+    publish_pid("worker.pid")
     with (ROOT / "worker-starts.log").open("a", encoding="ascii") as starts:
         starts.write(f"{os.getpid()}\n")
     if scenario == "startup_crash":
