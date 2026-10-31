@@ -1,7 +1,7 @@
 {
   "metadata": {
     "baseline_commit": "06ac7699a5d8254b87b1ba073e015ed62b28e307",
-    "rust_gui_snapshot": "基準版；新介面完成後需重新核對並更新",
+    "rust_gui_snapshot": "feature/gui-ux-improvements：整合中的 app.rs／settings_ui.rs／languages.rs 靜態對照；桌面互動尚未驗證",
     "official_reference": "https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/tree/v2.9.0",
     "official_gui_source": "https://raw.githubusercontent.com/PDFMathTranslate-next/PDFMathTranslate-next/v2.9.0/pdf2zh_next/gui.py",
     "official_provider_source": "https://raw.githubusercontent.com/PDFMathTranslate-next/PDFMathTranslate-next/v2.9.0/pdf2zh_next/config/translate_engine_model.py",
@@ -13,7 +13,8 @@
       "Integer": 10,
       "Float": 4
     },
-    "interpretation": "default/nullable/secret 來自本地嵌入 schema；range 分列本地驗證與官方 GUI 限制。未指定不代表無限制；required 是條件式執行驗證，nullable 不能推斷是否必填。"
+    "interpretation": "default/nullable/secret 來自本地嵌入 schema；range 分列本地驗證與官方 GUI 限制。未指定不代表無限制；required 是條件式執行驗證，nullable 不能推斷是否必填。 current_rust_advanced 指目前介面分組，非官方進階分類；不適用表示目前沒有可編輯控制項。",
+    "baseline_gui_snapshot": "每欄 baseline_rust_gui 保存 commit 06ac769 的原控制項"
   },
   "fields": [
     {
@@ -29,10 +30,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "多個 PDF 檔案選擇；另有網址輸入",
-      "current_rust_gui": "基準：PDF 選擇器與檔案清單",
+      "current_rust_gui": "PDF 檔案選擇／拖放／移除及清單；亦可下載公開 PDF 網址",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "input-files"
+      "flag": "input-files",
+      "baseline_rust_gui": "基準：PDF 選擇器與檔案清單",
+      "current_rust_advanced": false
     },
     {
       "path": "basic.debug",
@@ -47,10 +50,12 @@
       "advanced": "未指定",
       "secret": false,
       "official_gui": "未指定（未確認官方 GUI 有獨立控制項）",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：勾選框",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "debug"
+      "flag": "debug",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "basic.gui",
@@ -65,10 +70,12 @@
       "advanced": "未指定",
       "secret": false,
       "official_gui": "未指定（未確認官方 GUI 有獨立控制項）",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "桌面 GUI 無獨立控制項；保留在設定中",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "gui"
+      "flag": "gui",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": "不適用"
     },
     {
       "path": "basic.warmup",
@@ -83,10 +90,12 @@
       "advanced": "未指定",
       "secret": false,
       "official_gui": "未指定（未確認官方 GUI 有獨立控制項）",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "桌面 GUI 無獨立控制項；保留在設定中",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "warmup"
+      "flag": "warmup",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": "不適用"
     },
     {
       "path": "basic.generate_offline_assets",
@@ -101,10 +110,12 @@
       "advanced": "未指定",
       "secret": false,
       "official_gui": "未指定（未確認官方 GUI 有獨立控制項）",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "桌面 GUI 無獨立控制項；保留在設定中",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "generate-offline-assets"
+      "flag": "generate-offline-assets",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": "不適用"
     },
     {
       "path": "basic.restore_offline_assets",
@@ -119,10 +130,12 @@
       "advanced": "未指定",
       "secret": false,
       "official_gui": "未指定（未確認官方 GUI 有獨立控制項）",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "桌面 GUI 無獨立控制項；保留在設定中",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "restore-offline-assets"
+      "flag": "restore-offline-assets",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": "不適用"
     },
     {
       "path": "basic.version",
@@ -137,10 +150,12 @@
       "advanced": "未指定",
       "secret": false,
       "official_gui": "未指定（未確認官方 GUI 有獨立控制項）",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "桌面 GUI 無獨立控制項；保留在設定中",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "version"
+      "flag": "version",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": "不適用"
     },
     {
       "path": "gui_settings.share",
@@ -155,10 +170,12 @@
       "advanced": "未指定",
       "secret": false,
       "official_gui": "未指定（未確認官方 GUI 有獨立控制項）",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "桌面 GUI 無獨立控制項；保留在設定中",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "share"
+      "flag": "share",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": "不適用"
     },
     {
       "path": "gui_settings.auth_file",
@@ -173,10 +190,12 @@
       "advanced": "未指定",
       "secret": true,
       "official_gui": "未指定（未確認官方 GUI 有獨立控制項）",
-      "current_rust_gui": "基準：「所有設定」遮罩文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "桌面 GUI 無獨立控制項；保留在設定中",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "auth-file"
+      "flag": "auth-file",
+      "baseline_rust_gui": "基準：「所有設定」遮罩文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": "不適用"
     },
     {
       "path": "gui_settings.welcome_page",
@@ -191,10 +210,12 @@
       "advanced": "未指定",
       "secret": false,
       "official_gui": "未指定（未確認官方 GUI 有獨立控制項）",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "桌面 GUI 無獨立控制項；保留在設定中",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "welcome-page"
+      "flag": "welcome-page",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": "不適用"
     },
     {
       "path": "gui_settings.enabled_services",
@@ -209,10 +230,12 @@
       "advanced": "未指定",
       "secret": false,
       "official_gui": "未指定（未確認官方 GUI 有獨立控制項）",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "管理服務勾選框與全部服務按鈕；保留各服務原有設定",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "enabled-services"
+      "flag": "enabled-services",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": false
     },
     {
       "path": "gui_settings.disable_gui_sensitive_input",
@@ -227,10 +250,12 @@
       "advanced": "未指定",
       "secret": false,
       "official_gui": "未指定（未確認官方 GUI 有獨立控制項）",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：勾選框",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "disable-gui-sensitive-input"
+      "flag": "disable-gui-sensitive-input",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "gui_settings.disable_config_auto_save",
@@ -245,10 +270,12 @@
       "advanced": "未指定",
       "secret": false,
       "official_gui": "未指定（未確認官方 GUI 有獨立控制項）",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：勾選框",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "disable-config-auto-save"
+      "flag": "disable-config-auto-save",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "gui_settings.server_port",
@@ -263,10 +290,12 @@
       "advanced": "未指定",
       "secret": false,
       "official_gui": "未指定（未確認官方 GUI 有獨立控制項）",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "桌面 GUI 無獨立控制項；保留在設定中",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "server-port"
+      "flag": "server-port",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": "不適用"
     },
     {
       "path": "gui_settings.server_name",
@@ -281,15 +310,17 @@
       "advanced": "未指定",
       "secret": false,
       "official_gui": "未指定（未確認官方 GUI 有獨立控制項）",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "桌面 GUI 無獨立控制項；保留在設定中",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "server-name"
+      "flag": "server-name",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": "不適用"
     },
     {
       "path": "gui_settings.ui_lang",
       "type": "String",
-      "default": "en",
+      "default": "zh-TW",
       "range": {
         "rust_validation": "未指定",
         "official_gui": "未指定"
@@ -299,10 +330,13 @@
       "advanced": "未指定",
       "secret": false,
       "official_gui": "未指定（未確認官方 GUI 有獨立控制項）",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：文字輸入",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "ui-lang"
+      "flag": "ui-lang",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "baseline_default": "en",
+      "current_rust_advanced": true
     },
     {
       "path": "translation.min_text_length",
@@ -317,10 +351,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "進階選項數值輸入",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：文字輸入與數值微調器",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "min-text-length"
+      "flag": "min-text-length",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "translation.rpc_doclayout",
@@ -335,10 +371,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "文字輸入，初始隱藏",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：文字輸入",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "rpc-doclayout"
+      "flag": "rpc-doclayout",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "translation.lang_in",
@@ -353,10 +391,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "來源語言下拉；選項為官方 lang_map",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "語言名稱下拉；支援語言交換、自訂代碼和已知服務限制提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "lang-in"
+      "flag": "lang-in",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": false
     },
     {
       "path": "translation.lang_out",
@@ -371,10 +411,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "目標語言下拉；選項為官方 lang_map",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "語言名稱下拉；支援語言交換、自訂代碼和已知服務限制提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "lang-out"
+      "flag": "lang-out",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": false
     },
     {
       "path": "translation.output",
@@ -389,10 +431,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "由 GUI 暫存輸出目錄設定，非獨立輸入控制項",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "常用區：文字輸入與路徑選擇器",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "output"
+      "flag": "output",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": false
     },
     {
       "path": "translation.qps",
@@ -407,10 +451,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "限流模式數值輸入（RPM／併發／自訂轉換）",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "常用區：文字輸入與數值微調器",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "qps"
+      "flag": "qps",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": false
     },
     {
       "path": "translation.ignore_cache",
@@ -425,10 +471,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "進階選項勾選框",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "常用區：勾選框",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "ignore-cache"
+      "flag": "ignore-cache",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": false
     },
     {
       "path": "translation.custom_system_prompt",
@@ -443,10 +491,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": true,
       "official_gui": "進階選項文字輸入",
-      "current_rust_gui": "基準：「所有設定」遮罩文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：遮罩文字輸入（多行）；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "custom-system-prompt"
+      "flag": "custom-system-prompt",
+      "baseline_rust_gui": "基準：「所有設定」遮罩文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "translation.glossaries",
@@ -461,10 +511,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "多個 CSV 上傳與唯讀預覽；僅支援 LLM 服務",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "術語 CSV 選擇器與逗號分隔輸入；非 LLM 服務時仍可編輯並提示術語需要 LLM",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "glossaries"
+      "flag": "glossaries",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": false
     },
     {
       "path": "translation.save_auto_extracted_glossary",
@@ -479,10 +531,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "進階選項勾選框",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "術語區：勾選框；自動擷取停用時不可編輯",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "save-auto-extracted-glossary"
+      "flag": "save-auto-extracted-glossary",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": false
     },
     {
       "path": "translation.pool_max_workers",
@@ -497,10 +551,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "自訂限流模式數值輸入",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "常用區：文字輸入與數值微調器",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "pool-max-workers"
+      "flag": "pool-max-workers",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": false
     },
     {
       "path": "translation.term_qps",
@@ -515,10 +571,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "術語自訂限流數值輸入",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "術語區：文字輸入與數值微調器；自動擷取停用時不可編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "term-qps"
+      "flag": "term-qps",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": false
     },
     {
       "path": "translation.term_pool_max_workers",
@@ -533,10 +591,13 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "術語自訂限流數值輸入",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "術語區：文字輸入與數值微調器；自動擷取停用時不可編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "term-pool-max-workers"
+      "flag": "term-pool-max-workers",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": false,
+      "runtime_note": "正常翻譯路徑中 bridge 在傳給 Worker 前將 0／null 轉為正文並發數；服務建議的並發數可能先覆蓋。配置中的 0 保留。"
     },
     {
       "path": "translation.no_auto_extract_glossary",
@@ -551,10 +612,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "啟用自動術語擷取的反向勾選框",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "術語服務區的反向勾選框；無可用術語引擎時停用",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "no-auto-extract-glossary"
+      "flag": "no-auto-extract-glossary",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": false
     },
     {
       "path": "translation.primary_font_family",
@@ -569,10 +632,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "Auto／serif／sans-serif／script 下拉",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：選項下拉",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "primary-font-family"
+      "flag": "primary-font-family",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.pages",
@@ -587,10 +652,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "All／First／First 5 pages／Range；Range 顯示文字輸入",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "全部／第一頁／前五頁快捷與自訂範圍文字框、錯誤提示",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "pages"
+      "flag": "pages",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": false
     },
     {
       "path": "pdf.no_dual",
@@ -605,10 +672,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "PDF 輸出選項勾選框",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "輸出區反向勾選框",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "no-dual"
+      "flag": "no-dual",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": false
     },
     {
       "path": "pdf.no_mono",
@@ -623,10 +692,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "PDF 輸出選項勾選框",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "輸出區反向勾選框",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "no-mono"
+      "flag": "no-mono",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": false
     },
     {
       "path": "pdf.formular_font_pattern",
@@ -641,10 +712,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "進階選項文字輸入",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：文字輸入",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "formular-font-pattern"
+      "flag": "formular-font-pattern",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.formular_char_pattern",
@@ -659,10 +732,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "進階選項文字輸入",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：文字輸入",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "formular-char-pattern"
+      "flag": "formular-char-pattern",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.split_short_lines",
@@ -677,10 +752,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "進階選項勾選框",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：勾選框",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "split-short-lines"
+      "flag": "split-short-lines",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.short_line_split_factor",
@@ -695,10 +772,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "0.1–1.0 滑桿，僅啟用 split_short_lines 時顯示",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：文字輸入與數值微調器；啟用短行分割時顯示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "short-line-split-factor"
+      "flag": "short-line-split-factor",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.skip_clean",
@@ -713,10 +792,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "進階選項勾選框",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：勾選框",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "skip-clean"
+      "flag": "skip-clean",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.dual_translate_first",
@@ -731,10 +812,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "PDF 輸出選項勾選框",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：勾選框",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "dual-translate-first"
+      "flag": "dual-translate-first",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.disable_rich_text_translate",
@@ -749,10 +832,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "進階選項勾選框",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：勾選框",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "disable-rich-text-translate"
+      "flag": "disable-rich-text-translate",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.enhance_compatibility",
@@ -767,10 +852,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "進階選項勾選框",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：勾選框",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "enhance-compatibility"
+      "flag": "enhance-compatibility",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.use_alternating_pages_dual",
@@ -785,10 +872,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "PDF 輸出選項勾選框",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：勾選框",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "use-alternating-pages-dual"
+      "flag": "use-alternating-pages-dual",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.watermark_output_mode",
@@ -803,10 +892,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "Watermarked／No Watermark 單選",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：選項下拉",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "watermark-output-mode"
+      "flag": "watermark-output-mode",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.max_pages_per_part",
@@ -821,10 +912,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "進階選項數值輸入",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：文字輸入與數值微調器",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "max-pages-per-part"
+      "flag": "max-pages-per-part",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.translate_table_text",
@@ -839,10 +932,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "進階選項勾選框",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：勾選框",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "translate-table-text"
+      "flag": "translate-table-text",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.skip_scanned_detection",
@@ -857,10 +952,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "進階選項勾選框",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：勾選框",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "skip-scanned-detection"
+      "flag": "skip-scanned-detection",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.ocr_workaround",
@@ -875,10 +972,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "進階選項勾選框",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：勾選框",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "ocr-workaround"
+      "flag": "ocr-workaround",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.auto_enable_ocr_workaround",
@@ -893,10 +992,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "進階選項勾選框",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：勾選框",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "auto-enable-ocr-workaround"
+      "flag": "auto-enable-ocr-workaround",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.only_include_translated_page",
@@ -911,10 +1012,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "PDF 輸出選項勾選框",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：勾選框",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "only-include-translated-page"
+      "flag": "only-include-translated-page",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.no_merge_alternating_line_numbers",
@@ -929,10 +1032,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "進階選項勾選框（反向）",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：勾選框",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "no-merge-alternating-line-numbers"
+      "flag": "no-merge-alternating-line-numbers",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.no_remove_non_formula_lines",
@@ -947,10 +1052,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "進階選項勾選框（反向）",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：勾選框",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "no-remove-non-formula-lines"
+      "flag": "no-remove-non-formula-lines",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.non_formula_line_iou_threshold",
@@ -965,10 +1072,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "0–1 滑桿",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：文字輸入與數值微調器",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "non-formula-line-iou-threshold"
+      "flag": "non-formula-line-iou-threshold",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.figure_table_protection_threshold",
@@ -983,10 +1092,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "0–1 滑桿",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：文字輸入與數值微調器",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "figure-table-protection-threshold"
+      "flag": "figure-table-protection-threshold",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "pdf.skip_formula_offset_calculation",
@@ -1001,10 +1112,12 @@
       "advanced": "是（官方 Advanced Options）",
       "secret": false,
       "official_gui": "進階選項勾選框",
-      "current_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：勾選框",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "skip-formula-offset-calculation"
+      "flag": "skip-formula-offset-calculation",
+      "baseline_rust_gui": "基準：「所有設定」勾選框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "config_file",
@@ -1019,10 +1132,12 @@
       "advanced": "未指定",
       "secret": false,
       "official_gui": "未指定（未確認官方 GUI 有獨立控制項）",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：文字輸入與路徑選擇器",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "config-file"
+      "flag": "config-file",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "report_interval",
@@ -1037,10 +1152,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯時由 GUI 指定，無獨立控制項",
-      "current_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_gui": "進階選項分組：文字輸入與數值微調器",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "report-interval"
+      "flag": "report-interval",
+      "baseline_rust_gui": "基準：「所有設定」文字框；部分欄位另有常用控制項",
+      "current_rust_advanced": true
     },
     {
       "path": "siliconflowfree",
@@ -1055,10 +1172,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "siliconflowfree"
+      "flag": "siliconflowfree",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "siliconflowfree_detail.siliconflow_free_enable_json_mode",
@@ -1073,10 +1192,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "siliconflow-free-enable-json-mode"
+      "flag": "siliconflow-free-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_siliconflowfree",
@@ -1091,10 +1212,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "術語引擎下拉（或跟隨正文）",
-      "current_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_gui": "術語引擎下拉：跟隨正文或已啟用且支援 LLM 的服務",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-siliconflowfree"
+      "flag": "term-siliconflowfree",
+      "baseline_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_advanced": false
     },
     {
       "path": "term_siliconflowfree_detail.term_siliconflow_free_enable_json_mode",
@@ -1109,10 +1232,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-siliconflow-free-enable-json-mode"
+      "flag": "term-siliconflow-free-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "openai",
@@ -1127,10 +1252,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "openai"
+      "flag": "openai",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "openai_detail.openai_model",
@@ -1145,10 +1272,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務：文字輸入",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "openai-model"
+      "flag": "openai-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "openai_detail.openai_base_url",
@@ -1163,10 +1292,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "openai-base-url"
+      "flag": "openai-base-url",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "openai_detail.openai_api_key",
@@ -1181,10 +1312,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "openai-api-key"
+      "flag": "openai-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "openai_detail.openai_timeout",
@@ -1199,10 +1332,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：文字輸入",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "openai-timeout"
+      "flag": "openai-timeout",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "openai_detail.openai_temperature",
@@ -1217,10 +1352,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：文字輸入；受對應開關控制顯示",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "openai-temperature"
+      "flag": "openai-temperature",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "openai_detail.openai_reasoning_effort",
@@ -1235,10 +1372,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：文字輸入；受對應開關控制顯示",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "openai-reasoning-effort"
+      "flag": "openai-reasoning-effort",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "openai_detail.openai_enable_json_mode",
@@ -1253,10 +1392,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "openai-enable-json-mode"
+      "flag": "openai-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "openai_detail.openai_send_temprature",
@@ -1271,10 +1412,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "openai-send-temprature"
+      "flag": "openai-send-temprature",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "openai_detail.openai_send_reasoning_effort",
@@ -1289,10 +1432,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "openai-send-reasoning-effort"
+      "flag": "openai-send-reasoning-effort",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_openai",
@@ -1307,10 +1452,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "術語引擎下拉（或跟隨正文）",
-      "current_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_gui": "術語引擎下拉：跟隨正文或已啟用且支援 LLM 的服務",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-openai"
+      "flag": "term-openai",
+      "baseline_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_advanced": false
     },
     {
       "path": "term_openai_detail.term_openai_model",
@@ -1325,10 +1472,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務：文字輸入",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-openai-model"
+      "flag": "term-openai-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_openai_detail.term_openai_base_url",
@@ -1343,10 +1492,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "術語所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-openai-base-url"
+      "flag": "term-openai-base-url",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_openai_detail.term_openai_api_key",
@@ -1361,10 +1512,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "術語所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-openai-api-key"
+      "flag": "term-openai-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_openai_detail.term_openai_timeout",
@@ -1379,10 +1532,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：文字輸入",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-openai-timeout"
+      "flag": "term-openai-timeout",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_openai_detail.term_openai_temperature",
@@ -1397,10 +1552,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：文字輸入；受對應開關控制顯示",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-openai-temperature"
+      "flag": "term-openai-temperature",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_openai_detail.term_openai_reasoning_effort",
@@ -1415,10 +1572,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：文字輸入；受對應開關控制顯示",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-openai-reasoning-effort"
+      "flag": "term-openai-reasoning-effort",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_openai_detail.term_openai_enable_json_mode",
@@ -1433,10 +1592,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-openai-enable-json-mode"
+      "flag": "term-openai-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_openai_detail.term_openai_send_temprature",
@@ -1451,10 +1612,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-openai-send-temprature"
+      "flag": "term-openai-send-temprature",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_openai_detail.term_openai_send_reasoning_effort",
@@ -1469,10 +1632,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-openai-send-reasoning-effort"
+      "flag": "term-openai-send-reasoning-effort",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "aliyundashscope",
@@ -1487,10 +1652,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "aliyundashscope"
+      "flag": "aliyundashscope",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "aliyundashscope_detail.aliyun_dashscope_model",
@@ -1505,10 +1672,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務：文字輸入",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "aliyun-dashscope-model"
+      "flag": "aliyun-dashscope-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "aliyundashscope_detail.aliyun_dashscope_base_url",
@@ -1523,10 +1692,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "aliyun-dashscope-base-url"
+      "flag": "aliyun-dashscope-base-url",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "aliyundashscope_detail.aliyun_dashscope_api_key",
@@ -1541,10 +1712,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "aliyun-dashscope-api-key"
+      "flag": "aliyun-dashscope-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "aliyundashscope_detail.aliyun_dashscope_timeout",
@@ -1559,10 +1732,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：文字輸入",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "aliyun-dashscope-timeout"
+      "flag": "aliyun-dashscope-timeout",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "aliyundashscope_detail.aliyun_dashscope_temperature",
@@ -1577,10 +1752,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：文字輸入；受對應開關控制顯示",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "aliyun-dashscope-temperature"
+      "flag": "aliyun-dashscope-temperature",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "aliyundashscope_detail.aliyun_dashscope_send_temperature",
@@ -1595,10 +1772,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "aliyun-dashscope-send-temperature"
+      "flag": "aliyun-dashscope-send-temperature",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "aliyundashscope_detail.aliyun_dashscope_enable_json_mode",
@@ -1613,10 +1792,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "aliyun-dashscope-enable-json-mode"
+      "flag": "aliyun-dashscope-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_aliyundashscope",
@@ -1631,10 +1812,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "術語引擎下拉（或跟隨正文）",
-      "current_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_gui": "術語引擎下拉：跟隨正文或已啟用且支援 LLM 的服務",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-aliyundashscope"
+      "flag": "term-aliyundashscope",
+      "baseline_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_advanced": false
     },
     {
       "path": "term_aliyundashscope_detail.term_aliyun_dashscope_model",
@@ -1649,10 +1832,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務：文字輸入",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-aliyun-dashscope-model"
+      "flag": "term-aliyun-dashscope-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_aliyundashscope_detail.term_aliyun_dashscope_base_url",
@@ -1667,10 +1852,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "術語所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-aliyun-dashscope-base-url"
+      "flag": "term-aliyun-dashscope-base-url",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_aliyundashscope_detail.term_aliyun_dashscope_api_key",
@@ -1685,10 +1872,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "術語所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-aliyun-dashscope-api-key"
+      "flag": "term-aliyun-dashscope-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_aliyundashscope_detail.term_aliyun_dashscope_timeout",
@@ -1703,10 +1892,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：文字輸入",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-aliyun-dashscope-timeout"
+      "flag": "term-aliyun-dashscope-timeout",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_aliyundashscope_detail.term_aliyun_dashscope_temperature",
@@ -1721,10 +1912,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：文字輸入；受對應開關控制顯示",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-aliyun-dashscope-temperature"
+      "flag": "term-aliyun-dashscope-temperature",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_aliyundashscope_detail.term_aliyun_dashscope_send_temperature",
@@ -1739,10 +1932,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-aliyun-dashscope-send-temperature"
+      "flag": "term-aliyun-dashscope-send-temperature",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_aliyundashscope_detail.term_aliyun_dashscope_enable_json_mode",
@@ -1757,10 +1952,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-aliyun-dashscope-enable-json-mode"
+      "flag": "term-aliyun-dashscope-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "google",
@@ -1775,10 +1972,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "google"
+      "flag": "google",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "bing",
@@ -1793,10 +1992,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "bing"
+      "flag": "bing",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "deepl",
@@ -1811,10 +2012,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "deepl"
+      "flag": "deepl",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "deepl_detail.deepl_auth_key",
@@ -1829,10 +2032,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "deepl-auth-key"
+      "flag": "deepl-auth-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "deepseek",
@@ -1847,10 +2052,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "deepseek"
+      "flag": "deepseek",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "deepseek_detail.deepseek_model",
@@ -1865,10 +2072,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務：文字輸入",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "deepseek-model"
+      "flag": "deepseek-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "deepseek_detail.deepseek_api_key",
@@ -1883,10 +2092,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "deepseek-api-key"
+      "flag": "deepseek-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "deepseek_detail.deepseek_enable_json_mode",
@@ -1901,10 +2112,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "deepseek-enable-json-mode"
+      "flag": "deepseek-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "deepseek_detail.deepseek_thinking_mode",
@@ -1919,10 +2132,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "服務條件式下拉：未設定／enabled／disabled",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：選項下拉",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "deepseek-thinking-mode"
+      "flag": "deepseek-thinking-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "deepseek_detail.deepseek_reasoning_effort",
@@ -1937,10 +2152,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "服務條件式下拉：high／max；thinking enabled 時顯示",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：選項下拉；thinking enabled 且 deepseek-v4 模型時顯示",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "deepseek-reasoning-effort"
+      "flag": "deepseek-reasoning-effort",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_deepseek",
@@ -1955,10 +2172,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "術語引擎下拉（或跟隨正文）",
-      "current_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_gui": "術語引擎下拉：跟隨正文或已啟用且支援 LLM 的服務",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-deepseek"
+      "flag": "term-deepseek",
+      "baseline_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_advanced": false
     },
     {
       "path": "term_deepseek_detail.term_deepseek_model",
@@ -1973,10 +2192,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務：文字輸入",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-deepseek-model"
+      "flag": "term-deepseek-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_deepseek_detail.term_deepseek_api_key",
@@ -1991,10 +2212,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "術語所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-deepseek-api-key"
+      "flag": "term-deepseek-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_deepseek_detail.term_deepseek_enable_json_mode",
@@ -2009,10 +2232,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-deepseek-enable-json-mode"
+      "flag": "term-deepseek-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_deepseek_detail.term_deepseek_thinking_mode",
@@ -2027,10 +2252,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "服務條件式下拉：未設定／enabled／disabled",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：選項下拉",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-deepseek-thinking-mode"
+      "flag": "term-deepseek-thinking-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_deepseek_detail.term_deepseek_reasoning_effort",
@@ -2045,10 +2272,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "服務條件式下拉：high／max；thinking enabled 時顯示",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：選項下拉；thinking enabled 且 deepseek-v4 模型時顯示",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-deepseek-reasoning-effort"
+      "flag": "term-deepseek-reasoning-effort",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "ollama",
@@ -2063,10 +2292,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "ollama"
+      "flag": "ollama",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "ollama_detail.ollama_model",
@@ -2081,10 +2312,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務：文字輸入",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "ollama-model"
+      "flag": "ollama-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "ollama_detail.ollama_host",
@@ -2099,10 +2332,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "ollama-host"
+      "flag": "ollama-host",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "ollama_detail.num_predict",
@@ -2117,10 +2352,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：文字輸入與數值微調器",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "num-predict"
+      "flag": "num-predict",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_ollama",
@@ -2135,10 +2372,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "術語引擎下拉（或跟隨正文）",
-      "current_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_gui": "術語引擎下拉：跟隨正文或已啟用且支援 LLM 的服務",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-ollama"
+      "flag": "term-ollama",
+      "baseline_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_advanced": false
     },
     {
       "path": "term_ollama_detail.term_ollama_model",
@@ -2153,10 +2392,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務：文字輸入",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-ollama-model"
+      "flag": "term-ollama-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_ollama_detail.term_ollama_host",
@@ -2171,10 +2412,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "術語所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-ollama-host"
+      "flag": "term-ollama-host",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_ollama_detail.term_num_predict",
@@ -2189,10 +2432,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：文字輸入與數值微調器",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-num-predict"
+      "flag": "term-num-predict",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "xinference",
@@ -2207,10 +2452,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "xinference"
+      "flag": "xinference",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "xinference_detail.xinference_model",
@@ -2225,10 +2472,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務：文字輸入",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "xinference-model"
+      "flag": "xinference-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "xinference_detail.xinference_host",
@@ -2243,10 +2492,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "xinference-host"
+      "flag": "xinference-host",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_xinference",
@@ -2261,10 +2512,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "術語引擎下拉（或跟隨正文）",
-      "current_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_gui": "術語引擎下拉：跟隨正文或已啟用且支援 LLM 的服務",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-xinference"
+      "flag": "term-xinference",
+      "baseline_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_advanced": false
     },
     {
       "path": "term_xinference_detail.term_xinference_model",
@@ -2279,10 +2532,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務：文字輸入",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-xinference-model"
+      "flag": "term-xinference-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_xinference_detail.term_xinference_host",
@@ -2297,10 +2552,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "術語所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-xinference-host"
+      "flag": "term-xinference-host",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "azureopenai",
@@ -2315,10 +2572,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "azureopenai"
+      "flag": "azureopenai",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "azureopenai_detail.azure_openai_model",
@@ -2333,10 +2592,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務：文字輸入",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "azure-openai-model"
+      "flag": "azure-openai-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "azureopenai_detail.azure_openai_base_url",
@@ -2351,10 +2612,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "azure-openai-base-url"
+      "flag": "azure-openai-base-url",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "azureopenai_detail.azure_openai_api_key",
@@ -2369,10 +2632,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "azure-openai-api-key"
+      "flag": "azure-openai-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "azureopenai_detail.azure_openai_api_version",
@@ -2387,10 +2652,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：文字輸入",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "azure-openai-api-version"
+      "flag": "azure-openai-api-version",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_azureopenai",
@@ -2405,10 +2672,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "術語引擎下拉（或跟隨正文）",
-      "current_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_gui": "術語引擎下拉：跟隨正文或已啟用且支援 LLM 的服務",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-azureopenai"
+      "flag": "term-azureopenai",
+      "baseline_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_advanced": false
     },
     {
       "path": "term_azureopenai_detail.term_azure_openai_model",
@@ -2423,10 +2692,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務：文字輸入",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-azure-openai-model"
+      "flag": "term-azure-openai-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_azureopenai_detail.term_azure_openai_base_url",
@@ -2441,10 +2712,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "術語所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-azure-openai-base-url"
+      "flag": "term-azure-openai-base-url",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_azureopenai_detail.term_azure_openai_api_key",
@@ -2459,10 +2732,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "術語所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-azure-openai-api-key"
+      "flag": "term-azure-openai-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_azureopenai_detail.term_azure_openai_api_version",
@@ -2477,10 +2752,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：文字輸入",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-azure-openai-api-version"
+      "flag": "term-azure-openai-api-version",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "modelscope",
@@ -2495,10 +2772,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "modelscope"
+      "flag": "modelscope",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "modelscope_detail.modelscope_model",
@@ -2513,10 +2792,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務：文字輸入",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "modelscope-model"
+      "flag": "modelscope-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "modelscope_detail.modelscope_api_key",
@@ -2531,10 +2812,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "modelscope-api-key"
+      "flag": "modelscope-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "modelscope_detail.modelscope_enable_json_mode",
@@ -2549,10 +2832,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "modelscope-enable-json-mode"
+      "flag": "modelscope-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_modelscope",
@@ -2567,10 +2852,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "術語引擎下拉（或跟隨正文）",
-      "current_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_gui": "術語引擎下拉：跟隨正文或已啟用且支援 LLM 的服務",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-modelscope"
+      "flag": "term-modelscope",
+      "baseline_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_advanced": false
     },
     {
       "path": "term_modelscope_detail.term_modelscope_model",
@@ -2585,10 +2872,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務：文字輸入",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-modelscope-model"
+      "flag": "term-modelscope-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_modelscope_detail.term_modelscope_api_key",
@@ -2603,10 +2892,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "術語所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-modelscope-api-key"
+      "flag": "term-modelscope-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_modelscope_detail.term_modelscope_enable_json_mode",
@@ -2621,10 +2912,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-modelscope-enable-json-mode"
+      "flag": "term-modelscope-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "zhipu",
@@ -2639,10 +2932,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "zhipu"
+      "flag": "zhipu",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "zhipu_detail.zhipu_model",
@@ -2657,10 +2952,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務：文字輸入",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "zhipu-model"
+      "flag": "zhipu-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "zhipu_detail.zhipu_api_key",
@@ -2675,10 +2972,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "zhipu-api-key"
+      "flag": "zhipu-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "zhipu_detail.zhipu_enable_json_mode",
@@ -2693,10 +2992,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "zhipu-enable-json-mode"
+      "flag": "zhipu-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_zhipu",
@@ -2711,10 +3012,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "術語引擎下拉（或跟隨正文）",
-      "current_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_gui": "術語引擎下拉：跟隨正文或已啟用且支援 LLM 的服務",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-zhipu"
+      "flag": "term-zhipu",
+      "baseline_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_advanced": false
     },
     {
       "path": "term_zhipu_detail.term_zhipu_model",
@@ -2729,10 +3032,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務：文字輸入",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-zhipu-model"
+      "flag": "term-zhipu-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_zhipu_detail.term_zhipu_api_key",
@@ -2747,10 +3052,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "術語所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-zhipu-api-key"
+      "flag": "term-zhipu-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_zhipu_detail.term_zhipu_enable_json_mode",
@@ -2765,10 +3072,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-zhipu-enable-json-mode"
+      "flag": "term-zhipu-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "siliconflow",
@@ -2783,10 +3092,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "siliconflow"
+      "flag": "siliconflow",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "siliconflow_detail.siliconflow_base_url",
@@ -2801,10 +3112,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "siliconflow-base-url"
+      "flag": "siliconflow-base-url",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "siliconflow_detail.siliconflow_model",
@@ -2819,10 +3132,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務：文字輸入",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "siliconflow-model"
+      "flag": "siliconflow-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "siliconflow_detail.siliconflow_api_key",
@@ -2837,10 +3152,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "siliconflow-api-key"
+      "flag": "siliconflow-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "siliconflow_detail.siliconflow_enable_thinking",
@@ -2855,10 +3172,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）；受對應開關控制顯示",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "siliconflow-enable-thinking"
+      "flag": "siliconflow-enable-thinking",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "siliconflow_detail.siliconflow_send_enable_thinking_param",
@@ -2873,10 +3192,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "siliconflow-send-enable-thinking-param"
+      "flag": "siliconflow-send-enable-thinking-param",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "siliconflow_detail.siliconflow_enable_json_mode",
@@ -2891,10 +3212,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "siliconflow-enable-json-mode"
+      "flag": "siliconflow-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_siliconflow",
@@ -2909,10 +3232,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "術語引擎下拉（或跟隨正文）",
-      "current_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_gui": "術語引擎下拉：跟隨正文或已啟用且支援 LLM 的服務",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-siliconflow"
+      "flag": "term-siliconflow",
+      "baseline_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_advanced": false
     },
     {
       "path": "term_siliconflow_detail.term_siliconflow_base_url",
@@ -2927,10 +3252,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "術語所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-siliconflow-base-url"
+      "flag": "term-siliconflow-base-url",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_siliconflow_detail.term_siliconflow_model",
@@ -2945,10 +3272,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務：文字輸入",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-siliconflow-model"
+      "flag": "term-siliconflow-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_siliconflow_detail.term_siliconflow_api_key",
@@ -2963,10 +3292,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "術語所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-siliconflow-api-key"
+      "flag": "term-siliconflow-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_siliconflow_detail.term_siliconflow_enable_thinking",
@@ -2981,10 +3312,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）；受對應開關控制顯示",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-siliconflow-enable-thinking"
+      "flag": "term-siliconflow-enable-thinking",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_siliconflow_detail.term_siliconflow_send_enable_thinking_param",
@@ -2999,10 +3332,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-siliconflow-send-enable-thinking-param"
+      "flag": "term-siliconflow-send-enable-thinking-param",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_siliconflow_detail.term_siliconflow_enable_json_mode",
@@ -3017,10 +3352,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-siliconflow-enable-json-mode"
+      "flag": "term-siliconflow-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "tencentmechinetranslation",
@@ -3035,10 +3372,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "tencentmechinetranslation"
+      "flag": "tencentmechinetranslation",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "tencentmechinetranslation_detail.tencentcloud_secret_id",
@@ -3053,10 +3392,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "tencentcloud-secret-id"
+      "flag": "tencentcloud-secret-id",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "tencentmechinetranslation_detail.tencentcloud_secret_key",
@@ -3071,10 +3412,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "tencentcloud-secret-key"
+      "flag": "tencentcloud-secret-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "gemini",
@@ -3089,10 +3432,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "gemini"
+      "flag": "gemini",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "gemini_detail.gemini_model",
@@ -3107,10 +3452,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務：文字輸入",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "gemini-model"
+      "flag": "gemini-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "gemini_detail.gemini_api_key",
@@ -3125,10 +3472,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "gemini-api-key"
+      "flag": "gemini-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "gemini_detail.gemini_enable_json_mode",
@@ -3143,10 +3492,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "gemini-enable-json-mode"
+      "flag": "gemini-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_gemini",
@@ -3161,10 +3512,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "術語引擎下拉（或跟隨正文）",
-      "current_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_gui": "術語引擎下拉：跟隨正文或已啟用且支援 LLM 的服務",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-gemini"
+      "flag": "term-gemini",
+      "baseline_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_advanced": false
     },
     {
       "path": "term_gemini_detail.term_gemini_model",
@@ -3179,10 +3532,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務：文字輸入",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-gemini-model"
+      "flag": "term-gemini-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_gemini_detail.term_gemini_api_key",
@@ -3197,10 +3552,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "術語所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-gemini-api-key"
+      "flag": "term-gemini-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_gemini_detail.term_gemini_enable_json_mode",
@@ -3215,10 +3572,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-gemini-enable-json-mode"
+      "flag": "term-gemini-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "azure",
@@ -3233,10 +3592,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "azure"
+      "flag": "azure",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "azure_detail.azure_endpoint",
@@ -3251,10 +3612,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "azure-endpoint"
+      "flag": "azure-endpoint",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "azure_detail.azure_api_key",
@@ -3269,10 +3632,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "azure-api-key"
+      "flag": "azure-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "anythingllm",
@@ -3287,10 +3652,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "anythingllm"
+      "flag": "anythingllm",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "anythingllm_detail.anythingllm_url",
@@ -3305,10 +3672,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "anythingllm-url"
+      "flag": "anythingllm-url",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "anythingllm_detail.anythingllm_apikey",
@@ -3323,10 +3692,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "anythingllm-apikey"
+      "flag": "anythingllm-apikey",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "dify",
@@ -3341,10 +3712,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "dify"
+      "flag": "dify",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "dify_detail.dify_url",
@@ -3359,10 +3732,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "dify-url"
+      "flag": "dify-url",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "dify_detail.dify_apikey",
@@ -3377,10 +3752,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "dify-apikey"
+      "flag": "dify-apikey",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "grok",
@@ -3395,10 +3772,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "grok"
+      "flag": "grok",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "grok_detail.grok_model",
@@ -3413,10 +3792,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務：文字輸入",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "grok-model"
+      "flag": "grok-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "grok_detail.grok_api_key",
@@ -3431,10 +3812,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "grok-api-key"
+      "flag": "grok-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "grok_detail.grok_enable_json_mode",
@@ -3449,10 +3832,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "grok-enable-json-mode"
+      "flag": "grok-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_grok",
@@ -3467,10 +3852,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "術語引擎下拉（或跟隨正文）",
-      "current_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_gui": "術語引擎下拉：跟隨正文或已啟用且支援 LLM 的服務",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-grok"
+      "flag": "term-grok",
+      "baseline_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_advanced": false
     },
     {
       "path": "term_grok_detail.term_grok_model",
@@ -3485,10 +3872,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務：文字輸入",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-grok-model"
+      "flag": "term-grok-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_grok_detail.term_grok_api_key",
@@ -3503,10 +3892,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "術語所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-grok-api-key"
+      "flag": "term-grok-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_grok_detail.term_grok_enable_json_mode",
@@ -3521,10 +3912,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-grok-enable-json-mode"
+      "flag": "term-grok-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "groq",
@@ -3539,10 +3932,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "groq"
+      "flag": "groq",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "groq_detail.groq_model",
@@ -3557,10 +3952,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務：文字輸入",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "groq-model"
+      "flag": "groq-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "groq_detail.groq_api_key",
@@ -3575,10 +3972,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "groq-api-key"
+      "flag": "groq-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "groq_detail.groq_enable_json_mode",
@@ -3593,10 +3992,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "groq-enable-json-mode"
+      "flag": "groq-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_groq",
@@ -3611,10 +4012,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "術語引擎下拉（或跟隨正文）",
-      "current_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_gui": "術語引擎下拉：跟隨正文或已啟用且支援 LLM 的服務",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-groq"
+      "flag": "term-groq",
+      "baseline_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_advanced": false
     },
     {
       "path": "term_groq_detail.term_groq_model",
@@ -3629,10 +4032,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務：文字輸入",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-groq-model"
+      "flag": "term-groq-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_groq_detail.term_groq_api_key",
@@ -3647,10 +4052,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "術語所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-groq-api-key"
+      "flag": "term-groq-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_groq_detail.term_groq_enable_json_mode",
@@ -3665,10 +4072,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-groq-enable-json-mode"
+      "flag": "term-groq-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "qwenmt",
@@ -3683,10 +4092,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "qwenmt"
+      "flag": "qwenmt",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "qwenmt_detail.qwenmt_model",
@@ -3701,10 +4112,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務：文字輸入",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "qwenmt-model"
+      "flag": "qwenmt-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "qwenmt_detail.qwenmt_base_url",
@@ -3719,10 +4132,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "qwenmt-base-url"
+      "flag": "qwenmt-base-url",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "qwenmt_detail.qwenmt_api_key",
@@ -3737,10 +4152,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "qwenmt-api-key"
+      "flag": "qwenmt-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "qwenmt_detail.ali_domains",
@@ -3755,10 +4172,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：文字輸入",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "ali-domains"
+      "flag": "ali-domains",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "openaicompatible",
@@ -3773,10 +4192,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "openaicompatible"
+      "flag": "openaicompatible",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "openaicompatible_detail.openai_compatible_model",
@@ -3791,10 +4212,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務：文字輸入",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "openai-compatible-model"
+      "flag": "openai-compatible-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "openaicompatible_detail.openai_compatible_base_url",
@@ -3809,10 +4232,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "openai-compatible-base-url"
+      "flag": "openai-compatible-base-url",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "openaicompatible_detail.openai_compatible_api_key",
@@ -3827,10 +4252,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "openai-compatible-api-key"
+      "flag": "openai-compatible-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "openaicompatible_detail.openai_compatible_timeout",
@@ -3845,10 +4272,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：文字輸入",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "openai-compatible-timeout"
+      "flag": "openai-compatible-timeout",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "openaicompatible_detail.openai_compatible_temperature",
@@ -3863,10 +4292,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：文字輸入；受對應開關控制顯示",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "openai-compatible-temperature"
+      "flag": "openai-compatible-temperature",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "openaicompatible_detail.openai_compatible_reasoning_effort",
@@ -3881,10 +4312,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：文字輸入；受對應開關控制顯示",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "openai-compatible-reasoning-effort"
+      "flag": "openai-compatible-reasoning-effort",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "openaicompatible_detail.openai_compatible_send_temperature",
@@ -3899,10 +4332,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "openai-compatible-send-temperature"
+      "flag": "openai-compatible-send-temperature",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "openaicompatible_detail.openai_compatible_send_reasoning_effort",
@@ -3917,10 +4352,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "openai-compatible-send-reasoning-effort"
+      "flag": "openai-compatible-send-reasoning-effort",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "openaicompatible_detail.openai_compatible_enable_json_mode",
@@ -3935,10 +4372,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "openai-compatible-enable-json-mode"
+      "flag": "openai-compatible-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_openaicompatible",
@@ -3953,10 +4392,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "術語引擎下拉（或跟隨正文）",
-      "current_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_gui": "術語引擎下拉：跟隨正文或已啟用且支援 LLM 的服務",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-openaicompatible"
+      "flag": "term-openaicompatible",
+      "baseline_rust_gui": "基準：術語引擎下拉（或與正文相同）",
+      "current_rust_advanced": false
     },
     {
       "path": "term_openaicompatible_detail.term_openai_compatible_model",
@@ -3971,10 +4412,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務：文字輸入",
       "nullable": false,
       "scope": "術語引擎",
-      "flag": "term-openai-compatible-model"
+      "flag": "term-openai-compatible-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_openaicompatible_detail.term_openai_compatible_base_url",
@@ -3989,10 +4432,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "術語所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-openai-compatible-base-url"
+      "flag": "term-openai-compatible-base-url",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_openaicompatible_detail.term_openai_compatible_api_key",
@@ -4007,10 +4452,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的遮罩密碼輸入；敏感輸入關閉時隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "術語所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-openai-compatible-api-key"
+      "flag": "term-openai-compatible-api-key",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "term_openaicompatible_detail.term_openai_compatible_timeout",
@@ -4025,10 +4472,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：文字輸入",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-openai-compatible-timeout"
+      "flag": "term-openai-compatible-timeout",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_openaicompatible_detail.term_openai_compatible_temperature",
@@ -4043,10 +4492,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：文字輸入；受對應開關控制顯示",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-openai-compatible-temperature"
+      "flag": "term-openai-compatible-temperature",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_openaicompatible_detail.term_openai_compatible_reasoning_effort",
@@ -4061,10 +4512,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：文字輸入；受對應開關控制顯示",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-openai-compatible-reasoning-effort"
+      "flag": "term-openai-compatible-reasoning-effort",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_openaicompatible_detail.term_openai_compatible_send_temperature",
@@ -4079,10 +4532,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-openai-compatible-send-temperature"
+      "flag": "term-openai-compatible-send-temperature",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_openaicompatible_detail.term_openai_compatible_send_reasoning_effort",
@@ -4097,10 +4552,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-openai-compatible-send-reasoning-effort"
+      "flag": "term-openai-compatible-send-reasoning-effort",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "term_openaicompatible_detail.term_openai_compatible_enable_json_mode",
@@ -4115,10 +4572,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的勾選框",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：三態下拉（未設定／啟用／停用）",
       "nullable": true,
       "scope": "術語引擎",
-      "flag": "term-openai-compatible-enable-json-mode"
+      "flag": "term-openai-compatible-enable-json-mode",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；勾選框",
+      "current_rust_advanced": true
     },
     {
       "path": "claudecode",
@@ -4133,10 +4592,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "claudecode"
+      "flag": "claudecode",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "claudecode_detail.claude_code_path",
@@ -4151,10 +4612,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：文字輸入與路徑選擇器",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "claude-code-path"
+      "flag": "claude-code-path",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "claudecode_detail.claude_code_model",
@@ -4169,10 +4632,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務：文字輸入",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "claude-code-model"
+      "flag": "claude-code-model",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "clitranslator",
@@ -4187,10 +4652,12 @@
       "advanced": "否（官方 GUI 主要控制項，或非可編輯設定）",
       "secret": false,
       "official_gui": "翻譯服務下拉",
-      "current_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_gui": "正文引擎下拉：已啟用服務；已選服務停用時提示",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "clitranslator"
+      "flag": "clitranslator",
+      "baseline_rust_gui": "基準：翻譯服務下拉",
+      "current_rust_advanced": false
     },
     {
       "path": "clitranslator_detail.clitranslator_command",
@@ -4205,10 +4672,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入；可由停用敏感輸入設定禁止編輯",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "clitranslator-command"
+      "flag": "clitranslator-command",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     },
     {
       "path": "clitranslator_detail.clitranslator_timeout",
@@ -4223,10 +4692,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：文字輸入與數值微調器",
       "nullable": false,
       "scope": "正文／一般",
-      "flag": "clitranslator-timeout"
+      "flag": "clitranslator-timeout",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；文字框",
+      "current_rust_advanced": true
     },
     {
       "path": "clitranslator_detail.clitranslator_postprocess_command",
@@ -4241,10 +4712,12 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": true,
       "official_gui": "所選服務條件顯示的文字輸入；敏感欄位可能依設定隱藏",
-      "current_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_gui": "正文所選服務：遮罩文字輸入（多行）；可由停用敏感輸入設定禁止編輯",
       "nullable": true,
       "scope": "正文／一般",
-      "flag": "clitranslator-postprocess-command"
+      "flag": "clitranslator-postprocess-command",
+      "baseline_rust_gui": "基準：所選服務欄位及「所有設定」；遮罩文字框",
+      "current_rust_advanced": false
     }
   ]
 }

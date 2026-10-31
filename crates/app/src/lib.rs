@@ -4,7 +4,11 @@
 mod app;
 mod background;
 mod dialogs;
+mod languages;
 mod model;
+mod settings_ui;
+mod strings;
+mod transfers;
 #[cfg(windows)]
 mod windows_launch;
 

@@ -1,7 +1,7 @@
 use std::{path::PathBuf, sync::Arc, time::Duration};
 
 use eframe::egui::{self, Align, Color32, Layout, RichText, Vec2};
-use pdf2zh_config::{EngineSpec, FieldSpec, FieldType, engine_specs, field_specs};
+use pdf2zh_config::{EngineSpec, FieldSpec, engine_specs, field_specs};
 use pdf2zh_pdf_preview::{
     PreviewErrorKind, PreviewRenderer, PreviewRequest, PreviewResult, PreviewTicket,
 };
@@ -30,6 +30,10 @@ pub(crate) struct NativeApp {
     original_file: usize,
     kind: DocumentKind,
     submitting: bool,
+    save_revision: u64,
+    url: String,
+    download_cancel: Option<tokio_util::sync::CancellationToken>,
+    exporting: bool,
     saving: bool,
     notice: Option<String>,
     error: Option<String>,
@@ -70,7 +74,7 @@ impl NativeApp {
             .gui()
             .ok()
             .and_then(|gui| gui.ui_lang)
-            .is_some_and(|language| language.starts_with("zh"));
+            .is_none_or(|language| !language.starts_with("en"));
         context.egui_ctx.set_visuals(egui::Visuals::light());
         let mut style = (*context.egui_ctx.style_of(egui::Theme::Light)).clone();
         style.spacing.item_spacing = Vec2::new(9.0, 8.0);
@@ -109,6 +113,10 @@ impl NativeApp {
             original_file: 0,
             kind: DocumentKind::Original,
             submitting: false,
+            save_revision: 0,
+            url: String::new(),
+            download_cancel: None,
+            exporting: false,
             saving: false,
             notice: None,
             error: None,
@@ -128,11 +136,14 @@ impl NativeApp {
             fit_to_page: true,
         }
     }
-    fn text(&self, chinese: &'static str, english: &'static str) -> &'static str {
-        if self.chinese { chinese } else { english }
+    fn text(&self, key: &'static str) -> &'static str {
+        crate::strings::ui(key, self.chinese)
     }
     fn fail(&mut self, error: impl std::fmt::Display) {
-        self.error = Some(error.to_string());
+        self.error = Some(crate::strings::friendly_error(
+            &error.to_string(),
+            self.chinese,
+        ));
         self.notice = None;
     }
     fn command(&mut self, command: Command) -> bool {
@@ -170,19 +181,24 @@ impl NativeApp {
                     });
                 }
                 Event::Saved(settings) => {
-                    self.editor.saved(settings);
+                    let unchanged = self.editor.saved_at(settings, self.save_revision);
                     self.saving = false;
-                    self.notice = Some(self.text("設定已保存", "Settings saved").into());
+                    self.notice = Some(
+                        self.text(if unchanged {
+                            "Settings saved"
+                        } else {
+                            "Saved snapshot; newer edits remain unsaved"
+                        })
+                        .into(),
+                    );
                     self.error = None;
                 }
                 Event::Copied(path) => {
-                    self.notice = Some(format!(
-                        "{} {}",
-                        self.text("已另存為", "Saved to"),
-                        path.display()
-                    ))
+                    self.notice = Some(format!("{} {}", self.text("Saved to"), path.display()))
                 }
-                Event::Warning(message) => self.notice = Some(message.into()),
+                Event::Warning(message) => {
+                    self.notice = Some(crate::strings::friendly_error(message, self.chinese))
+                }
                 Event::SaveFailed => {
                     self.saving = false;
                     self.fail("Cannot save settings; check that the application settings folder is writable");
@@ -192,6 +208,41 @@ impl NativeApp {
                     self.fail(error);
                 }
                 Event::Failed(error) => self.fail(error),
+                Event::Reloaded(settings) => {
+                    self.saving = false;
+                    if self.editor.revision == self.save_revision {
+                        let files = self.editor.files.clone();
+                        self.editor = Editor::new(settings);
+                        self.editor.files = files;
+                        self.notice = Some(self.text("Settings reloaded").into());
+                        self.error = None;
+                    }
+                }
+                Event::ReloadFailed => {
+                    self.saving = false;
+                    self.fail("Cannot reload settings");
+                }
+                Event::Downloaded(path) => {
+                    self.download_cancel = None;
+                    if let Err(error) = self.editor.add_files([path]) {
+                        self.fail(error);
+                    } else {
+                        self.notice = Some(self.text("PDF download complete").into());
+                        self.url.clear();
+                    }
+                }
+                Event::DownloadFailed(error) => {
+                    self.download_cancel = None;
+                    self.fail(error);
+                }
+                Event::Exported(path) => {
+                    self.exporting = false;
+                    self.notice = Some(format!("{} {}", self.text("Saved to"), path.display()));
+                }
+                Event::ExportFailed(error) => {
+                    self.exporting = false;
+                    self.fail(error);
+                }
             }
         }
         for batch in &mut self.batches {
@@ -203,6 +254,8 @@ impl NativeApp {
             .any(|batch| !batch.snapshot.status.is_terminal())
             || self.submitting
             || self.saving
+            || self.download_cancel.is_some()
+            || self.exporting
         {
             context.request_repaint_after(Duration::from_millis(150));
         }
@@ -271,6 +324,7 @@ impl NativeApp {
     fn save(&mut self) {
         match self.editor.snapshot(false) {
             Ok(settings) => {
+                self.save_revision = self.editor.revision;
                 if self.command(Command::Save(settings)) {
                     self.saving = true;
                 }
@@ -283,10 +337,8 @@ impl NativeApp {
             ui.vertical(|ui| {
                 ui.heading("PDFMathTranslate");
                 ui.label(
-                    RichText::new(
-                        self.text("保留版面的 PDF 翻譯", "Translate PDFs, keep the layout"),
-                    )
-                    .color(Color32::from_gray(95)),
+                    RichText::new(self.text("Translate PDFs, keep the layout"))
+                        .color(Color32::from_gray(95)),
                 );
             });
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
@@ -297,26 +349,39 @@ impl NativeApp {
                 };
                 if ui.small_button(language).clicked() {
                     self.chinese = !self.chinese;
-                    self.edit(
-                        "gui_settings.ui_lang",
-                        json!(if self.chinese { "zh-TW" } else { "en" }),
-                    );
+                    self.edit("gui_settings.ui_lang", json!(self.text("en")));
                 }
                 if ui
-                    .add_enabled(
-                        !self.saving,
-                        egui::Button::new(self.text("保存設定", "Save settings")),
-                    )
+                    .add_enabled(!self.saving, egui::Button::new(self.text("Save settings")))
                     .clicked()
                 {
                     self.save();
                 }
-                let can_submit = !self.submitting && !self.saving && !self.editor.files.is_empty();
+                if ui
+                    .add_enabled(
+                        !self.saving && !self.editor.dirty,
+                        egui::Button::new(self.text("Reload settings")),
+                    )
+                    .on_hover_text(self.text("Save edits before reloading"))
+                    .clicked()
+                {
+                    self.save_revision = self.editor.revision;
+                    if self.command(Command::Reload) {
+                        self.saving = true;
+                    }
+                }
+                let can_submit = !self.submitting
+                    && !self.saving
+                    && self.download_cancel.is_none()
+                    && !self.editor.files.is_empty()
+                    && self
+                        .editor
+                        .engine_enabled(self.editor.settings.main_engine());
                 if ui
                     .add_enabled(
                         can_submit,
                         egui::Button::new(
-                            RichText::new(self.text("開始翻譯", "Translate")).color(Color32::WHITE),
+                            RichText::new(self.text("Translate")).color(Color32::WHITE),
                         )
                         .fill(Color32::from_rgb(33, 102, 183))
                         .stroke(egui::Stroke::NONE),
@@ -327,7 +392,7 @@ impl NativeApp {
                 }
                 if self.editor.dirty {
                     ui.label(
-                        RichText::new(self.text("尚未保存", "Unsaved changes"))
+                        RichText::new(self.text("Unsaved changes"))
                             .small()
                             .color(Color32::from_gray(100)),
                     );
@@ -343,7 +408,7 @@ impl NativeApp {
                 .show(ui, |ui| {
                     ui.horizontal_wrapped(|ui| {
                         ui.colored_label(Color32::from_rgb(160, 38, 38), message);
-                        if ui.small_button(self.text("關閉", "Dismiss")).clicked() {
+                        if ui.small_button(self.text("Dismiss")).clicked() {
                             self.error = None;
                         }
                     });
@@ -360,9 +425,9 @@ impl NativeApp {
     }
     fn files(&mut self, ui: &mut egui::Ui, frame: &eframe::Frame) {
         ui.horizontal(|ui| {
-            ui.strong(self.text("PDF 文件", "PDF documents"));
+            ui.strong(self.text("PDF documents"));
             ui.label(format!("({})", self.editor.files.len()));
-            if ui.button(self.text("加入…", "Add…")).clicked()
+            if ui.button(self.text("Add…")).clicked()
                 && let Some(paths) = dialogs::pdfs(frame)
                 && let Err(error) = self.editor.add_files(paths)
             {
@@ -374,13 +439,11 @@ impl NativeApp {
                 .stroke(egui::Stroke::new(1.0, Color32::from_gray(200)))
                 .inner_margin(16.0)
                 .show(ui, |ui| {
-                    ui.label(self.text(
-                        "將 PDF 拖放到這裡，或按「加入」",
-                        "Drop PDFs here, or choose Add",
-                    ));
+                    ui.label(self.text("Drop PDFs here, or choose Add"));
                 });
         }
         let mut remove = None;
+        let remove_label = self.text("Remove");
         egui::ScrollArea::vertical()
             .id_salt("input-documents")
             .max_height(145.0)
@@ -400,11 +463,7 @@ impl NativeApp {
                             self.selected_batch = None;
                             self.kind = DocumentKind::Original;
                         }
-                        if ui
-                            .small_button("×")
-                            .on_hover_text(if self.chinese { "移除" } else { "Remove" })
-                            .clicked()
-                        {
+                        if ui.small_button("×").on_hover_text(remove_label).clicked() {
                             remove = Some(index);
                         }
                     });
@@ -417,7 +476,7 @@ impl NativeApp {
                 .min(self.editor.files.len().saturating_sub(1));
         }
     }
-    fn engine(&mut self, ui: &mut egui::Ui, term: bool) {
+    fn engine(&mut self, ui: &mut egui::Ui, frame: &eframe::Frame, term: bool) {
         let current = if term {
             self.editor.explicit_term_engine()
         } else {
@@ -425,7 +484,7 @@ impl NativeApp {
         };
         let selected = current.map(|engine| engine.flag.clone());
         let label = current.map_or_else(
-            || self.text("與正文相同", "Same as document").to_string(),
+            || self.text("Same as document").to_string(),
             |engine| engine.name.clone(),
         );
         let mut next = selected.clone();
@@ -434,16 +493,11 @@ impl NativeApp {
             .width(ui.available_width())
             .show_ui(ui, |ui| {
                 if term {
-                    ui.selectable_value(
-                        &mut next,
-                        None,
-                        self.text("與正文相同", "Same as document"),
-                    );
+                    ui.selectable_value(&mut next, None, self.text("Same as document"));
                 }
-                for engine in engine_specs()
-                    .iter()
-                    .filter(|engine| !term || engine.supports_llm)
-                {
+                for engine in engine_specs().iter().filter(|engine| {
+                    (!term || engine.supports_llm) && self.editor.engine_enabled(engine)
+                }) {
                     ui.selectable_value(&mut next, Some(engine.flag.clone()), &engine.name);
                 }
             });
@@ -452,16 +506,28 @@ impl NativeApp {
         {
             self.fail(error);
         }
+        if current.is_some_and(|engine| !self.editor.engine_enabled(engine)) {
+            ui.colored_label(
+                Color32::from_rgb(160, 38, 38),
+                self.text("The selected service is disabled"),
+            );
+        }
         let engine = if term {
             self.editor.explicit_term_engine()
         } else {
             Some(self.editor.settings.main_engine())
         };
         if let Some(engine) = engine {
-            self.engine_fields(ui, engine, term);
+            self.engine_fields(ui, frame, engine, term);
         }
     }
-    fn engine_fields(&mut self, ui: &mut egui::Ui, engine: &EngineSpec, term: bool) {
+    fn engine_fields(
+        &mut self,
+        ui: &mut egui::Ui,
+        frame: &eframe::Frame,
+        engine: &EngineSpec,
+        term: bool,
+    ) {
         let Some(detail) = &engine.detail_key else {
             return;
         };
@@ -477,229 +543,345 @@ impl NativeApp {
         let mut advanced = Vec::new();
         for spec in specs {
             let leaf = spec.path.rsplit('.').next().unwrap_or_default();
-            if leaf.ends_with("_model")
+            if !crate::settings_ui::advanced(spec)
                 || spec.secret
                 || leaf.ends_with("_base_url")
                 || leaf.ends_with("_endpoint")
                 || leaf.ends_with("_host")
                 || leaf.ends_with("_api_url")
             {
-                self.field(ui, spec, None);
+                self.field(ui, frame, spec, None);
             } else {
                 advanced.push(spec);
             }
         }
         if !advanced.is_empty() {
-            egui::CollapsingHeader::new(self.text("服務選項", "Service options"))
+            egui::CollapsingHeader::new(self.text("Service options"))
                 .id_salt(("service-options", term))
                 .show(ui, |ui| {
                     for spec in advanced {
-                        self.field(ui, spec, None);
+                        self.field(ui, frame, spec, None);
                     }
                 });
         }
     }
-    fn field(&mut self, ui: &mut egui::Ui, spec: &FieldSpec, label: Option<&str>) {
-        let disabled = spec.secret
-            && self
-                .editor
-                .settings
-                .gui()
-                .is_ok_and(|gui| gui.disable_gui_sensitive_input);
-        let label = label.unwrap_or(&spec.flag);
-        ui.push_id(&spec.path, |ui| {
-            ui.add_enabled_ui(!disabled, |ui| {
-                if spec.kind == FieldType::Bool {
-                    let mut checked = self
-                        .editor
-                        .settings
-                        .get(&spec.path)
-                        .and_then(Value::as_bool)
-                        .unwrap_or(false);
-                    if ui
-                        .checkbox(&mut checked, label)
-                        .on_hover_text(&spec.help)
-                        .changed()
-                    {
-                        self.edit(&spec.path, json!(checked));
-                    }
-                } else {
-                    ui.label(label).on_hover_text(&spec.help);
-                    let multiline = spec.kind == FieldType::StringSet
-                        || spec.path.ends_with("custom_system_prompt");
-                    let buffer = self.editor.draft(spec);
-                    let edit = if multiline {
-                        egui::TextEdit::multiline(buffer).desired_rows(2)
-                    } else {
-                        egui::TextEdit::singleline(buffer)
-                    };
-                    let response = ui.add(edit.password(spec.secret).desired_width(f32::INFINITY));
-                    if response.changed() {
-                        self.editor.dirty = true;
-                    }
-                    if disabled {
-                        ui.small(if self.chinese {
-                            "此設定禁止在介面中編輯敏感資料"
-                        } else {
-                            "Sensitive fields are disabled by settings"
-                        });
-                    }
-                }
-            });
-        });
+    fn field(
+        &mut self,
+        ui: &mut egui::Ui,
+        frame: &eframe::Frame,
+        spec: &FieldSpec,
+        label: Option<&str>,
+    ) {
+        if !crate::settings_ui::visible(&self.editor, spec) {
+            return;
+        }
+        if let Err(error) =
+            crate::settings_ui::field(ui, &mut self.editor, spec, label, self.chinese, frame)
+        {
+            self.fail(error);
+        }
     }
-    fn field_path(&mut self, ui: &mut egui::Ui, path: &str, label: Option<&str>) {
+    fn field_path(
+        &mut self,
+        ui: &mut egui::Ui,
+        frame: &eframe::Frame,
+        path: &str,
+        label: Option<&str>,
+    ) {
         if let Some(spec) = field_specs().iter().find(|spec| spec.path == path) {
-            self.field(ui, spec, label);
+            self.field(ui, frame, spec, label);
         }
     }
     fn settings_panel(&mut self, ui: &mut egui::Ui, frame: &eframe::Frame) {
         self.files(ui, frame);
+        self.url_input(ui);
         ui.separator();
-        ui.strong(self.text("翻譯服務", "Translation service"));
-        self.engine(ui, false);
+        ui.strong(self.text("Translation service"));
+        self.engine(ui, frame, false);
+        egui::CollapsingHeader::new(self.text("Manage services"))
+            .id_salt("enabled-services")
+            .show(ui, |ui| {
+                ui.small(self.text("Disabled services keep their saved settings"));
+                if ui.small_button(self.text("All services")).clicked() {
+                    self.edit("gui_settings.enabled_services", Value::Null);
+                }
+                for engine in engine_specs() {
+                    let mut enabled = self.editor.engine_enabled(engine);
+                    if ui.checkbox(&mut enabled, &engine.name).changed()
+                        && let Err(error) = self.editor.toggle_service(engine, enabled)
+                    {
+                        self.fail(error);
+                    }
+                }
+            });
+        ui.separator();
+        self.language(ui, "translation.lang_in", true);
         ui.horizontal(|ui| {
-            let width = (ui.available_width() - 12.0) / 2.0;
-            ui.allocate_ui_with_layout(Vec2::new(width, 0.0), Layout::top_down(Align::Min), |ui| {
-                self.field_path(
-                    ui,
-                    "translation.lang_in",
-                    Some(if self.chinese {
-                        "原文語言"
-                    } else {
-                        "From language"
-                    }),
-                )
-            });
-            ui.allocate_ui_with_layout(Vec2::new(width, 0.0), Layout::top_down(Align::Min), |ui| {
-                self.field_path(
-                    ui,
-                    "translation.lang_out",
-                    Some(if self.chinese {
-                        "譯文語言"
-                    } else {
-                        "To language"
-                    }),
-                )
-            });
+            if ui
+                .button("⇄")
+                .on_hover_text(self.text("Swap languages"))
+                .clicked()
+                && let Err(error) = self.editor.swap_languages()
+            {
+                self.fail(error);
+            }
+            ui.small(self.text("Options depend on the selected service"));
         });
-        egui::CollapsingHeader::new(self.text("輸出與術語", "Output and terminology"))
+        self.language(ui, "translation.lang_out", false);
+        egui::CollapsingHeader::new(self.text("Output and terminology"))
             .default_open(true)
             .show(ui, |ui| {
-                ui.horizontal(|ui| {
-                    let label = self.text("輸出資料夾", "Output folder");
-                    ui.label(label);
-                    if ui.small_button("…").clicked()
-                        && let Some(path) = dialogs::folder(frame)
-                    {
-                        self.edit("translation.output", json!(path.to_string_lossy()));
+                self.field_path(
+                    ui,
+                    frame,
+                    "translation.output",
+                    Some(self.text("Output folder")),
+                );
+                self.output_choice(ui, "pdf.no_mono", self.text("Translated PDF"));
+                self.output_choice(ui, "pdf.no_dual", self.text("Bilingual PDF"));
+                ui.label(self.text("Page selection"));
+                ui.horizontal_wrapped(|ui| {
+                    for (name, pages) in [
+                        ("All pages", None),
+                        ("First page", Some("1")),
+                        ("First five pages", Some("1-5")),
+                    ] {
+                        if ui.small_button(self.text(name)).clicked() {
+                            self.edit("pdf.pages", json!(pages));
+                        }
                     }
                 });
-                self.field_path(
-                    ui,
-                    "translation.output",
-                    Some(self.text(
-                        "留空使用原文件資料夾",
-                        "Leave empty to use the source folder",
-                    )),
-                );
-                self.output_choice(ui, "pdf.no_mono", self.text("譯文 PDF", "Translated PDF"));
-                self.output_choice(ui, "pdf.no_dual", self.text("雙語 PDF", "Bilingual PDF"));
-                self.field_path(
-                    ui,
-                    "pdf.pages",
-                    Some(self.text(
-                        "頁碼（例如 1-3,5；留空為全部）",
-                        "Pages (e.g. 1-3,5; empty for all)",
-                    )),
-                );
+                self.field_path(ui, frame, "pdf.pages", Some(self.text("Custom pages")));
+                ui.small(self.text("Page ranges help"));
+                if let Some(draft) = self.editor.drafts.get("pdf.pages") {
+                    let mut probe = self.editor.settings.clone();
+                    if probe.set("pdf.pages", json!(draft)).is_err() || probe.parse_pages().is_err()
+                    {
+                        ui.colored_label(
+                            Color32::from_rgb(160, 38, 38),
+                            self.text("Invalid page selection"),
+                        );
+                    }
+                }
                 ui.horizontal(|ui| {
-                    ui.label(self.text("術語表 CSV", "Glossary CSV"));
+                    ui.label(self.text("Glossary CSV"));
                     if ui.small_button("…").clicked()
                         && let Some(path) = dialogs::glossary(frame)
                     {
                         self.edit("translation.glossaries", json!(path.to_string_lossy()));
                     }
                 });
+                let llm = self.editor.settings.main_engine().supports_llm;
                 self.field_path(
                     ui,
+                    frame,
                     "translation.glossaries",
-                    Some(self.text("多份以逗號分隔", "Separate multiple files with commas")),
+                    Some(self.text("Separate multiple files with commas")),
                 );
-                self.output_choice(
-                    ui,
-                    "translation.no_auto_extract_glossary",
-                    self.text("自動擷取術語", "Extract terminology automatically"),
-                );
-                self.field_path(
-                    ui,
-                    "translation.save_auto_extracted_glossary",
-                    Some(self.text("保存擷取的術語表", "Save extracted glossary")),
-                );
-                egui::CollapsingHeader::new(self.text("術語翻譯服務", "Terminology service")).show(
-                    ui,
-                    |ui| {
-                        self.engine(ui, true);
-                        self.field_path(
+                if !llm {
+                    ui.small(self.text("Glossaries require an LLM service"));
+                }
+                egui::CollapsingHeader::new(self.text("Terminology service")).show(ui, |ui| {
+                    self.engine(ui, frame, true);
+                    let available = self.editor.settings.term_engine().is_some();
+                    ui.add_enabled_ui(available, |ui| {
+                        self.output_choice(
                             ui,
-                            "translation.term_qps",
-                            Some(self.text("術語每秒請求數", "Terminology requests per second")),
+                            "translation.no_auto_extract_glossary",
+                            self.text("Extract terminology automatically"),
                         );
-                        self.field_path(
-                            ui,
-                            "translation.term_pool_max_workers",
-                            Some(self.text("術語同時請求數", "Concurrent terminology requests")),
-                        );
-                    },
-                );
+                        let active = self
+                            .editor
+                            .settings
+                            .translation()
+                            .is_ok_and(|translation| !translation.no_auto_extract_glossary);
+                        ui.add_enabled_ui(active, |ui| {
+                            self.field_path(
+                                ui,
+                                frame,
+                                "translation.save_auto_extracted_glossary",
+                                None,
+                            );
+                            self.field_path(ui, frame, "translation.term_qps", None);
+                            self.field_path(ui, frame, "translation.term_pool_max_workers", None);
+                        });
+                    });
+                    if !available {
+                        ui.small(self.text("Terminology requires an LLM service"));
+                    }
+                    ui.small(self.text("Terminology limits help"));
+                });
             });
-        egui::CollapsingHeader::new(self.text("速度與版面", "Speed and layout")).show(ui, |ui| {
-            self.field_path(
-                ui,
-                "translation.qps",
-                Some(self.text("每秒請求數", "Requests per second")),
-            );
-            self.field_path(
-                ui,
-                "translation.pool_max_workers",
-                Some(self.text(
-                    "同時請求數（留空為自動）",
-                    "Concurrent requests (empty for automatic)",
-                )),
-            );
-            for (path, zh, en) in [
-                (
-                    "translation.ignore_cache",
-                    "略過翻譯快取",
-                    "Ignore translation cache",
-                ),
-                (
-                    "pdf.use_alternating_pages_dual",
-                    "雙語 PDF 交錯頁面",
-                    "Alternate original and translated pages",
-                ),
-                ("pdf.dual_translate_first", "譯文在前", "Translation first"),
-                (
-                    "pdf.translate_table_text",
-                    "翻譯表格文字",
-                    "Translate table text",
-                ),
-                ("pdf.ocr_workaround", "使用 OCR", "Use OCR"),
-                (
-                    "pdf.auto_enable_ocr_workaround",
-                    "自動偵測 OCR",
-                    "Detect when OCR is needed",
-                ),
-            ] {
-                self.field_path(ui, path, Some(self.text(zh, en)));
+        egui::CollapsingHeader::new(self.text("Performance and rate limits")).show(ui, |ui| {
+            self.field_path(ui, frame, "translation.qps", None);
+            self.field_path(ui, frame, "translation.pool_max_workers", None);
+            self.field_path(ui, frame, "translation.ignore_cache", None);
+        });
+        let common = [
+            "translation.lang_in",
+            "translation.lang_out",
+            "translation.output",
+            "pdf.pages",
+            "pdf.no_mono",
+            "pdf.no_dual",
+            "translation.glossaries",
+            "translation.no_auto_extract_glossary",
+            "translation.save_auto_extracted_glossary",
+            "translation.term_qps",
+            "translation.term_pool_max_workers",
+            "translation.qps",
+            "translation.pool_max_workers",
+            "translation.ignore_cache",
+            "gui_settings.enabled_services",
+            "basic.input_files",
+            "basic.gui",
+            "basic.version",
+            "basic.warmup",
+            "basic.generate_offline_assets",
+            "basic.restore_offline_assets",
+            "gui_settings.share",
+            "gui_settings.auth_file",
+            "gui_settings.welcome_page",
+            "gui_settings.server_port",
+            "gui_settings.server_name",
+        ];
+        egui::CollapsingHeader::new(self.text("Advanced options")).show(ui, |ui| {
+            ui.small(self.text("Settings are written only when you choose Save settings. Unknown settings are preserved."));
+            let hint = self.text("Find a setting");
+            ui.add(egui::TextEdit::singleline(&mut self.search).hint_text(hint).desired_width(f32::INFINITY));
+            let search = self.search.to_lowercase();
+            let flags: Vec<_> = engine_specs().iter().flat_map(|engine| [engine.flag.clone(), format!("term_{}", engine.flag)]).collect();
+            for group in ["Basic translation settings", "PDF processing", "Other advanced settings"] {
+                egui::CollapsingHeader::new(self.text(group)).show(ui, |ui| {
+                    for spec in field_specs().iter().filter(|spec| !common.contains(&spec.path.as_str()) && !flags.contains(&spec.path) && !spec.path.contains("_detail.") && crate::settings_ui::group(spec) == group) {
+                        let label = crate::strings::field_label(spec, self.chinese);
+                        if search.is_empty() || spec.path.to_lowercase().contains(&search) || label.to_lowercase().contains(&search) {
+                            self.field(ui, frame, spec, None);
+                        }
+                    }
+                });
             }
         });
-        egui::CollapsingHeader::new(self.text("所有設定", "All settings")).show(ui,|ui| {
-            ui.label(self.text("明確按「保存設定」才會寫入。未識別的舊設定會保留。", "Settings are written only when you choose Save settings. Unknown settings are preserved."));
-            ui.add(egui::TextEdit::singleline(&mut self.search).hint_text(if self.chinese {"搜尋設定"}else{"Find a setting"}).desired_width(f32::INFINITY));
-            let search=self.search.to_lowercase();
-            let engine_flags:Vec<_>=engine_specs().iter().flat_map(|engine|[engine.flag.clone(),format!("term_{}",engine.flag)]).collect();
-            for spec in field_specs().iter().filter(|spec|spec.path!="basic.input_files"&&!engine_flags.contains(&spec.path)).filter(|spec|search.is_empty()||spec.path.to_lowercase().contains(&search)||spec.help.to_lowercase().contains(&search)) {self.field(ui,spec,None);}
+        // Even a hidden/inactive service cannot trap an invalid pending edit.
+        let invalid = self.editor.invalid_fields();
+        if !invalid.is_empty() {
+            egui::CollapsingHeader::new(self.text("Pending edits requiring attention"))
+                .default_open(true)
+                .show(ui, |ui| {
+                    for spec in invalid {
+                        ui.push_id(("invalid-field", &spec.path), |ui| {
+                            if let Err(error) = crate::settings_ui::field(
+                                ui,
+                                &mut self.editor,
+                                spec,
+                                None,
+                                self.chinese,
+                                frame,
+                            ) {
+                                self.fail(error);
+                            }
+                        });
+                    }
+                });
+        }
+    }
+    fn language(&mut self, ui: &mut egui::Ui, path: &str, source: bool) {
+        ui.push_id(path, |ui| {
+            ui.label(self.text(if source {
+                "Input language"
+            } else {
+                "Output language"
+            }));
+            let current = self
+                .editor
+                .drafts
+                .get(path)
+                .cloned()
+                .or_else(|| {
+                    self.editor
+                        .settings
+                        .get(path)
+                        .and_then(Value::as_str)
+                        .map(str::to_owned)
+                })
+                .unwrap_or_default();
+            let mut selected = current.clone();
+            let engine = self.editor.settings.main_engine().name.clone();
+            egui::ComboBox::from_id_salt("language")
+                .selected_text(crate::languages::display(&current, self.chinese))
+                .width(ui.available_width())
+                .show_ui(ui, |ui| {
+                    for language in crate::languages::CATALOG.iter().filter(|language| {
+                        crate::languages::supported(&engine, language.code, source) != Some(false)
+                    }) {
+                        ui.selectable_value(
+                            &mut selected,
+                            language.code.to_owned(),
+                            crate::languages::display(language.code, self.chinese),
+                        );
+                    }
+                });
+            if selected != current {
+                self.edit(path, json!(selected));
+            }
+            egui::CollapsingHeader::new(self.text("Custom language code"))
+                .id_salt("custom-language")
+                .show(ui, |ui| {
+                    let spec = field_specs()
+                        .iter()
+                        .find(|spec| spec.path == path)
+                        .expect("language field");
+                    let changed = ui
+                        .add(
+                            egui::TextEdit::singleline(self.editor.draft(spec))
+                                .desired_width(f32::INFINITY),
+                        )
+                        .changed();
+                    if changed {
+                        self.editor.mark_dirty();
+                    }
+                });
+            if crate::languages::supported(&engine, &current, source) == Some(false) {
+                ui.colored_label(
+                    Color32::from_rgb(160, 38, 38),
+                    self.text("The selected service does not support this language"),
+                );
+            }
+        });
+    }
+    fn url_input(&mut self, ui: &mut egui::Ui) {
+        egui::CollapsingHeader::new(self.text("Download PDF URL")).show(ui, |ui| {
+            let hint = self.text("Enter a valid HTTP or HTTPS URL");
+            ui.add_enabled(
+                self.download_cancel.is_none(),
+                egui::TextEdit::singleline(&mut self.url)
+                    .hint_text(hint)
+                    .desired_width(f32::INFINITY),
+            );
+            if let Some(cancel) = &self.download_cancel {
+                ui.horizontal(|ui| {
+                    ui.spinner();
+                    if ui.button(self.text("Cancel download")).clicked() {
+                        cancel.cancel();
+                    }
+                });
+            } else if ui
+                .add_enabled(
+                    !self.url.trim().is_empty(),
+                    egui::Button::new(self.text("Download")),
+                )
+                .clicked()
+            {
+                let cancel = tokio_util::sync::CancellationToken::new();
+                if self.command(Command::Download {
+                    url: self.url.clone(),
+                    cancel: cancel.clone(),
+                }) {
+                    self.download_cancel = Some(cancel);
+                    self.error = None;
+                }
+            }
+            ui.small(self.text("Public PDF URL limits"));
         });
     }
     fn output_choice(&mut self, ui: &mut egui::Ui, path: &str, label: &str) {
@@ -715,20 +897,20 @@ impl NativeApp {
     }
     fn status_text(&self, status: TaskStatus) -> &'static str {
         match status {
-            TaskStatus::Queued => self.text("排隊中", "Queued"),
-            TaskStatus::Starting => self.text("準備中", "Preparing"),
-            TaskStatus::Running => self.text("翻譯中", "Translating"),
-            TaskStatus::Cancelling => self.text("正在取消並清理", "Cancelling and cleaning up"),
-            TaskStatus::Succeeded => self.text("已完成", "Complete"),
-            TaskStatus::Failed => self.text("失敗", "Failed"),
-            TaskStatus::Cancelled => self.text("已取消", "Cancelled"),
+            TaskStatus::Queued => self.text("Queued"),
+            TaskStatus::Starting => self.text("Preparing"),
+            TaskStatus::Running => self.text("Translating"),
+            TaskStatus::Cancelling => self.text("Cancelling and cleaning up"),
+            TaskStatus::Succeeded => self.text("Complete"),
+            TaskStatus::Failed => self.text("Failed"),
+            TaskStatus::Cancelled => self.text("Cancelled"),
         }
     }
-    fn task_panel(&mut self, ui: &mut egui::Ui) {
+    fn task_panel(&mut self, ui: &mut egui::Ui, frame: &eframe::Frame) {
         if self.submitting {
             ui.horizontal(|ui| {
                 ui.spinner();
-                ui.label(self.text("正在建立翻譯任務…", "Preparing translation…"));
+                ui.label(self.text("Preparing translation…"));
             });
         }
         if self.batches.is_empty() {
@@ -744,19 +926,12 @@ impl NativeApp {
                     self.status_text(batch.snapshot.status)
                 )
             })
-            .unwrap_or_else(|| self.text("選擇翻譯任務", "Choose a translation").into());
+            .unwrap_or_else(|| self.text("Choose a translation").into());
+        let source_documents = self.text("Source documents");
         egui::ComboBox::from_id_salt("batch")
             .selected_text(label)
             .show_ui(ui, |ui| {
-                ui.selectable_value(
-                    &mut self.selected_batch,
-                    None,
-                    if self.chinese {
-                        "原文件"
-                    } else {
-                        "Source documents"
-                    },
-                );
+                ui.selectable_value(&mut self.selected_batch, None, source_documents);
                 for (index, batch) in self.batches.iter().enumerate() {
                     let label = format!(
                         "#{} · {} · {} PDF",
@@ -785,13 +960,14 @@ impl NativeApp {
                 && ui
                     .add_enabled(
                         snapshot.status != TaskStatus::Cancelling,
-                        egui::Button::new(self.text("取消", "Cancel")),
+                        egui::Button::new(self.text("Cancel")),
                     )
                     .clicked()
             {
                 batch.handle.cancel();
             }
         });
+        self.export_batch(ui, frame, &snapshot);
         if let Some(fraction) = progress_fraction(&snapshot) {
             ui.add(
                 egui::ProgressBar::new(fraction)
@@ -807,10 +983,13 @@ impl NativeApp {
             .and_then(|event| event.get("stage"))
             .and_then(Value::as_str)
         {
-            ui.label(stage);
+            ui.label(crate::strings::stage(stage, self.chinese));
         }
         if let Some(failure) = &snapshot.failure {
-            ui.colored_label(Color32::from_rgb(160, 38, 38), &failure.message);
+            ui.colored_label(
+                Color32::from_rgb(160, 38, 38),
+                crate::strings::friendly_error(&failure.message, self.chinese),
+            );
         }
         self.selected_file = self.selected_file.min(inputs.len().saturating_sub(1));
         egui::ComboBox::from_id_salt("result-file")
@@ -856,30 +1035,66 @@ impl NativeApp {
             None
         }
     }
+    fn export_batch(&mut self, ui: &mut egui::Ui, frame: &eframe::Frame, snapshot: &TaskSnapshot) {
+        use crate::model::{ExportKind, batch_pdf_results};
+        ui.add_enabled_ui(
+            !self.exporting && snapshot.status == TaskStatus::Succeeded,
+            |ui| {
+                ui.menu_button(self.text("Export batch ZIP"), |ui| {
+                    for (name, kind) in [
+                        ("All PDF results", ExportKind::All),
+                        ("Mono PDF results", ExportKind::Mono),
+                        ("Dual PDF results", ExportKind::Dual),
+                    ] {
+                        let sources = batch_pdf_results(snapshot, kind);
+                        if ui
+                            .add_enabled(sources.is_ok(), egui::Button::new(self.text(name)))
+                            .clicked()
+                        {
+                            ui.close();
+                            if let Ok(sources) = sources
+                                && let Some(destination) = dialogs::save(
+                                    frame,
+                                    std::path::Path::new("translation-results.zip"),
+                                )
+                                && self.command(Command::ExportZip {
+                                    sources,
+                                    destination,
+                                })
+                            {
+                                self.exporting = true;
+                            }
+                        }
+                    }
+                });
+            },
+        );
+        if self.exporting {
+            ui.spinner();
+        }
+    }
     fn preview_panel(&mut self, ui: &mut egui::Ui, frame: &eframe::Frame) {
-        self.task_panel(ui);
+        self.task_panel(ui, frame);
         ui.separator();
         ui.horizontal_wrapped(|ui| {
-            for (kind, zh, en) in [
+            for (kind, _zh, en) in [
                 (DocumentKind::Original, "原文", "Original"),
                 (DocumentKind::Mono, "譯文", "Translated"),
                 (DocumentKind::Dual, "雙語", "Bilingual"),
             ] {
-                ui.selectable_value(&mut self.kind, kind, if self.chinese { zh } else { en });
+                let label = self.text(en);
+                ui.selectable_value(&mut self.kind, kind, label);
             }
             let path = self.selected_path().map(|(path, _)| path);
             if ui
-                .add_enabled(path.is_some(), egui::Button::new(self.text("開啟", "Open")))
+                .add_enabled(path.is_some(), egui::Button::new(self.text("Open")))
                 .clicked()
                 && let Some(path) = path.clone()
             {
                 self.command(Command::Open(path));
             }
             if ui
-                .add_enabled(
-                    path.is_some(),
-                    egui::Button::new(self.text("另存…", "Save as…")),
-                )
+                .add_enabled(path.is_some(), egui::Button::new(self.text("Save as…")))
                 .clicked()
                 && let Some(source) = path
                 && let Some(destination) = dialogs::save(frame, &source)
@@ -901,9 +1116,7 @@ impl NativeApp {
                     .filter(|path| !path.is_empty())
             {
                 let source = PathBuf::from(path);
-                if ui
-                    .button(self.text("保存術語表…", "Save glossary…"))
-                    .clicked()
+                if ui.button(self.text("Save glossary…")).clicked()
                     && let Some(destination) = dialogs::save(frame, &source)
                 {
                     self.command(Command::Copy {
@@ -922,7 +1135,7 @@ impl NativeApp {
                 self.page -= 1;
                 rerender = true;
             }
-            ui.label(self.text("頁", "Page"));
+            ui.label(self.text("Page"));
             rerender |= ui
                 .add(
                     egui::DragValue::new(&mut self.page)
@@ -941,10 +1154,11 @@ impl NativeApp {
                 rerender = true;
             }
             ui.separator();
+            let zoom_label = self.text("Zoom");
             let zoom_changed = ui
                 .add(
                     egui::Slider::new(&mut self.zoom, 0.5..=2.0)
-                        .text(if self.chinese { "縮放" } else { "Zoom" })
+                        .text(zoom_label)
                         .step_by(0.25),
                 )
                 .changed();
@@ -952,12 +1166,12 @@ impl NativeApp {
                 rerender = true;
                 self.fit_to_page = false;
             }
-            if ui.small_button(self.text("整頁", "Fit page")).clicked() {
+            if ui.small_button(self.text("Fit page")).clicked() {
                 self.fit_to_page = true;
                 self.zoom = 1.25;
                 rerender = true;
             }
-            if ui.small_button(self.text("重新載入", "Reload")).clicked() {
+            if ui.small_button(self.text("Reload")).clicked() {
                 rerender = true;
             }
         });
@@ -1015,9 +1229,9 @@ impl NativeApp {
                     let scale=if self.fit_to_page {((available.x-24.0)/size.x).min((available.y-24.0)/size.y).clamp(0.01,1.0)}else{1.0};
                     ui.add(egui::Image::new(texture).fit_to_exact_size(size*scale));
                 }
-                else if let Some(error)=&self.preview_error {ui.vertical_centered(|ui| {ui.add_space(40.0);ui.label(error);ui.label(self.text("仍可開啟或保存輸出文件。", "You can still open or save result files."));});}
-                else if self.preview_ticket.is_some()||self.preview_pending.is_some() {ui.horizontal(|ui| {ui.spinner();ui.label(self.text("正在載入預覽…", "Loading preview…"));});}
-                else {ui.vertical_centered(|ui| {ui.add_space(60.0);ui.heading(self.text("在這裡預覽 PDF", "Preview your PDF here"));ui.label(self.text("加入文件後可查看原文，完成翻譯後可切換譯文與雙語版。", "Add a document to preview the original. Switch to translated or bilingual output when it is ready."));});}
+                else if let Some(error)=&self.preview_error {ui.vertical_centered(|ui| {ui.add_space(40.0);ui.label(error);ui.label(self.text("You can still open or save result files."));});}
+                else if self.preview_ticket.is_some()||self.preview_pending.is_some() {ui.horizontal(|ui| {ui.spinner();ui.label(self.text("Loading preview…"));});}
+                else {ui.vertical_centered(|ui| {ui.add_space(60.0);ui.heading(self.text("Preview your PDF here"));ui.label(self.text("Add a document to preview the original. Switch to translated or bilingual output when it is ready."));});}
             });
         });
     }
@@ -1064,10 +1278,7 @@ impl eframe::App for NativeApp {
                 if closing {
                     ui.horizontal(|ui| {
                         ui.spinner();
-                        ui.label(self.text(
-                            "正在取消任務並安全關閉…",
-                            "Cancelling tasks and closing safely…",
-                        ));
+                        ui.label(self.text("Cancelling tasks and closing safely…"));
                     });
                 }
                 let height = ui.available_height();
@@ -1184,11 +1395,18 @@ mod tests {
             .find(|spec| spec.path == "openai_detail.openai_api_key")
             .unwrap();
         assert!(spec.secret);
-        let output = context.run_ui(input(), |ui| harness.app.field(ui, spec, None));
+        let output = context.run_ui(input(), |ui| {
+            harness
+                .app
+                .field(ui, &eframe::Frame::_new_kittest(), spec, None)
+        });
         let painted = format!("{:?}", output.shapes);
         output.drop_without_applying_deltas();
         assert!(!painted.contains(secret));
-        assert_eq!(harness.app.editor.drafts[&spec.path], secret);
+        assert_eq!(
+            harness.app.editor.settings.get(&spec.path),
+            Some(&json!(secret))
+        );
     }
     #[derive(Debug)]
     struct Dropped(PathBuf);

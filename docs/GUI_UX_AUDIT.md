@@ -1,16 +1,16 @@
 # GUI 與 BabelDOC 相容性稽核
 
-稽核基準為 `06ac7699a5d8254b87b1ba073e015ed62b28e307`，官方對照為 [PDFMathTranslate-next v2.9.0](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/tree/v2.9.0)（`f8dffcf`）。本文件的「基準」指該 commit，並非已完成之新介面的驗收結論。[GUI_SETTINGS.json](GUI_SETTINGS.json) 記錄嵌入 schema 的全部欄位；其中 GUI 控制項目前標示基準版，待新介面定稿後核對。來源判讀是靜態分析，未宣稱實際呼叫每家服務。
+稽核基準為 `06ac7699a5d8254b87b1ba073e015ed62b28e307`，官方對照為 [PDFMathTranslate-next v2.9.0](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/tree/v2.9.0)（`f8dffcf`）。本文件的「基準」指該 commit，並非已完成之新介面的驗收結論。[GUI_SETTINGS.json](GUI_SETTINGS.json) 記錄嵌入 schema 的全部欄位，分別保留基準與目前程式中的 GUI 控制項。來源判讀是靜態分析，未宣稱實際呼叫每家服務。官方 Windows 大型發行包未下載或執行，本次比較僅依 v2.9.0 原始碼，不是發行包實測。
 
-基準的 Rust workspace、Worker 35 項與 Builder 31 項測試已由主工作流程執行通過；既有 Release GUI 已啟動並可見原生視窗。Computer Use 操作授權等待逾時，介面逐項操作、翻譯和視覺驗收仍待完成。
+基準的 Rust workspace、Worker 35 項與 Builder 31 項測試已由主工作流程執行通過；既有 Release GUI 已啟動、截圖並完成介面語言切換。整合新介面後 `cargo test -p pdf2zh-app --locked` 45 項測試通過，包含 URL／ZIP 模組 16 項受控測試。Computer Use 起初授權等待逾時，後已恢復；新 Release 尚待建置，其逐項操作、實際公網下載、翻譯和完整 Release 視覺驗收仍待完成。
 
 ## 設定欄位
 
 `crates/config/src/schema_data.json` 有 **235 個不同 path**：Bool 100、String 120、Integer 10、Float 4、StringSet 1。這包含 24 個正文服務旗標、14 個術語服務旗標和輸入檔案欄位，不能描述為「235 個通用文字框」。基準版「所有設定」排除這 39 個欄位，靜態計算呈現 196 個欄位：62 個勾選框、134 個非布林文字框；部分常用欄位另在上方重複呈現。API、URL、指令等部分敏感欄位均依本地 `secret` 標記遮罩，這個標記不只表示密碼。
 
-JSON 每欄保留 path、型別、schema 預設值、本地驗證與官方 GUI 範圍、條件式必填、服務、進階分類、敏感標記及兩版 GUI 呈現。`nullable` 不等於是否必填；「未指定」表示未找到足夠證據，不能當成無限制。選用特定服務時的必填條件以 `crates/config/src/providers.rs` 為準。官方 GUI 的滑桿邊界與本地核心的有效範圍不一定相同，不能逕自把 GUI 邊界當成所有配置的有效範圍。
+JSON 每欄保留 path、型別、目前 schema 預設值、本地驗證與官方 GUI 範圍、條件式必填、服務、進階分類、敏感標記及兩版 GUI 呈現。`gui_settings.ui_lang` 基準預設為 `en`，目前預設為 `zh-TW`；已保存設定照常載入。`nullable` 不等於是否必填；「未指定」表示未找到足夠證據，不能當成無限制。選用特定服務時的必填條件以 `crates/config/src/providers.rs` 為準。官方 GUI 的滑桿邊界與本地核心的有效範圍不一定相同，不能逕自把 GUI 邊界當成所有配置的有效範圍。
 
-例如官方自訂 QPS 輸入顯示 1–1000，基準核心允許正的 `u32`；官方 pool workers 的 0 轉成自動，本地正文 `pool_max_workers` 顯式 0 則不通過驗證。官方的 `max_pages_per_part` GUI 輸入最小值是 0，而基準驗證接受空值、0 或至少 50。官方短行分割滑桿為 0.1–1.0，本地僅在該功能開啟時檢查最小 0.1。官方兩個圖表／非公式線閾值滑桿和本地驗證皆為 0–1。具體參見 [官方 GUI 原始碼](https://raw.githubusercontent.com/PDFMathTranslate-next/PDFMathTranslate-next/v2.9.0/pdf2zh_next/gui.py) 及本地 `crates/config/src/lib.rs`。
+例如官方自訂 QPS 輸入顯示 1–1000，基準核心允許正的 `u32`；官方 pool workers 的 0 轉成自動，本地正文 `pool_max_workers` 顯式 0 則不通過驗證。本地術語 `term_pool_max_workers` 接受 0 或空值：bridge 傳給 Worker 前將其轉為正文的執行緒數；服務提供的建議值可優先覆蓋該值。官方 GUI 的術語自訂 0 先轉為 `None`。若直接繞過 bridge 把 0 傳給 BabelDOC 0.6.3，則不會觸發其 `None` 預設處理；不能將該直接呼叫的行為誤認為本專案正常翻譯路徑。官方的 `max_pages_per_part` GUI 輸入最小值是 0，而基準驗證接受空值、0 或至少 50。官方短行分割滑桿為 0.1–1.0，本地僅在該功能開啟時檢查最小 0.1。官方兩個圖表／非公式線閾值滑桿和本地驗證皆為 0–1。具體參見 [官方 GUI 原始碼](https://raw.githubusercontent.com/PDFMathTranslate-next/PDFMathTranslate-next/v2.9.0/pdf2zh_next/gui.py)、本地 `crates/config/src/lib.rs` 與 `crates/babeldoc-bridge/src/lib.rs`。
 
 ## 官方 GUI 與基準桌面 GUI
 
@@ -22,6 +22,12 @@ JSON 每欄保留 path、型別、schema 預設值、本地驗證與官方 GUI �
 - **網址輸入與安全。** 官方有連結輸入，但其 `requests.get(..., timeout=10)` 的 GUI 呼叫未傳入可選大小限制；所查程式沒有內網／重新導向檢查，不能直接作為安全實作。基準版未見 URL 匯入；若加入，應檢查每次 DNS 解析與重導向、封鎖非公網目的地，限制大小和時間，驗證 PDF，並處理取消與暫存清理。這是本次需求的安全條件，非宣稱官方具備。
 - **繁體中文。** 基準版具中英文切換，部分固定標籤已翻譯，但通用欄位顯示 CLI flag 與英文 help，錯誤訊息亦不完全中文；預設設定 `gui_settings.ui_lang` 為 `en`。僅憑程式碼掃描不能宣稱所有畫面均已完成翻譯。
 - **資料更新。** 基準 `Editor::add_files` 在逐一驗證時即推入清單，後續檔案無效時可能留下先前加入的部分；設定 snapshot 在翻譯和儲存路徑的驗證範圍不同，需分別核對。這些是基準版觀察，新實作與測試結果須另行記錄。
+
+## 目前桌面實作與剩餘差異
+
+目前程式已整合官方語言清單、交換與自訂代碼，Qwen-MT／DeepL 採本地核心可證實的語言限制；其他服務的支援情況仍需由服務確認。`enabled_services` 控制正文與術語選單，管理區可重新啟用服務，停用不刪除各服務設定。欄位依服務、型別與條件顯示，包括可空布林的三態選擇、數值微調、DeepSeek 模式、短行分割及部分發送參數的相依條件。介面也提供頁面快捷、術語啟用狀態及限流提示、輸入整批驗證和設定儲存前驗證。上述為程式碼及受控測試的結果，尚不等同桌面互動驗收。
+
+網址下載限公開 HTTP／HTTPS、標準連接埠，檢查 DNS 和每次重新導向，限制為 100 MiB、總逾時 60 秒及最多五次重新導向，並檢查 PDF 和支援取消。成功批次可匯出全部、單語或雙語 PDF ZIP；官方另有術語 ZIP，目前桌面版保留單個術語檔另存，尚無術語 ZIP。新設定預設繁體中文，既有偏好設定保留；是否所有實際畫面、錯誤提示和流程均已妥善翻譯，仍需桌面操作驗證。
 
 ## BabelDOC 0.6.3 與 0.6.4
 

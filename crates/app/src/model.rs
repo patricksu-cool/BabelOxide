@@ -23,6 +23,7 @@ pub struct Editor {
     pub drafts: BTreeMap<String, String>,
     pub files: Vec<PathBuf>,
     pub dirty: bool,
+    pub revision: u64,
 }
 impl Editor {
     pub fn new(settings: Settings) -> Self {
@@ -35,10 +36,12 @@ impl Editor {
             drafts: BTreeMap::new(),
             files,
             dirty: false,
+            revision: 0,
         }
     }
     pub fn add_files(&mut self, paths: impl IntoIterator<Item = PathBuf>) -> Result<()> {
-        for path in paths {
+        let paths: Vec<_> = paths.into_iter().collect();
+        for path in &paths {
             ensure!(
                 path.extension()
                     .is_some_and(|extension| extension.eq_ignore_ascii_case("pdf")),
@@ -48,23 +51,47 @@ impl Editor {
                 path.to_str().is_some(),
                 "This filename cannot be represented in the settings file"
             );
+        }
+        let mut changed = false;
+        for path in paths {
             if !self.files.contains(&path) {
                 self.files.push(path);
-                self.dirty = true;
+                changed = true;
             }
         }
+        if changed {
+            self.mark_dirty();
+        }
         Ok(())
+    }
+    pub fn mark_dirty(&mut self) {
+        self.dirty = true;
+        self.revision = self.revision.wrapping_add(1);
+    }
+    pub fn invalid_fields(&self) -> Vec<&'static FieldSpec> {
+        field_specs()
+            .iter()
+            .filter(|spec| {
+                let stored = match self.settings.get(&spec.path) {
+                    Some(Value::String(value)) => value.clone(),
+                    None | Some(Value::Null) => String::new(),
+                    Some(value) => value.to_string(),
+                };
+                let text = self.drafts.get(&spec.path).unwrap_or(&stored);
+                crate::settings_ui::validate_draft(spec, text).is_err()
+            })
+            .collect()
     }
     pub fn remove_file(&mut self, index: usize) {
         if index < self.files.len() {
             self.files.remove(index);
-            self.dirty = true;
+            self.mark_dirty();
         }
     }
     pub fn set(&mut self, path: &str, value: Value) -> Result<()> {
         self.settings.set(path, value)?;
         self.drafts.remove(path);
-        self.dirty = true;
+        self.mark_dirty();
         Ok(())
     }
     pub fn select_engine(&mut self, flag: Option<&str>, term: bool) -> Result<()> {
@@ -82,7 +109,7 @@ impl Editor {
                 self.settings
                     .set(&format!("term_{}", engine.flag), json!(false))?;
             }
-            self.dirty = true;
+            self.mark_dirty();
         }
         Ok(())
     }
@@ -117,8 +144,29 @@ impl Editor {
             let Some(spec) = field_specs().iter().find(|spec| spec.path == *path) else {
                 continue;
             };
+            let original = match self.settings.get(path) {
+                Some(Value::String(value)) => value.clone(),
+                None | Some(Value::Null) => String::new(),
+                Some(value) => value.to_string(),
+            };
+            if *text == original {
+                continue;
+            }
             let value = parse_draft(spec, text)?;
+            crate::settings_ui::validate_draft(spec, text)?;
             settings.set(path, value)?;
+        }
+        // Validate every populated setting, including direct controls and older
+        // configs; drafts remain untouched if any check fails.
+        for spec in field_specs() {
+            if let Some(value) = settings.get(&spec.path) {
+                let text = match value {
+                    Value::Null => String::new(),
+                    Value::String(value) => value.clone(),
+                    value => value.to_string(),
+                };
+                crate::settings_ui::validate_draft(spec, &text)?;
+            }
         }
         settings.set(
             "basic.input_files",
@@ -129,6 +177,7 @@ impl Editor {
                     .collect::<Vec<_>>()
             ),
         )?;
+        settings.validate()?;
         if for_translation {
             ensure!(!self.files.is_empty(), "Choose at least one PDF");
             let pdf = settings.pdf()?;
@@ -136,7 +185,24 @@ impl Editor {
                 !(pdf.no_mono && pdf.no_dual),
                 "Choose at least one PDF output"
             );
-            settings.validate()?;
+            ensure!(
+                self.engine_enabled(settings.main_engine()),
+                "The selected service is disabled"
+            );
+            let translation = settings.translation()?;
+            for (code, source) in [(&translation.lang_in, true), (&translation.lang_out, false)] {
+                ensure!(
+                    crate::languages::supported(&settings.main_engine().name, code, source)
+                        != Some(false),
+                    "The selected service does not support this language"
+                );
+            }
+            if let Some(engine) = self.explicit_term_engine() {
+                ensure!(
+                    self.engine_enabled(engine),
+                    "The selected terminology service is disabled"
+                );
+            }
         }
         Ok(settings)
     }
@@ -144,6 +210,74 @@ impl Editor {
         self.settings = settings;
         self.drafts.clear();
         self.dirty = false;
+    }
+    pub fn saved_at(&mut self, settings: Settings, revision: u64) -> bool {
+        if self.revision != revision {
+            return false;
+        }
+        self.saved(settings);
+        true
+    }
+    pub fn engine_enabled(&self, engine: &EngineSpec) -> bool {
+        let configured = self
+            .drafts
+            .get("gui_settings.enabled_services")
+            .map(String::as_str)
+            .or_else(|| {
+                self.settings
+                    .get("gui_settings.enabled_services")
+                    .and_then(Value::as_str)
+            })
+            .unwrap_or_default();
+        configured.trim().is_empty()
+            || configured
+                .split(',')
+                .any(|name| name.trim().eq_ignore_ascii_case(&engine.name))
+    }
+    pub fn toggle_service(&mut self, engine: &EngineSpec, enabled: bool) -> Result<()> {
+        let mut names: Vec<String> = engine_specs()
+            .iter()
+            .filter(|item| self.engine_enabled(item))
+            .map(|item| item.name.clone())
+            .collect();
+        names.retain(|name| !name.eq_ignore_ascii_case(&engine.name));
+        if enabled {
+            names.push(engine.name.clone());
+        }
+        ensure!(!names.is_empty(), "Keep at least one service enabled");
+        self.set("gui_settings.enabled_services", json!(names.join(",")))
+    }
+    pub fn swap_languages(&mut self) -> Result<()> {
+        let input = "translation.lang_in";
+        let output = "translation.lang_out";
+        let value = |path| {
+            self.drafts
+                .get(path)
+                .cloned()
+                .or_else(|| {
+                    self.settings
+                        .get(path)
+                        .and_then(Value::as_str)
+                        .map(str::to_owned)
+                })
+                .unwrap_or_default()
+        };
+        let mut settings = self.settings.clone();
+        settings.set(input, json!(value(output)))?;
+        settings.set(output, json!(value(input)))?;
+        let translation = settings.translation()?;
+        for (code, source) in [(&translation.lang_in, true), (&translation.lang_out, false)] {
+            ensure!(
+                crate::languages::supported(&settings.main_engine().name, code, source)
+                    != Some(false),
+                "The selected service does not support this language"
+            );
+        }
+        self.settings = settings;
+        self.drafts.remove(input);
+        self.drafts.remove(output);
+        self.mark_dirty();
+        Ok(())
     }
 }
 
@@ -155,10 +289,12 @@ pub fn parse_draft(spec: &FieldSpec, text: &str) -> Result<Value> {
     match spec.kind {
         FieldType::String => Ok(json!(text)),
         FieldType::Integer => text
+            .trim()
             .parse::<i64>()
             .map(|value| json!(value))
             .map_err(|_| invalid()),
         FieldType::Float => text
+            .trim()
             .parse::<f64>()
             .ok()
             .filter(|value| value.is_finite())
@@ -169,7 +305,10 @@ pub fn parse_draft(spec: &FieldSpec, text: &str) -> Result<Value> {
             "false" => Ok(json!(false)),
             _ => Err(invalid()),
         },
-        FieldType::StringSet => serde_json::from_str(text).map_err(|_| invalid()),
+        FieldType::StringSet => {
+            let values: Vec<String> = serde_json::from_str(text).map_err(|_| invalid())?;
+            Ok(json!(values))
+        }
     }
 }
 
@@ -196,6 +335,42 @@ pub fn result_path(
             .filter(|path| !path.is_empty())
             .map(PathBuf::from),
     }
+}
+
+#[derive(Clone, Copy)]
+pub enum ExportKind {
+    All,
+    Mono,
+    Dual,
+}
+
+pub fn batch_pdf_results(snapshot: &TaskSnapshot, kind: ExportKind) -> Result<Vec<PathBuf>> {
+    ensure!(
+        snapshot.status == TaskStatus::Succeeded
+            && snapshot.total_files > 0
+            && snapshot.results.len() == snapshot.total_files,
+        "The batch has no complete PDF results"
+    );
+    let mut paths = Vec::new();
+    for result in &snapshot.results {
+        let mut found = false;
+        for (field, wanted) in [
+            ("mono_pdf_path", !matches!(kind, ExportKind::Dual)),
+            ("dual_pdf_path", !matches!(kind, ExportKind::Mono)),
+        ] {
+            if wanted
+                && let Some(path) = result
+                    .get(field)
+                    .and_then(Value::as_str)
+                    .filter(|path| !path.is_empty())
+            {
+                paths.push(PathBuf::from(path));
+                found = true;
+            }
+        }
+        ensure!(found, "The batch has no complete PDF results");
+    }
+    Ok(paths)
 }
 
 pub fn progress_fraction(snapshot: &TaskSnapshot) -> Option<f32> {
@@ -279,6 +454,116 @@ mod tests {
         assert!(editor.add_files([PathBuf::from("bad.exe")]).is_err());
         editor.remove_file(0);
         assert!(editor.files.is_empty());
+    }
+    #[test]
+    fn adding_a_mixed_batch_is_atomic_and_keeps_existing_selection() {
+        let mut editor = Editor::new(Settings::default());
+        editor.add_files([PathBuf::from("existing.pdf")]).unwrap();
+        let revision = editor.revision;
+        editor.dirty = false;
+        assert!(
+            editor
+                .add_files([PathBuf::from("valid.pdf"), PathBuf::from("invalid.txt")])
+                .is_err()
+        );
+        assert_eq!(editor.files, [PathBuf::from("existing.pdf")]);
+        assert_eq!(editor.revision, revision);
+        assert!(!editor.dirty);
+    }
+    #[test]
+    fn invalid_inactive_stored_fields_have_a_visible_repair_entry() {
+        let mut editor = Editor::new(Settings::default());
+        editor
+            .set("deepseek_detail.deepseek_model", json!("deepseek-v4-pro"))
+            .unwrap();
+        let path = "deepseek_detail.deepseek_reasoning_effort";
+        editor.set(path, json!("unexpected-effort")).unwrap();
+        assert!(editor.drafts.is_empty());
+        assert!(editor.invalid_fields().iter().any(|spec| spec.path == path));
+        assert!(editor.snapshot(false).is_err());
+        editor.set(path, json!("high")).unwrap();
+        assert!(editor.snapshot(false).is_ok());
+    }
+    #[test]
+    fn an_unchanged_empty_optional_string_is_not_cleared_by_a_rendered_draft() {
+        let mut editor = Editor::new(Settings::default());
+        let path = "openai_detail.openai_api_key";
+        editor.set(path, json!("")).unwrap();
+        editor.drafts.insert(path.into(), String::new());
+        assert_eq!(editor.snapshot(false).unwrap().get(path), Some(&json!("")));
+    }
+    #[test]
+    fn default_interface_is_traditional_chinese_and_explicit_english_survives() {
+        let mut editor = Editor::new(Settings::default());
+        assert_eq!(
+            editor.settings.gui().unwrap().ui_lang.as_deref(),
+            Some("zh-TW")
+        );
+        editor.set("gui_settings.ui_lang", json!("en")).unwrap();
+        assert_eq!(
+            editor
+                .snapshot(false)
+                .unwrap()
+                .gui()
+                .unwrap()
+                .ui_lang
+                .as_deref(),
+            Some("en")
+        );
+    }
+    #[test]
+    fn invalid_save_drafts_leave_settings_and_credentials_intact() {
+        let mut editor = Editor::new(Settings::default());
+        editor
+            .set("openai_detail.openai_api_key", json!("synthetic-preserved"))
+            .unwrap();
+        let before = editor.settings.as_value().clone();
+        editor.drafts.insert("translation.qps".into(), "0".into());
+        assert!(editor.snapshot(false).is_err());
+        assert_eq!(editor.settings.as_value(), &before);
+        assert_eq!(editor.drafts["translation.qps"], "0");
+        editor.drafts.insert("translation.qps".into(), "6".into());
+        let saved = editor.snapshot(false).unwrap();
+        editor.set("translation.lang_out", json!("ja")).unwrap();
+        assert!(!editor.saved_at(saved, editor.revision.wrapping_sub(1)));
+        assert_eq!(
+            editor.settings.get("translation.lang_out"),
+            Some(&json!("ja"))
+        );
+        assert!(editor.dirty);
+    }
+    #[test]
+    fn enabled_services_are_case_insensitive_and_do_not_erase_other_profiles() {
+        let mut editor = Editor::new(Settings::default());
+        editor
+            .set("gui_settings.enabled_services", json!("gOoGle, DeepL"))
+            .unwrap();
+        editor
+            .set("openai_detail.openai_api_key", json!("synthetic-preserved"))
+            .unwrap();
+        assert!(!editor.engine_enabled(editor.settings.main_engine()));
+        let google = engine_specs()
+            .iter()
+            .find(|engine| engine.flag == "google")
+            .unwrap();
+        assert!(editor.engine_enabled(google));
+        editor.toggle_service(google, false).unwrap();
+        assert!(!editor.engine_enabled(google));
+        assert_eq!(
+            editor.settings.get("openai_detail.openai_api_key"),
+            Some(&json!("synthetic-preserved"))
+        );
+    }
+    #[test]
+    fn language_swap_preserves_codes_and_survives_save_and_reload() {
+        let mut editor = Editor::new(Settings::default());
+        editor.set("translation.lang_in", json!("en")).unwrap();
+        editor.set("translation.lang_out", json!("zh-TW")).unwrap();
+        editor.swap_languages().unwrap();
+        let settings = editor.snapshot(false).unwrap();
+        let reloaded = Editor::new(Settings::from_value(settings.into_value()).unwrap());
+        assert_eq!(reloaded.settings.translation().unwrap().lang_in, "zh-TW");
+        assert_eq!(reloaded.settings.translation().unwrap().lang_out, "en");
     }
     #[test]
     fn term_selection_is_optional_and_uses_llm_flags() {

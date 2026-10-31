@@ -26,15 +26,6 @@ pub fn glossary(_parent: &eframe::Frame) -> Option<PathBuf> {
 }
 
 #[cfg(windows)]
-pub fn folder(parent: &eframe::Frame) -> Option<PathBuf> {
-    rfd::FileDialog::new().set_parent(parent).pick_folder()
-}
-#[cfg(not(windows))]
-pub fn folder(_parent: &eframe::Frame) -> Option<PathBuf> {
-    None
-}
-
-#[cfg(windows)]
 pub fn save(parent: &eframe::Frame, source: &Path) -> Option<PathBuf> {
     let extension = source.extension()?.to_str()?;
     rfd::FileDialog::new()

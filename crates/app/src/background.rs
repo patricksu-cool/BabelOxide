@@ -22,6 +22,15 @@ use crate::model::validate_result_path;
 pub(crate) enum Command {
     Translate(Settings),
     Save(Settings),
+    Reload,
+    Download {
+        url: String,
+        cancel: tokio_util::sync::CancellationToken,
+    },
+    ExportZip {
+        sources: Vec<PathBuf>,
+        destination: PathBuf,
+    },
     Copy {
         source: PathBuf,
         destination: PathBuf,
@@ -34,6 +43,12 @@ pub(crate) enum Event {
         inputs: Vec<PathBuf>,
     },
     Saved(Settings),
+    Reloaded(Settings),
+    ReloadFailed,
+    Downloaded(PathBuf),
+    DownloadFailed(String),
+    Exported(PathBuf),
+    ExportFailed(String),
     SaveFailed,
     SubmissionFailed(String),
     Copied(PathBuf),
@@ -221,12 +236,65 @@ async fn run(
             return;
         }
     };
+    let mut downloads = Vec::new();
     loop {
         if shutdown.requested.load(Ordering::Acquire) {
             break;
         }
         let command = tokio::select! {biased; _=shutdown.notify.notified()=>continue, command=commands.recv()=>match command {Some(command)=>command,None=>break}};
         match command {
+            Command::Reload => {
+                let source = store.clone();
+                match tokio::task::spawn_blocking(move || source.load()).await {
+                    Ok(Ok(settings)) => emit(&events, &shutdown, Event::Reloaded(settings)).await,
+                    _ => emit(&events, &shutdown, Event::ReloadFailed).await,
+                }
+            }
+            Command::Download { url, cancel } => {
+                let future = crate::transfers::download_pdf(&url, &cancel);
+                tokio::pin!(future);
+                let downloaded = tokio::select! {
+                    result = &mut future => result,
+                    _ = shutdown.notify.notified() => { cancel.cancel(); future.await }
+                };
+                if shutdown.requested.load(Ordering::Acquire) {
+                    break;
+                }
+                match downloaded {
+                    Ok(downloaded) => {
+                        let path = downloaded.path;
+                        downloads.push(downloaded.directory);
+                        emit(&events, &shutdown, Event::Downloaded(path)).await;
+                    }
+                    Err(error) => {
+                        emit(&events, &shutdown, Event::DownloadFailed(error.to_string())).await
+                    }
+                }
+            }
+            Command::ExportZip {
+                sources,
+                destination,
+            } => {
+                let output = destination.clone();
+                match tokio::task::spawn_blocking(move || {
+                    crate::transfers::export_zip(&sources, &destination)
+                })
+                .await
+                {
+                    Ok(Ok(())) => emit(&events, &shutdown, Event::Exported(output)).await,
+                    Ok(Err(error)) => {
+                        emit(&events, &shutdown, Event::ExportFailed(error.to_string())).await
+                    }
+                    Err(_) => {
+                        emit(
+                            &events,
+                            &shutdown,
+                            Event::ExportFailed("Cannot export batch ZIP".into()),
+                        )
+                        .await
+                    }
+                }
+            }
             Command::Translate(settings) => {
                 let inputs = settings
                     .basic()
@@ -347,6 +415,7 @@ async fn run(
     // Do not select away cleanup: tasks can still own native children or a
     // SQLite writer that must roll back before the application exits.
     manager.shutdown().await;
+    drop(downloads);
 }
 
 pub(crate) fn copy_result(source: &std::path::Path, destination: &std::path::Path) -> Result<()> {

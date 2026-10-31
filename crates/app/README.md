@@ -1,65 +1,20 @@
-# Native desktop application
+# 原生桌面介面
 
-`pdf2zh-gui` uses eframe/egui 0.37.0 with the Glow renderer. It opens a native
-Windows window, native file dialogs, and the bundled PDFium preview renderer.
-There is no browser, HTTP UI server, JavaScript, or Gradio startup path.
+`pdf2zh-gui` 是 Windows 原生桌面視窗，以 Rust、eframe／egui 和內建 PDFium 預覽組成；翻譯仍透過隔離的 BabelDOC Python Worker。介面不啟動 Gradio 或網頁伺服器。預設介面語言為繁體中文，既有設定的語言仍會載入。
 
-The binary uses `pdf2zh_cli::parse` and `Invocation::load` with an explicit
-environment map. Embedders can call `launch_with_settings(LaunchOptions)` with
-their own `ConfigStore`, `Settings`, `WorkerOptions`, cache filename, and bundle
-directory. Constructing settings or opening the UI does not start Python.
-Only an explicit Translate action submits the shared `pdf2zh_tasks` batch.
-The BabelDOC engine remains an isolated Python worker for actual translation.
+## 使用方式
 
-## Desktop workflow
+1. 用檔案選擇器或拖放加入 PDF，可移除個別檔案並預覽原文。也可展開「下載 PDF 網址」，輸入公開的 HTTP 或 HTTPS PDF 連結，下載完成後加入相同的檔案清單。
+2. 選擇翻譯服務、模型與所需憑證；「管理服務」可控制服務清單，停用服務不會刪除其既有設定。已選的服務被停用時，請重新啟用或切換服務。
+3. 選擇來源與目標語言，可交換、使用下拉選單或展開自訂代碼。Qwen-MT、DeepL 的選單依本地實作已知限制過濾；其他服務支援情況請依服務確認，現有自訂代碼不會因不在清單而自動刪除。
+4. 選擇輸出資料夾、譯文／雙語輸出及頁面。頁面快捷可選全部、第一頁或前五頁；自訂欄可輸入如 `1,3,5-10,-5` 或 `25-`。術語 CSV 可由選擇器加入，多個路徑以逗號分隔；術語設定與可用性依服務而定。
+5. 速度、PDF 處理和其餘設定分組在折疊區。按「保存設定」寫入，錯誤會阻止保存；未辨識的設定會保留。敏感欄位依 schema 遮罩，設定禁止敏感輸入時不可編輯。
+6. 開始翻譯後可查看進度或取消。選擇批次與檔案後，可預覽原文、譯文或雙語結果，開啟或另存單個檔案。成功批次提供全部 PDF、譯文 PDF 或雙語 PDF 的 ZIP 匯出；術語表另存功能保留，未納入上述 ZIP 選項。
 
-- Add several PDFs with the picker or drag them into the window; remove individual
-  inputs and preview them before translating.
-- Choose any of the 24 shared translation engines, model and credentials, input
-  and output languages, output folder, mono/bilingual output, page selection,
-  glossary, terminology engine, request rate and concurrency, and layout options.
-  Additional typed options use the shared configuration metadata and help text.
-- Save settings explicitly. Changes are never automatically written, including
-  when `disable_config_auto_save` is set. Unknown configuration fields survive
-  the shared atomic save. Transient input filenames are excluded from defaults.
-  Secret metadata produces password fields; `disable_gui_sensitive_input`
-  disables editing them. Neither settings nor secret edit buffers are logged.
-- Follow the latest shared task snapshot, cancel active or queued batches, choose
-  an input/result document, switch original/translated/bilingual views, navigate
-  pages, zoom, open the result, or save a copy of a PDF or extracted glossary.
+網址匯入僅允許 HTTP 80 或 HTTPS 443，拒絕網址中的帳號密碼、片段、本機／內網或保留位址；每次重新導向都會重新檢查目的位址。下載大小上限為 100 MiB、總逾時 60 秒、連線逾時 10 秒，最多重新導向五次。可取消下載；下載檔須通過 PDF 檢查。此功能使用背景處理，下載檔案為本次應用程式工作階段的暫存輸入。
 
-PDF progress uses BabelDOC's weighted `overall_progress / 100`, including its
-part offsets, then combines it with the number of completed files in a batch.
-The terminology selector distinguishes explicit term flags from the shared
-configuration's fallback to the main LLM, preserving the legacy default.
+## 驗證界線
 
-The application creates a persistent Tokio runtime on a background thread.
-Disk writes and result copies use blocking-pool jobs. Task progress uses bounded
-watch snapshots rather than an unbounded per-update queue. Closing the window
-disables further actions, cancels batches, awaits `TaskManager::shutdown`, and
-closes/joins PDFium on the background owner before allowing the viewport to close.
-No translation, bridge, or SQLite cleanup future is aborted to meet a grace timer.
+此次工作基準的 Rust workspace、Worker 35 項與 Builder 31 項測試已通過；既有 Release GUI 已啟動、截圖並完成介面語言切換。整合新介面後 `cargo test -p pdf2zh-app --locked` 的 45 項測試通過，其中包含 URL／ZIP 模組的受控測試。測試資料與連線是隔離或模擬的；這些結果不能代表公開網路下載、新版桌面互動、真實翻譯或獨立完整 Release 封裝均已通過。Computer Use 起初授權等待逾時，後已恢復；後續結果以專案最終狀態文件為準。
 
-Preview is delegated to `pdf2zh-pdf-preview`; it only loads
-`<bundle_root>/native/pdfium/pdfium.dll`, independently of a writable
-`PDF2ZH_APP_DIR`. One renderer lives for the process. Requests use document
-identity, generation and ticket checks; a busy slot retains only the latest UI
-request for a later frame. A native preview failure leaves result open/save
-available. Closing can wait for the current synchronous native render to finish.
-See the workspace `PREVIEW_DESIGN.md` and `NATIVE_DEPENDENCIES.md` for the native
-closure, hash verification, licenses, and OpenGL requirements.
-
-## Validation boundaries
-
-All application tests use temporary configuration/data directories and synthetic
-credentials. Headless egui tests exercise the real UI frame, password painting,
-and multi-file native drop handling without reading PDF bytes on the UI thread.
-The background tests exercise explicit persistence, result copies, and shared
-TaskManager submission/results/cancellation using the controlled fake worker
-fixture. That fixture uses project-local Python solely for IPC/process tests;
-it loads no BabelDOC or provider SDK and makes no HTTP/API calls.
-
-Native window and file-dialog behavior, actual PDFium rendering and clean-machine
-packaging need the root integration checks. Unit tests alone do not establish
-those properties. The app currently targets Windows; the retained legacy web UI
-preferences in configuration do not create a server in this native application.
+官方 v2.9.0 比較依 [官方原始碼](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/tree/v2.9.0)，未下載或執行官方 Windows 發行包。逐欄資料與差異見 [GUI 設定盤點](../../docs/GUI_SETTINGS.json) 及 [GUI 相容性稽核](../../docs/GUI_UX_AUDIT.md)。
