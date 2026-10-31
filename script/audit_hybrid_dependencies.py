@@ -59,7 +59,7 @@ def main():
         if len(engine) != len(wheels):
             raise ValueError("Duplicate Worker distribution")
     else:
-        python_input = ROOT / "docs/rust-migration/PYTHON_DEPENDENCY_INVENTORY.json"
+        python_input = ROOT / "python-worker/dependencies-win64.json"
         engine = json.loads(python_input.read_text(encoding="utf-8"))["engine"]
     for name, item in engine.items():
         if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", name) or not re.fullmatch(r"[A-Za-z0-9.+!-]+", item["version"]):

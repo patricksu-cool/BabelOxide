@@ -1,0 +1,16 @@
+# 範本，不會自動取代使用者設定。Key 建議在 GUI 或環境變數中輸入。
+openai = true
+
+[openai_detail]
+openai_model = "your-model"
+openai_base_url = "https://api.openai.com/v1"
+openai_api_key = ""
+
+[translation]
+lang_in = "en"
+lang_out = "zh-TW"
+qps = 4
+ignore_cache = false
+
+[gui_settings]
+ui_lang = "zh-TW"

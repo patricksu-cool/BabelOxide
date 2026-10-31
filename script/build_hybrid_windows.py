@@ -33,10 +33,12 @@ from pathlib import PurePosixPath
 import tomllib
 
 REPO = Path(__file__).resolve().parents[1]
-INVENTORY = REPO / "docs/rust-migration/PYTHON_DEPENDENCY_INVENTORY.json"
-ASSET_INVENTORY = REPO / "docs/rust-migration/ENGINE_ASSET_INVENTORY.json"
+INVENTORY = REPO / "python-worker/dependencies-win64.json"
+ASSET_INVENTORY = REPO / "resources/engine-assets.lock.json"
 REQUIREMENTS = REPO / "python-worker/requirements-win64.lock.txt"
 WHEEL_OVERRIDES = REPO / "python-worker/wheel-overrides.json"
+BASELINE_WHEELS = REPO / "python-worker/baseline-wheels.json"
+BUILD_INPUTS = REPO / "build-inputs/windows-x64"
 PYTHON_VERSION = "3.13.16"
 ENGINE_COUNT = 85
 PDFIUM_VERSION = "158.0.8125.0"
@@ -200,28 +202,34 @@ def wheel_rank(url: str) -> tuple[int, int, str] | None:
     return max(ranks) if ranks else None
 
 
-def select_wheels(inventory: dict, lock: dict, expected_count: int = ENGINE_COUNT) -> list[dict]:
+def select_wheels(inventory: dict, profile: dict, expected_count: int = ENGINE_COUNT) -> list[dict]:
     require(inventory["environment"]["python_full_version"] == PYTHON_VERSION, "Inventory Python version changed")
     engine = inventory["engine"]
     require(len(engine) == expected_count, "Engine distribution count changed; review the closure first")
     require(engine["babeldoc"]["version"] == "0.6.3", "Unexpected BabelDOC version")
-    result = []
-    for name, metadata in sorted(engine.items()):
-        require(canonical_name(name) == name, "Inventory distribution name must be canonical")
-        packages = [p for p in lock["package"] if canonical_name(p["name"]) == name and p["version"] == metadata["version"]]
-        require(len(packages) == 1, f"Expected exactly one uv.lock package: {name}")
-        package = packages[0]
-        require(package["source"] == {"registry": "https://pypi.org/simple"}, f"Unexpected package source: {name}")
-        candidates = [(rank, w) for w in package.get("wheels", []) if (rank := wheel_rank(w["url"])) is not None]
-        require(bool(candidates), f"No Windows x64 CPython 3.13 wheel: {name}")
-        wheel = max(candidates, key=lambda candidate: candidate[0])[1]
-        require(re.fullmatch(r"sha256:[0-9a-f]{64}", wheel["hash"]) is not None, f"Missing wheel SHA256: {name}")
-        result.append({"name": name, "version": package["version"], "url": wheel["url"], "sha256": wheel["hash"][7:], "bytes": wheel["size"]})
-    return result
+    require(set(profile) == {"schema_version", "python", "platform", "wheels"} and profile["schema_version"] == 1, "Unsupported baseline wheel profile")
+    require(profile["python"] == PYTHON_VERSION and profile["platform"] == "win_amd64", "Wrong baseline wheel platform")
+    wheels = profile["wheels"]
+    require(isinstance(wheels, list) and len(wheels) == expected_count, "Wrong baseline wheel count")
+    names = set()
+    for wheel in wheels:
+        require(isinstance(wheel, dict) and set(wheel) == {"name", "version", "url", "sha256", "bytes"}, "Invalid baseline wheel fields")
+        name = wheel["name"]
+        require(isinstance(name, str) and canonical_name(name) == name and name in engine and name not in names, "Unexpected or duplicate baseline wheel")
+        names.add(name)
+        require(wheel["version"] == engine[name]["version"], f"Baseline wheel version differs from inventory: {name}")
+        require(wheel_rank(wheel["url"]) is not None, "Incompatible baseline wheel")
+        filename = urllib.parse.unquote(PurePosixPath(urllib.parse.urlsplit(wheel["url"]).path).name)
+        identity = filename[:-4].rsplit("-", 3)[0].split("-")
+        require(len(identity) == 2 and canonical_name(identity[0]) == name and identity[1] == wheel["version"], "Baseline wheel identity differs from profile")
+        require(isinstance(wheel["sha256"], str) and re.fullmatch(r"[0-9a-f]{64}", wheel["sha256"]) is not None, "Invalid baseline wheel SHA256")
+        require(type(wheel["bytes"]) is int and wheel["bytes"] > 0, "Invalid baseline wheel size")
+    require(names == set(engine), "Baseline wheel set differs from inventory")
+    return sorted(wheels, key=lambda wheel: wheel["name"])
 
 
 def apply_wheel_overrides(wheels: list[dict], profile: dict) -> list[dict]:
-    """Apply reviewed Worker-only replacements without changing the legacy lock."""
+    """Apply reviewed Worker-only replacements to the captured baseline."""
     require(set(profile) == {"schema_version", "packages"} and profile["schema_version"] == 1, "Unsupported Worker wheel profile")
     require(isinstance(profile["packages"], dict), "Worker wheel replacements must be a mapping")
     selected = {wheel["name"]: dict(wheel) for wheel in wheels}
@@ -245,13 +253,13 @@ def apply_wheel_overrides(wheels: list[dict], profile: dict) -> list[dict]:
     return [selected[wheel["name"]] for wheel in wheels]
 
 
-def lock_text(wheels: list[dict], inventory_sha256: str, uv_sha256: str, overrides_sha256: str) -> str:
+def lock_text(wheels: list[dict], inventory_sha256: str, baseline_sha256: str, overrides_sha256: str) -> str:
     lines = [
         "# Generated by script/build_hybrid_windows.py --write-lock; do not edit by hand.",
         f"# Windows x64 / CPython {PYTHON_VERSION} / BabelDOC 0.6.3 / {len(wheels)} distributions.",
         "# Source text fingerprints below normalize CRLF to LF; release manifests hash actual bytes.",
-        f"# PYTHON_DEPENDENCY_INVENTORY.json sha256: {inventory_sha256}",
-        f"# uv.lock sha256: {uv_sha256}",
+        f"# dependencies-win64.json sha256: {inventory_sha256}",
+        f"# baseline-wheels.json sha256: {baseline_sha256}",
         f"# wheel-overrides.json sha256: {overrides_sha256}",
         "# One exact compatible wheel per package; no sdist, index resolution or transitive installation.",
         "",
@@ -283,7 +291,7 @@ def write_lock_file(path: Path, content: str) -> None:
 
 def runtime_files(source: Path, manifest: Path) -> list[dict]:
     records = read_json(manifest)
-    require(isinstance(records, list), "Old runtime manifest must be a file list")
+    require(isinstance(records, list), "Runtime manifest must be a file list")
     selected = []
     seen = set()
     for record in records:
@@ -296,7 +304,7 @@ def runtime_files(source: Path, manifest: Path) -> list[dict]:
         seen.add(name.lower())
         verify_file(source / name, record["bytes"], record["sha256"])
         selected.append({"name": name, "bytes": record["bytes"], "sha256": record["sha256"].lower()})
-    require(bool(selected), "No runtime files in old manifest")
+    require(bool(selected), "No runtime files in manifest")
     actual = {p.relative_to(source).as_posix() for p in files_below(source)}
     require(actual == {r["name"] for r in selected}, "Unmanifested or missing files in embedded runtime source")
     for name, pin in RUNTIME_PINS.items():
@@ -345,6 +353,18 @@ def verify_restored(home: Path, expected: dict[str, dict]) -> None:
         require(digest(path, "sha3_256") == entry["sha3_256"], f"Restored asset SHA3 mismatch: {name}")
     actual = {p.relative_to(cache).as_posix() for p in files_below(cache)}
     require(actual == set(expected), "Unexpected files in restored engine cache")
+
+
+def engine_seed_manifest(home: Path, expected: dict[str, dict]) -> dict:
+    """Describe only verified immutable assets for the Rust portable cache seeder."""
+    verify_restored(home, expected)
+    cache = home / ".cache/babeldoc"
+    files = []
+    for name, entry in sorted(expected.items()):
+        relative_member(name)
+        require(name == f"{entry['category']}/{entry['name']}", "Seed asset identity differs from inventory")
+        files.append({"category": entry["category"], "name": entry["name"], "bytes": entry["bytes"], "sha256": digest(cache / name)})
+    return {"schema_version": 1, "asset_tag": ASSET_TAG, "files": files}
 
 
 def pe_imports(path: Path) -> dict:
@@ -509,7 +529,7 @@ def python_inventory(stage: Path, wheels: list[dict], engine: dict) -> tuple[lis
                 record["license_files"].append(destination.relative_to(stage).as_posix())
         installed[name] = record
     require(set(installed) == set(expected), "Installed distribution closure differs from the 85-package lock")
-    supplement = REPO / "script/windows-release/ADDITIONAL_LICENSES.json"
+    supplement = REPO / "resources/licenses/python/ADDITIONAL_LICENSES.json"
     for notice in read_json(supplement):
         for package in notice["packages"]:
             name = canonical_name(package)
@@ -656,7 +676,7 @@ def validate_output(output: Path, inputs: list[Path]) -> Path:
     output = plain_path(output)
     require(output.is_relative_to(REPO) and output != REPO, "Output must be a new directory below the repository")
     require(not output.exists(), f"Output already exists; it will not be replaced: {output}")
-    forbidden = [REPO / name for name in (".git", ".venv", ".cargo", "crates", "python-worker", "script", "docs", "target", "pdf2zh_next", "dist/release")]
+    forbidden = [REPO / name for name in (".git", ".venv", ".cargo", "crates", "python-worker", "script", "docs", "target", "build-inputs", "pdf2zh_next", "dist/release")]
     for root in forbidden + inputs:
         root = plain_path(root)
         require(not output.is_relative_to(root) and not root.is_relative_to(output), f"Output overlaps a protected/input path: {root}")
@@ -664,7 +684,7 @@ def validate_output(output: Path, inputs: list[Path]) -> Path:
 
 
 def input_paths(args: argparse.Namespace) -> list[Path]:
-    return [getattr(args, name) for name in ("runtime_source", "runtime_manifest", "pdfium_source", "assets_zip", "bin_dir", "asset_notices", "cargo_registry_src", "uv") if getattr(args, name) is not None]
+    return [getattr(args, name) for name in ("runtime_source", "runtime_manifest", "pdfium_source", "assets_zip", "bin_dir", "asset_notices", "cargo_registry_src", "wheel_cache", "uv") if getattr(args, name) is not None]
 
 
 def preflight(args: argparse.Namespace, wheels: list[dict], expected_lock: str) -> dict:
@@ -694,6 +714,8 @@ def preflight(args: argparse.Namespace, wheels: list[dict], expected_lock: str) 
     require(uv.is_file() and uv.name.lower().endswith(".exe"), "Existing uv.exe is required; pass --uv explicitly")
     if args.asset_notices:
         require(bool(files_below(plain_path(args.asset_notices))), "Explicit asset notice directory is empty")
+    if args.wheel_cache:
+        require(bool(files_below(plain_path(args.wheel_cache))), "Explicit wheel cache directory is empty")
     return {"output": output, "runtime": records, "assets": expected_assets, "uv": uv, "wheels": wheels, "inputs": inputs + [uv]}
 
 
@@ -803,13 +825,13 @@ def staged_inputs(stage: Path, wheels: list[dict]) -> dict:
     """Use one captured dependency snapshot throughout a long installation."""
     provenance = stage / "provenance"
     inventory_path = provenance / INVENTORY.name
-    lock_path = provenance / "uv.lock"
+    baseline_path = provenance / BASELINE_WHEELS.name
     overrides_path = provenance / WHEEL_OVERRIDES.name
     inventory = read_json(inventory_path)
-    selected = select_wheels(inventory, tomllib.loads(lock_path.read_text(encoding="utf-8")))
+    selected = select_wheels(inventory, read_json(baseline_path))
     selected = apply_wheel_overrides(selected, read_json(overrides_path))
     require(selected == wheels, "Source dependency files changed after preflight")
-    expected = lock_text(selected, source_text_digest(inventory_path), source_text_digest(lock_path), source_text_digest(overrides_path))
+    expected = lock_text(selected, source_text_digest(inventory_path), source_text_digest(baseline_path), source_text_digest(overrides_path))
     require((provenance / REQUIREMENTS.name).read_text(encoding="utf-8") == expected, "Captured worker lock differs from captured dependency inputs")
     return inventory
 
@@ -826,6 +848,11 @@ def build(args: argparse.Namespace, plan: dict) -> Path:
     stage.mkdir()
     print(f"Build work directory (preserved on failure): {work}", flush=True)
     environment = sanitized_environment(work, stage=stage)
+    if args.wheel_cache:
+        # Never let uv modify an existing cache; use only a private copy and
+        # make offline mode mandatory when the caller supplies one.
+        shutil.copytree(args.wheel_cache, work / "uv-cache")
+        environment["UV_OFFLINE"] = "1"
     try:
         runtime = stage / "runtime/python"
         for record in plan["runtime"]:
@@ -836,13 +863,15 @@ def build(args: argparse.Namespace, plan: dict) -> Path:
             origin = args.bin_dir / name
             checked_copy(origin, stage / name, (origin.stat().st_size, digest(origin)))
         checked_copy(REPO / "python-worker/worker.py", stage / "babeldoc/worker.py")
+        checked_copy(REPO / "resources/windows-README.md", stage / "README_zh_TW.md")
+        checked_copy(REPO / "resources/config.example.toml", stage / "config/config.example.toml")
         checked_copy(args.pdfium_source / "bin/pdfium.dll", stage / "native/pdfium/pdfium.dll", (PDFIUM_BYTES, PDFIUM_SHA256))
         for origin in [args.pdfium_source / "LICENSE", args.pdfium_source / "VERSION", args.pdfium_source / "args.gn", *files_below(args.pdfium_source / "licenses")]:
             checked_copy(origin, stage / "licenses/pdfium" / origin.relative_to(args.pdfium_source))
         checked_copy(REPO / "LICENSE", stage / "licenses/project/LICENSE")
         checked_copy(args.runtime_source / "LICENSE.txt", stage / "licenses/python-runtime/LICENSE.txt", RUNTIME_PINS["LICENSE.txt"])
         provenance = stage / "provenance"
-        for origin in (REQUIREMENTS, WHEEL_OVERRIDES, INVENTORY, ASSET_INVENTORY, REPO / "uv.lock", REPO / "Cargo.lock", REPO / "Cargo.toml", Path(__file__), REPO / "docs/rust-migration/HYBRID_BUILD.md"):
+        for origin in (REQUIREMENTS, WHEEL_OVERRIDES, BASELINE_WHEELS, INVENTORY, ASSET_INVENTORY, REPO / "Cargo.lock", REPO / "Cargo.toml", Path(__file__), REPO / "docs/DEVELOPMENT.md"):
             checked_copy(origin, provenance / origin.name, (origin.stat().st_size, digest(origin)))
         captured_inventory = staged_inputs(stage, plan["wheels"])
         write_json(provenance / "RUNTIME_SOURCE_FILES.json", plan["runtime"])
@@ -892,17 +921,20 @@ def build(args: argparse.Namespace, plan: dict) -> Path:
         removed_bytecode = remove_generated_bytecode(stage)
         empty_engine_cache = remove_empty_engine_cache(stage)
         verify_restored(home, plan["assets"])
+        seed_manifest = stage / "resources/engine-assets.json"
+        write_json(seed_manifest, engine_seed_manifest(home, plan["assets"]))
         write_json(stage / "ARTIFACT_EXCLUSIONS.json", {"entrypoints": entrypoints, "empty_generated_engine_cache": empty_engine_cache, "removed_generated_bytecode_files": removed_bytecode, "scope": "Application entrypoints are the two Rust EXEs. Only verified generated wrappers, bytecode and the smoke's empty known cache are excluded; original wheel RECORD metadata is retained."})
-        write_json(stage / "THIRD_PARTY_COMPONENTS.json", {"python": python_components, "rust_lock_all_targets": rust_components, "pdfium": {"version": PDFIUM_VERSION, "publisher_archive_url": PDFIUM_URL, "publisher_archive_sha256": PDFIUM_ARCHIVE_SHA256, "dll_sha256": PDFIUM_SHA256, "verification": "DLL digest, version/build flags, notices copied; archive/signature/ABI validation is external", "licenses": "licenses/pdfium"}, "python_runtime": {"version": PYTHON_VERSION, "source": "manifest-verified previous official embedded-runtime candidate", "license": "licenses/python-runtime/LICENSE.txt"}, "engine_assets": {"inventory": "provenance/ENGINE_ASSET_INVENTORY.json", "license_texts_supplied": bool(args.asset_notices)}, "license_review_items": license_issues})
+        write_json(stage / "THIRD_PARTY_COMPONENTS.json", {"python": python_components, "rust_lock_all_targets": rust_components, "pdfium": {"version": PDFIUM_VERSION, "publisher_archive_url": PDFIUM_URL, "publisher_archive_sha256": PDFIUM_ARCHIVE_SHA256, "dll_sha256": PDFIUM_SHA256, "verification": "DLL digest, version/build flags, notices copied; archive/signature/ABI validation is external", "licenses": "licenses/pdfium"}, "python_runtime": {"version": PYTHON_VERSION, "source": "verified embedded-runtime build input; see provenance/RUNTIME_SOURCE_FILES.json", "license": "licenses/python-runtime/LICENSE.txt"}, "engine_assets": {"inventory": "provenance/engine-assets.lock.json", "license_texts_supplied": bool(args.asset_notices)}, "license_review_items": license_issues})
         build_info = {
             "schema_version": 1, "artifact_kind": "hybrid-windows-x64-candidate", "release_ready": False,
             "rust_built_by_builder": False, "source_commit": args.source_commit,
             "runtime_python": PYTHON_VERSION, "babeldoc": "0.6.3", "python_distribution_count": ENGINE_COUNT,
             "pdfium": PDFIUM_VERSION, "pdfium_dll_sha256": PDFIUM_SHA256,
             "assets_tag": ASSET_TAG, "assets_archive_sha256": ASSET_SHA256, "assets_verified_files": len(plan["assets"]),
+            "engine_seed_manifest_sha256": digest(seed_manifest),
             "offline_assets_restored_and_sha3_verified": True, "editable": False, "directml": False,
             "pth": PTH_CONTENT.splitlines(), "environment": "allowlisted; no user config/API credentials/proxy/index environment",
-            "inputs": {"uv_lock_sha256": digest(provenance / "uv.lock"), "cargo_lock_sha256": digest(provenance / "Cargo.lock"), "worker_lock_sha256": digest(provenance / REQUIREMENTS.name), "wheel_overrides_sha256": digest(provenance / WHEEL_OVERRIDES.name), "builder_sha256": digest(provenance / Path(__file__).name), "runtime_source_manifest_sha256": digest(args.runtime_manifest), "worker_sha256": digest(stage / "babeldoc/worker.py")},
+            "inputs": {"baseline_wheels_sha256": digest(provenance / BASELINE_WHEELS.name), "cargo_lock_sha256": digest(provenance / "Cargo.lock"), "worker_lock_sha256": digest(provenance / REQUIREMENTS.name), "wheel_overrides_sha256": digest(provenance / WHEEL_OVERRIDES.name), "builder_sha256": digest(provenance / Path(__file__).name), "runtime_source_manifest_sha256": digest(args.runtime_manifest), "worker_sha256": digest(stage / "babeldoc/worker.py")},
             "uv_version": (work / "uv-version.log").read_text(encoding="utf-8").strip(),
             "checks": {"embedded_native_imports_after_relocation": "passed", "cli_version": "passed", "gui_version": "passed", "native_unresolved_count": len(missing)},
             "removed_generated_bytecode_files": removed_bytecode,
@@ -927,17 +959,20 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     action = parser.add_mutually_exclusive_group()
     action.add_argument("--plan", action="store_true", help="Verify inputs and show the plan without building/installing")
-    action.add_argument("--write-lock", action="store_true", help="Regenerate the owned worker requirements from inventory, uv.lock and reviewed Worker replacements")
+    action.add_argument("--write-lock", action="store_true", help="Regenerate worker requirements from the captured baseline and reviewed replacements")
     action.add_argument("--self-test", action="store_true", help="Run fast synthetic tests without network, packages, Cargo or real binaries")
     parser.add_argument("--output", type=Path, help="New output directory below the repo; must not already exist")
     parser.add_argument("--bin-dir", type=Path, default=REPO / "target/release")
-    parser.add_argument("--runtime-source", type=Path, default=REPO / "dist/release/runtime")
-    parser.add_argument("--runtime-manifest", type=Path, default=REPO / "dist/release/RELEASE_FILES.json")
-    parser.add_argument("--pdfium-source", type=Path, default=REPO / ".test-output/rust-migration/native/8125/extracted")
-    parser.add_argument("--assets-zip", type=Path, default=REPO / f".test-output/rust-migration/phase6-assets-generate/archives/offline_assets_{ASSET_TAG}.zip")
+    parser.add_argument("--runtime-source", type=Path, default=BUILD_INPUTS / "runtime")
+    parser.add_argument("--runtime-manifest", type=Path, default=BUILD_INPUTS / "runtime-files.json")
+    parser.add_argument("--pdfium-source", type=Path, default=BUILD_INPUTS / "pdfium")
+    parser.add_argument("--assets-zip", type=Path, default=BUILD_INPUTS / f"offline_assets_{ASSET_TAG}.zip")
     parser.add_argument("--uv", type=Path, help="Existing uv.exe (resolved once before the environment is isolated)")
     parser.add_argument("--cargo-registry-src", type=Path, help="Explicit read-only Cargo registry/src directory for third-party notices")
-    parser.add_argument("--asset-notices", type=Path, help="Explicit reviewed font/model/CMap/tokenizer notices directory")
+    parser.add_argument("--asset-notices", type=Path, default=REPO / "resources/licenses/engine-assets", help="Reviewed font/model/CMap/tokenizer notices directory")
+    wheel_source = parser.add_mutually_exclusive_group()
+    wheel_source.add_argument("--wheel-cache", type=Path, default=BUILD_INPUTS / "uv-cache", help="Copy an existing uv cache into the private build directory and install offline")
+    wheel_source.add_argument("--online", dest="wheel_cache", action="store_const", const=None, help="Download pinned wheels to a new private cache instead of using the offline cache")
     parser.add_argument("--source-commit", help="Caller-supplied source revision for the precompiled EXEs; not inferred from binary hashes")
     parser.add_argument("--allow-unresolved-native", action="store_true", help="Allow a clearly marked diagnostic candidate with unresolved native imports")
     parser.add_argument("--install-timeout", type=int, default=1800)
@@ -947,7 +982,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         parser.error("--output is required for --plan or building")
     if args.install_timeout <= 0 or args.smoke_timeout <= 0:
         parser.error("Timeouts must be positive")
-    for name in ("output", "bin_dir", "runtime_source", "runtime_manifest", "pdfium_source", "assets_zip", "uv", "cargo_registry_src", "asset_notices"):
+    for name in ("output", "bin_dir", "runtime_source", "runtime_manifest", "pdfium_source", "assets_zip", "uv", "cargo_registry_src", "asset_notices", "wheel_cache"):
         value = getattr(args, name)
         if value is not None:
             setattr(args, name, plain_path(value))
@@ -960,9 +995,9 @@ def main(argv: list[str] | None = None) -> int:
         result = unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(BuilderTests))
         return 0 if result.wasSuccessful() else 1
     inventory = read_json(INVENTORY)
-    wheels = select_wheels(inventory, tomllib.loads((REPO / "uv.lock").read_text(encoding="utf-8")))
+    wheels = select_wheels(inventory, read_json(BASELINE_WHEELS))
     wheels = apply_wheel_overrides(wheels, read_json(WHEEL_OVERRIDES))
-    expected = lock_text(wheels, source_text_digest(INVENTORY), source_text_digest(REPO / "uv.lock"), source_text_digest(WHEEL_OVERRIDES))
+    expected = lock_text(wheels, source_text_digest(INVENTORY), source_text_digest(BASELINE_WHEELS), source_text_digest(WHEEL_OVERRIDES))
     if args.write_lock:
         write_lock_file(REQUIREMENTS, expected)
         print(f"Wrote {len(wheels)} exact wheel requirements: {REQUIREMENTS}")
@@ -978,15 +1013,25 @@ def main(argv: list[str] | None = None) -> int:
 class BuilderTests(unittest.TestCase):
     """Synthetic boundary tests, deliberately independent of the user's setup."""
 
+    def test_stable_build_inputs_default_to_offline_with_explicit_online_override(self):
+        args = parse_args(["--plan", "--output", str(REPO / "dist" / "synthetic-plan")])
+        self.assertEqual(args.runtime_source, BUILD_INPUTS / "runtime")
+        self.assertEqual(args.runtime_manifest, BUILD_INPUTS / "runtime-files.json")
+        self.assertEqual(args.pdfium_source, BUILD_INPUTS / "pdfium")
+        self.assertEqual(args.wheel_cache, BUILD_INPUTS / "uv-cache")
+        self.assertTrue(args.assets_zip.is_relative_to(BUILD_INPUTS))
+        online = parse_args(["--plan", "--output", str(REPO / "dist" / "synthetic-plan"), "--online"])
+        self.assertIsNone(online.wheel_cache)
+
     def test_captured_locks_are_stable_across_git_checkout_line_endings(self):
         inventory = read_json(INVENTORY)
-        wheels = apply_wheel_overrides(select_wheels(inventory, tomllib.loads((REPO / "uv.lock").read_text(encoding="utf-8"))), read_json(WHEEL_OVERRIDES))
+        wheels = apply_wheel_overrides(select_wheels(inventory, read_json(BASELINE_WHEELS)), read_json(WHEEL_OVERRIDES))
         with tempfile.TemporaryDirectory(dir=REPO) as temporary:
             stage = Path(temporary)
             provenance = stage / "provenance"
             provenance.mkdir()
             for newline in (b"\n", b"\r\n"):
-                for origin in (INVENTORY, WHEEL_OVERRIDES, REPO / "uv.lock"):
+                for origin in (INVENTORY, WHEEL_OVERRIDES, BASELINE_WHEELS):
                     content = origin.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", newline)
                     (provenance / origin.name).write_bytes(content)
                 shutil.copyfile(REQUIREMENTS, provenance / REQUIREMENTS.name)
@@ -999,12 +1044,39 @@ class BuilderTests(unittest.TestCase):
 
     def test_worker_security_profile_changes_only_the_reviewed_wheel(self):
         inventory = read_json(INVENTORY)
-        baseline = select_wheels(inventory, tomllib.loads((REPO / "uv.lock").read_text(encoding="utf-8")))
+        baseline = select_wheels(inventory, read_json(BASELINE_WHEELS))
         effective = apply_wheel_overrides(baseline, read_json(WHEEL_OVERRIDES))
         self.assertEqual(len(effective), ENGINE_COUNT)
         self.assertEqual([old["name"] for old, new in zip(baseline, effective, strict=True) if old != new], ["pillow"])
         self.assertEqual(next(w["version"] for w in effective if w["name"] == "pillow"), "13.0.0")
         self.assertEqual(next(w["version"] for w in baseline if w["name"] == "pillow"), "12.3.0")
+
+    def test_effective_wheels_match_v3_recorded_profile(self):
+        # Captured from v3 provenance/WHEELS.json, canonicalized as below.
+        wheels = apply_wheel_overrides(select_wheels(read_json(INVENTORY), read_json(BASELINE_WHEELS)), read_json(WHEEL_OVERRIDES))
+        canonical = json.dumps(wheels, sort_keys=True, separators=(",", ":")).encode()
+        self.assertEqual(hashlib.sha256(canonical).hexdigest(), "2afbc367ce4d3f0fbfd8f3b5f1da0e5d34ff9d3bb79aba761b83d045b64dca97")
+
+    def test_baseline_profile_rejects_invalid_or_duplicate_wheels(self):
+        inventory = read_json(INVENTORY)
+        for mutation in ("duplicate", "url", "identity", "digest", "size", "version"):
+            with self.subTest(mutation=mutation):
+                profile = read_json(BASELINE_WHEELS)
+                wheel = profile["wheels"][0]
+                if mutation == "duplicate":
+                    profile["wheels"][-1] = wheel.copy()
+                elif mutation == "url":
+                    wheel["url"] = wheel["url"].replace("files.pythonhosted.org", "example.invalid")
+                elif mutation == "identity":
+                    wheel["url"] = wheel["url"].replace("annotated_types-", "different-")
+                elif mutation == "digest":
+                    wheel["sha256"] = "invalid"
+                elif mutation == "size":
+                    wheel["bytes"] = True
+                else:
+                    wheel["version"] = "0.0.0"
+                with self.assertRaises(BuildError):
+                    select_wheels(inventory, profile)
 
     def test_replacement_cannot_add_a_package_or_use_a_stale_baseline(self):
         profile = read_json(WHEEL_OVERRIDES)
@@ -1034,16 +1106,22 @@ class BuilderTests(unittest.TestCase):
 
     def test_captured_profile_change_cannot_silently_change_provenance(self):
         inventory = read_json(INVENTORY)
-        wheels = apply_wheel_overrides(select_wheels(inventory, tomllib.loads((REPO / "uv.lock").read_text(encoding="utf-8"))), read_json(WHEEL_OVERRIDES))
+        wheels = apply_wheel_overrides(select_wheels(inventory, read_json(BASELINE_WHEELS)), read_json(WHEEL_OVERRIDES))
         with tempfile.TemporaryDirectory(dir=REPO) as temporary:
             stage = Path(temporary)
             provenance = stage / "provenance"
             provenance.mkdir()
-            for origin in (INVENTORY, REQUIREMENTS, WHEEL_OVERRIDES, REPO / "uv.lock"):
+            for origin in (INVENTORY, REQUIREMENTS, WHEEL_OVERRIDES, BASELINE_WHEELS):
                 shutil.copyfile(origin, provenance / origin.name)
             profile = read_json(provenance / WHEEL_OVERRIDES.name)
             profile["packages"]["pillow"]["reason"] = "Changed after preflight"
             write_json(provenance / WHEEL_OVERRIDES.name, profile)
+            with self.assertRaises(BuildError):
+                staged_inputs(stage, wheels)
+            shutil.copyfile(WHEEL_OVERRIDES, provenance / WHEEL_OVERRIDES.name)
+            baseline = read_json(provenance / BASELINE_WHEELS.name)
+            baseline["wheels"][0]["bytes"] += 1
+            write_json(provenance / BASELINE_WHEELS.name, baseline)
             with self.assertRaises(BuildError):
                 staged_inputs(stage, wheels)
 
@@ -1109,13 +1187,13 @@ class BuilderTests(unittest.TestCase):
     def test_component_inventory_uses_captured_locks_after_source_changes(self):
         from unittest.mock import patch
         inventory = read_json(INVENTORY)
-        wheels = select_wheels(inventory, tomllib.loads((REPO / "uv.lock").read_text(encoding="utf-8")))
+        wheels = select_wheels(inventory, read_json(BASELINE_WHEELS))
         wheels = apply_wheel_overrides(wheels, read_json(WHEEL_OVERRIDES))
         with tempfile.TemporaryDirectory(dir=REPO) as temporary:
             stage = Path(temporary)
             provenance = stage / "provenance"
             provenance.mkdir()
-            for origin in (INVENTORY, REQUIREMENTS, WHEEL_OVERRIDES, REPO / "uv.lock"):
+            for origin in (INVENTORY, REQUIREMENTS, WHEEL_OVERRIDES, BASELINE_WHEELS):
                 shutil.copyfile(origin, provenance / origin.name)
             (provenance / "Cargo.lock").write_text('[[package]]\nname="captured-package"\nversion="1.0.0"\n')
             with patch(__name__ + ".REPO", stage / "missing-live-source"):
@@ -1190,6 +1268,8 @@ class BuilderTests(unittest.TestCase):
                 validate_output(root / "new", [root / "new/input"])
             with self.assertRaises(BuildError):
                 validate_output(REPO / "dist/release/new", [])
+            with self.assertRaises(BuildError):
+                validate_output(BUILD_INPUTS / "new", [])
             self.assertEqual(validate_output(root / "new", []), root / "new")
 
     def test_optional_notice_and_registry_inputs_cannot_contain_output_or_work(self):
@@ -1234,6 +1314,22 @@ class BuilderTests(unittest.TestCase):
             path.unlink()
             with self.assertRaises(BuildError):
                 verify_restored(home, expected)
+
+    def test_seed_manifest_contains_only_verified_asset_bytes(self):
+        with tempfile.TemporaryDirectory(dir=REPO) as temporary:
+            home = Path(temporary)
+            path = home / ".cache/babeldoc/fonts/synthetic.ttf"
+            path.parent.mkdir(parents=True)
+            path.write_bytes(b"font")
+            expected = {"fonts/synthetic.ttf": {"category": "fonts", "name": "synthetic.ttf", "bytes": 4, "sha3_256": hashlib.sha3_256(b"font").hexdigest()}}
+            self.assertEqual(engine_seed_manifest(home, expected), {"schema_version": 1, "asset_tag": ASSET_TAG, "files": [{"category": "fonts", "name": "synthetic.ttf", "bytes": 4, "sha256": hashlib.sha256(b"font").hexdigest()}]})
+            path.write_bytes(b"evil")
+            with self.assertRaises(BuildError):
+                engine_seed_manifest(home, expected)
+            path.write_bytes(b"font")
+            (path.parent / "extra.ttf").write_bytes(b"extra")
+            with self.assertRaises(BuildError):
+                engine_seed_manifest(home, expected)
 
     def test_final_manifest_has_every_file_and_no_self_hash(self):
         with tempfile.TemporaryDirectory(dir=REPO) as temporary:
@@ -1298,7 +1394,7 @@ class BuilderTests(unittest.TestCase):
 
     def test_real_lock_selection_is_exact_engine_closure_without_installing(self):
         inventory = read_json(INVENTORY)
-        wheels = select_wheels(inventory, tomllib.loads((REPO / "uv.lock").read_text(encoding="utf-8")))
+        wheels = select_wheels(inventory, read_json(BASELINE_WHEELS))
         self.assertEqual(len(wheels), 85)
         self.assertEqual({w["name"]: w["version"] for w in wheels}, {name: meta["version"] for name, meta in inventory["engine"].items()})
         self.assertFalse({"gradio", "gradio-client", "pdf2zh-next", "onnxruntime-directml"} & {w["name"] for w in wheels})
