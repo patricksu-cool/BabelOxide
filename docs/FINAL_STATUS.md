@@ -14,6 +14,8 @@ Rust 的 7 個 crates 負責原生 GUI、CLI、24 個服務選項／16 種 provi
 
 主要目錄為 `crates/`、`python-worker/`、`resources/`、`script/`、`tests/baseline/`、`docs/`；根 uv 專案只管理 pytest／Ruff，執行期依賴由 Worker profile 鎖定。必要 Python、PDFium、Rust、模型／字型 notices 已附；七個 egui 元件採同 workspace 的共享授權文字，其來源版本限制保留在 provenance，未宣稱完整商業再散布審查。
 
+收尾另依明確清單移除本輪建立的三份過時包與五個私人建置工作目錄；先逐檔驗證過時包沒有額外使用者資料，保存 manifest／日誌後才刪除。正式包、離線重建輸入、既有基準包與個人資料保留。
+
 ## 驗證結果
 
 | 項目 | 結果與範圍 |
@@ -33,7 +35,7 @@ Rust 的 7 個 crates 負責原生 GUI、CLI、24 個服務選項／16 種 provi
 | 其他磁碟代號 | 暫時 Z: 別名啟動一頁翻譯通過，映射已移除；仍是 C: 實體磁碟，不計為跨實體磁碟驗證 |
 | 唯讀備援 | 注入權限失敗、設定保留與備援不覆寫測試通過；未變更真實目錄 ACL |
 | 最終包 | 13,067 個 manifest 項目、1,248,094,450 bytes（不含 manifest 自身）；全檔 hash／size／集合相符，無額外私人設定、Key、PDF、venv 或可變 cache |
-| Git main | 待執行 fast-forward 與合併後回歸 |
+| Git main | 已確認沒有未整合的獨立修改，安全 fast-forward；合併後 Rust 245、Worker 35、Builder 31、fmt／Clippy／Release build 再次通過；工作樹乾淨，穩定回復點 `codex/personal-final-20261031`，未 Push／建立 GitHub Release |
 
 量化證據見 [最終驗證資料](validation/final-verification.json)，桌面操作範圍見 [GUI 實測](validation/GUI.md)。PDF SHA256 為 `d0a8367aa014b52929af86f42b5164ade3bb551c69717734a975ba122369498f`。本輪修正 Worker 啟動目錄、OpenCV 平行後端與 GUI COM／OLE 的長路徑問題；另修正測試 fixture 的非阻塞 socket 與 PID 檔發布競態，沒有重設計重試或 BabelDOC 排版。
 
@@ -43,7 +45,7 @@ Rust 的 7 個 crates 負責原生 GUI、CLI、24 個服務選項／16 種 provi
 
 在 GUI 選服務、Base URL／模型／Key 與語言，再按保存；設定在執行包 `config/config.v3.toml`，空 Key 範本為 `config/config.example.toml`。cache 路徑見上方；唯讀備援會明確顯示。開始翻譯的健康檢查可能計入自己的 API 用量。
 
-重新編譯與離線組包依 [DEVELOPMENT](DEVELOPMENT.md)，排解見 [TROUBLESHOOTING](TROUBLESHOOTING.md)。系統仍需官方 [VC++ v14 x64 Runtime](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170)，未從 System32 複製 DLL。包的程式碼提交為 `5db9e6a`；`BUILD_INFO.release_ready=false` 保留 builder 的公開再散布／乾淨機 gate，個人使用驗收以本報告及獨立證據為準。
+重新編譯與離線組包依 [DEVELOPMENT](DEVELOPMENT.md)，排解見 [TROUBLESHOOTING](TROUBLESHOOTING.md)。系統仍需官方 [VC++ v14 x64 Runtime](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170)，未從 System32 複製 DLL。包的程式碼提交為 `5db9e6a`，與 main 的程式碼相同；保留已桌面實測的成品，合併後重建不承諾位元組完全相同。`BUILD_INFO.release_ready=false` 保留 builder 的公開再散布／乾淨機 gate，個人使用驗收以本報告及獨立證據為準。
 
 ## 剩餘限制與未執行項目
 

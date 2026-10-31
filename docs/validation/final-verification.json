@@ -271,8 +271,34 @@
     "Tencent dynamic credential chain and remaining SDK boundaries; see PROVIDERS.md"
   ],
   "git": {
-    "main_integration": "pending fast-forward and post-merge tests",
+    "main_integration": "fast-forward from d18165e; no independent main changes or conflicts",
+    "post_merge_tested_revision": "696e8a3867fc4982779625bb44c0225369dd85f3",
+    "post_merge_tests": {
+      "rust_passed": 245,
+      "rust_failed": 0,
+      "default_ignored": 1,
+      "worker_passed": 35,
+      "builder_passed": 31,
+      "fmt": "passed",
+      "clippy_warnings_denied": "passed",
+      "release_build": "passed"
+    },
+    "packaged_code_equals_main": true,
+    "validated_package_retained": true,
+    "bitwise_rebuild_promised": false,
     "pushed": false,
-    "github_release_created": false
+    "github_release_created": false,
+    "recovery_baseline": "codex/baseline-final-integration-20261031",
+    "stable_tag": "codex/personal-final-20261031"
+  },
+  "cleanup": {
+    "reviewed_tracked_removal_list": 541,
+    "consolidated_migration_snapshots": 36,
+    "superseded_packages_removed": 3,
+    "private_builder_workdirs_removed": 5,
+    "strict_package_integrity_checked_before_removal": true,
+    "manifests_and_build_logs_archived": true,
+    "final_package_and_offline_inputs_preserved": true,
+    "unknown_user_data_preserved": true
   }
 }
