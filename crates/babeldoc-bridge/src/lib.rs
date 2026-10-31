@@ -383,16 +383,40 @@ fn validate_pdf_result(
     Ok(())
 }
 
+fn native_runtime_path(path: PathBuf) -> PathBuf {
+    #[cfg(windows)]
+    {
+        use std::os::windows::ffi::{OsStrExt, OsStringExt};
+        use windows_sys::Win32::Storage::FileSystem::GetShortPathNameW;
+
+        // OpenCV's native loader fails inside a deeply nested runtime even when
+        // CPython can import it using extended paths. Reuse an existing 8.3 alias
+        // when available; do not change volume policy or create filesystem links.
+        let mut input: Vec<u16> = path.as_os_str().encode_wide().collect();
+        input.push(0);
+        let mut output = vec![0u16; 32768];
+        let length =
+            unsafe { GetShortPathNameW(input.as_ptr(), output.as_mut_ptr(), output.len() as u32) }
+                as usize;
+        if length > 0 && length < output.len() && length + 1 < input.len() {
+            return PathBuf::from(std::ffi::OsString::from_wide(&output[..length]));
+        }
+    }
+    path
+}
+
 async fn run_session(
     worker: &WorkerOptions,
     plan: SessionPlan,
     cancel: CancellationToken,
     events: Option<mpsc::Sender<Value>>,
 ) -> Result<Value> {
-    let python = worker
-        .python
-        .canonicalize()
-        .context("Worker Python is unavailable; provide --python for development")?;
+    let python = native_runtime_path(
+        worker
+            .python
+            .canonicalize()
+            .context("Worker Python is unavailable; provide --python for development")?,
+    );
     let script = worker
         .script
         .canonicalize()

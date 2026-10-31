@@ -26,6 +26,8 @@ Tencent 目前支援設定中的靜態 ID／Key，以及完整環境 ID／Key �
 
 資料夾不可寫時，GUI／CLI 顯示使用者資料備援路徑。備援依來源資料夾識別，已有設定不會被初始化取代。`PDF2ZH_APP_DIR` 可明確選擇設定與 cache 根目錄；`--worker-home` 與 `--cache-file` 可另外指定。選擇自己可寫的位置，並保持完整 bundle 可讀。
 
+Windows 的超長路徑還受啟動器與原生套件限制。Worker 使用獨立暫存工作目錄，並優先採用磁碟既有的 8.3 短檔名啟動 Python，以避開 OpenCV 的原生長路徑限制；不會修改系統政策。若磁碟未提供短檔名，或 Windows 啟動器拒絕超過 260 字元的 EXE 路徑，請把完整程式資料夾移到較短的可寫位置。開發 smoke harness 會為超長 EXE 加上 Windows extended-path prefix。
+
 若 BabelDOC 資產與內附 manifest 不同，程式會保留檔案並停止。先備份自己的模型／字型，再改用新的空白 `--worker-home`；不要直接刪除不明資料。清 cache 前關閉所有任務，保留需要的 glossary 與輸出 PDF。
 
 取消可能先顯示清理中，正常情況會等待 Worker 結束。不要在清理中重複點擊或搬動整包。沙箱限制與乾淨機／不同實體磁碟的未驗證範圍，以 [最終狀態](FINAL_STATUS.md) 為準。
