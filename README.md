@@ -12,7 +12,7 @@ Windows 個人使用的 PDF 翻譯工具，保留公式、圖表與版面，輸�
 - Rust 翻譯快取：`cache/translations.v2.db`。
 - BabelDOC 可變資料：`cache/babeldoc-home/`；模型／字型種子保留在 `resources/`。
 - 程式資料夾不可寫時，畫面／CLI 會顯示使用者資料備援位置，不覆寫已有設定。
-- `resources/config.example.toml` 是無私人 Key 的範本，不會自動覆蓋設定。
+- 執行包的 `config/config.example.toml` 是空 Key 範本，原始碼範本在 `resources/config.example.toml`；不會自動覆蓋設定。
 
 CLI 範例（執行版本目錄內）：
 
