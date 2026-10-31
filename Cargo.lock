@@ -2291,6 +2291,7 @@ dependencies = [
  "pdf2zh-tasks",
  "reqwest",
  "rfd",
+ "rustls",
  "serde_json",
  "tempfile",
  "tokio",

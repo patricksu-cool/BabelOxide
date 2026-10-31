@@ -88,6 +88,32 @@ impl reqwest::dns::Resolve for RejectUnpinnedDns {
     }
 }
 
+fn pinned_download_client(url: &Url, addresses: &[SocketAddr]) -> Result<reqwest::Client> {
+    // URL download can be the first network action in a fresh GUI process.
+    // reqwest's rustls-no-provider feature requires explicit initialization;
+    // do not rely on a translation transport having installed it beforehand.
+    let _ = rustls::crypto::ring::default_provider().install_default();
+    let host = url.host_str().context("PDF 連結缺少伺服器名稱")?;
+    // A new client on every hop has no cookies, credentials, connection pool
+    // or translation-provider state. Only the checked sockets can be used.
+    reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::none())
+        .retry(reqwest::retry::never())
+        .no_proxy()
+        .referer(false)
+        .no_gzip()
+        .no_brotli()
+        .no_deflate()
+        .no_zstd()
+        .http1_only()
+        .connect_timeout(PDF_CONNECT_TIMEOUT)
+        .timeout(PDF_DOWNLOAD_TIMEOUT)
+        .dns_resolver(Arc::new(RejectUnpinnedDns))
+        .resolve_to_addrs(host, addresses)
+        .build()
+        .map_err(|_| anyhow!("無法建立 PDF 下載連線"))
+}
+
 impl DownloadNetwork for PublicNetwork {
     type Body = reqwest::Response;
 
@@ -99,25 +125,7 @@ impl DownloadNetwork for PublicNetwork {
     }
 
     async fn get(&self, url: &Url, addresses: &[SocketAddr]) -> Result<Reply<Self::Body>> {
-        let host = url.host_str().context("PDF 連結缺少伺服器名稱")?;
-        // A new client on every hop has no cookies, credentials, connection pool
-        // or provider state. Only the already checked sockets can be used.
-        let client = reqwest::Client::builder()
-            .redirect(reqwest::redirect::Policy::none())
-            .retry(reqwest::retry::never())
-            .no_proxy()
-            .referer(false)
-            .no_gzip()
-            .no_brotli()
-            .no_deflate()
-            .no_zstd()
-            .http1_only()
-            .connect_timeout(PDF_CONNECT_TIMEOUT)
-            .timeout(PDF_DOWNLOAD_TIMEOUT)
-            .dns_resolver(Arc::new(RejectUnpinnedDns))
-            .resolve_to_addrs(host, addresses)
-            .build()
-            .map_err(|_| anyhow!("無法建立 PDF 下載連線"))?;
+        let client = pinned_download_client(url, addresses)?;
         let response = client
             .get(url.clone())
             .header(
@@ -1199,6 +1207,36 @@ mod tests {
                 .resolve("files.example".parse().unwrap())
                 .await
                 .is_err()
+        );
+    }
+
+    #[tokio::test]
+    async fn cold_start_download_client_initializes_tls() {
+        const CHILD_FLAG: &str = "PDF2ZH_TEST_COLD_DOWNLOAD_TLS_CHILD";
+        const TEST_NAME: &str = "transfers::tests::cold_start_download_client_initializes_tls";
+        if std::env::var_os(CHILD_FLAG).is_some() {
+            assert!(
+                rustls::crypto::CryptoProvider::get_default().is_none(),
+                "fresh subprocess must not inherit an initialized TLS provider"
+            );
+            let url = checked_url("https://files.example/a.pdf", None).unwrap();
+            let addresses = [SocketAddr::new(public_ip(), 443)];
+            // Building clients is entirely offline: no DNS lookup or request.
+            let _first = pinned_download_client(&url, &addresses).unwrap();
+            assert!(rustls::crypto::CryptoProvider::get_default().is_some());
+            let _second = pinned_download_client(&url, &addresses).unwrap();
+            return;
+        }
+        let output = std::process::Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", TEST_NAME, "--nocapture"])
+            .env(CHILD_FLAG, "1")
+            .output()
+            .unwrap();
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        assert!(
+            output.status.success() && stdout.contains(TEST_NAME),
+            "cold-start regression subprocess failed or did not run its test:\n{stdout}\n{}",
+            String::from_utf8_lossy(&output.stderr)
         );
     }
 
