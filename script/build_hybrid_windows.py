@@ -720,7 +720,19 @@ def preflight(args: argparse.Namespace, wheels: list[dict], expected_lock: str) 
 
 
 def final_manifest(stage: Path) -> list[dict]:
-    require(not (stage / "config").exists(), "Build unexpectedly created application config")
+    if (stage / "config").exists():
+        templates = files_below(stage / "config")
+        require([path.relative_to(stage / "config").as_posix() for path in templates] == ["config.example.toml"], "Build unexpectedly created application config")
+        template = templates[0]
+        require(digest(template) == digest(REPO / "resources/config.example.toml"), "Unverified configuration template")
+        def empty_credentials(value):
+            if isinstance(value, dict):
+                for key, item in value.items():
+                    if any(word in key.lower() for word in ("api_key", "apikey", "auth_key", "secret_key", "secret_id", "password", "token")):
+                        require(item in ("", None), "Configuration template contains credentials")
+                    else:
+                        empty_credentials(item)
+        empty_credentials(tomllib.loads(template.read_text(encoding="utf-8")))
     require(not (stage / "site-packages").exists(), "Unexpected legacy site-packages layout")
     records = []
     for path in files_below(stage):
@@ -1347,6 +1359,26 @@ class BuilderTests(unittest.TestCase):
             (root / ".env").write_text("SYNTHETIC_KEY=not-a-real-key")
             with self.assertRaises(BuildError):
                 final_manifest(root)
+
+    def test_only_empty_verified_template_is_allowed_in_config(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory(dir=REPO) as temporary:
+            root = Path(temporary)
+            source = root / "resources/config.example.toml"
+            target = root / "stage/config/config.example.toml"
+            source.parent.mkdir()
+            target.parent.mkdir(parents=True)
+            source.write_text('[openai_detail]\nopenai_api_key=""\n', encoding="utf-8")
+            target.write_bytes(source.read_bytes())
+            with patch(__name__ + ".REPO", root):
+                self.assertEqual(len(final_manifest(root / "stage")), 1)
+                source.write_text('[openai_detail]\nopenai_api_key="synthetic-key"\n', encoding="utf-8")
+                target.write_bytes(source.read_bytes())
+                with self.assertRaisesRegex(BuildError, "contains credentials"):
+                    final_manifest(root / "stage")
+                (target.parent / "config.v3.toml").write_text("private runtime config")
+                with self.assertRaisesRegex(BuildError, "application config"):
+                    final_manifest(root / "stage")
 
     def test_environment_drops_api_proxy_and_python_paths(self):
         from unittest.mock import patch

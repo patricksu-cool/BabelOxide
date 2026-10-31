@@ -19,6 +19,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("exe", type=Path)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--portable-config",
+        action="store_true",
+        help="Use the copied bundle's own config/cache instead of a test override",
+    )
     parser.add_argument("--timeout", type=int, default=2400)
     args = parser.parse_args()
     output = args.output.resolve()
@@ -120,6 +125,8 @@ def main():
         NO_PROXY="127.0.0.1,localhost",
         no_proxy="127.0.0.1,localhost",
     )
+    if args.portable_config:
+        environment.pop("PDF2ZH_APP_DIR", None)
     args_first = [
         str(args.exe.resolve()),
         "--openai",
@@ -206,8 +213,7 @@ def main():
             "exits": exits,
             "pdfs": [path.name for path in output.glob("*.pdf")],
             "synthetic_key_in_logs": any(
-                "synthetic-gui-local-only"
-                in p.read_text(encoding="utf-8", errors="replace")
+                "synthetic-gui-" in p.read_text(encoding="utf-8", errors="replace")
                 for p in output.glob("*.log")
             ),
         }

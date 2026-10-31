@@ -27,6 +27,11 @@ def main():
     )
     parser.add_argument("--worker-home", type=Path)
     parser.add_argument("--packaged", action="store_true")
+    parser.add_argument(
+        "--portable-config",
+        action="store_true",
+        help="Use the copied bundle's own config/cache",
+    )
     parser.add_argument("--isolated-cwd", action="store_true")
     parser.add_argument("--pages")
     parser.add_argument("--debug", action="store_true")
@@ -108,7 +113,9 @@ def main():
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     environment = {
-        key: value for key, value in os.environ.items() if not key.startswith("PDF2ZH_")
+        key: os.environ[key]
+        for key in ("SystemRoot", "WINDIR", "COMSPEC", "PATH")
+        if key in os.environ
     }
     environment["PDF2ZH_OPENAI_API_KEY"] = synthetic
     # The full Rust CLI now loads configuration. Keep the fixture independent
@@ -126,7 +133,8 @@ def main():
         child_cwd.mkdir()
     environment["HOME"] = environment["USERPROFILE"] = str(isolated_home)
     environment["TEMP"] = environment["TMP"] = str(isolated_temp)
-    environment["PDF2ZH_APP_DIR"] = str(isolated_app)
+    if not args.portable_config:
+        environment["PDF2ZH_APP_DIR"] = str(isolated_app)
     environment["NO_PROXY"] = environment["no_proxy"] = "127.0.0.1,localhost"
     command = [
         str(args.exe.resolve()),
@@ -152,10 +160,14 @@ def main():
         "no_watermark",
     ]
     if not args.packaged:
-        command.extend([
-            "--python", str(args.python.resolve()),
-            "--worker", str(ROOT / "python-worker/worker.py"),
-        ])
+        command.extend(
+            [
+                "--python",
+                str(args.python.resolve()),
+                "--worker",
+                str(ROOT / "python-worker/worker.py"),
+            ]
+        )
     if args.worker_home is not None:
         command.extend(["--worker-home", str(args.worker_home.resolve())])
     command.append("--json")
@@ -193,8 +205,12 @@ def main():
         "batch_requests": sum(call["batch"] for call in calls),
         "pages": args.pages or "all",
         "provider": "loopback identity fixture",
-        "worker_runtime": "bundle defaults" if args.packaged else "explicit development paths",
-        "working_directory": "isolated non-source directory" if args.isolated_cwd else "repository root",
+        "worker_runtime": "bundle defaults"
+        if args.packaged
+        else "explicit development paths",
+        "working_directory": "isolated non-source directory"
+        if args.isolated_cwd
+        else "repository root",
         "contains_synthetic_key": synthetic in stdout + stderr,
         "progress_events": sum(
             event.get("type", "").startswith("progress") for event in events
