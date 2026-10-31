@@ -1,0 +1,136 @@
+[
+  {
+    "name": "accesskit",
+    "version": "0.25.2",
+    "file": "accesskit-0.25.2/LICENSE-MIT",
+    "source": "https://raw.githubusercontent.com/AccessKit/accesskit/f3026222559c7f5f46d8f25cb7404de68eb149f0/LICENSE-MIT",
+    "source_revision": "f3026222559c7f5f46d8f25cb7404de68eb149f0",
+    "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+  },
+  {
+    "name": "alloc-stdlib",
+    "version": "0.3.0",
+    "file": "alloc-stdlib-0.3.0/LICENSE",
+    "source": "https://raw.githubusercontent.com/dropbox/rust-alloc-no-stdlib/0a81fd6928ea3b33c8cd484aa4575d50ffb98012/LICENSE",
+    "source_revision": "0a81fd6928ea3b33c8cd484aa4575d50ffb98012",
+    "sha256": "c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae"
+  },
+  {
+    "name": "clipboard-win",
+    "version": "5.4.3",
+    "file": "clipboard-win-5.4.3/LICENSE",
+    "source": "https://raw.githubusercontent.com/DoumanAsh/clipboard-win/ed27008ae5d1f10cfbb266de039f0fb35fd05a56/LICENSE",
+    "source_revision": "ed27008ae5d1f10cfbb266de039f0fb35fd05a56",
+    "sha256": "c9bff75738922193e67fa726fa225535870d2aa1059f91452c411736284ad566"
+  },
+  {
+    "name": "ecolor",
+    "version": "0.37.0",
+    "file": "eframe-0.37.0/LICENSE-MIT",
+    "source": "https://raw.githubusercontent.com/emilk/egui/3c6eb8261c3293ad9c7ea1ed58487e038860ebef/LICENSE-MIT",
+    "source_revision": "3c6eb8261c3293ad9c7ea1ed58487e038860ebef",
+    "sha256": "95ca92f5f8ea5231f1580b3a2a799e8260af3114b900e1def5355a7f44bcf60c",
+    "target_crate_revision": "7c0b40402271e8d40cda69f87cf3c2617c2e4382",
+    "verification": "Shared egui 0.37 workspace license from the published eframe sibling revision; target revision was unavailable at collection"
+  },
+  {
+    "name": "eframe",
+    "version": "0.37.0",
+    "file": "eframe-0.37.0/LICENSE-MIT",
+    "source": "https://raw.githubusercontent.com/emilk/egui/3c6eb8261c3293ad9c7ea1ed58487e038860ebef/LICENSE-MIT",
+    "source_revision": "3c6eb8261c3293ad9c7ea1ed58487e038860ebef",
+    "sha256": "95ca92f5f8ea5231f1580b3a2a799e8260af3114b900e1def5355a7f44bcf60c"
+  },
+  {
+    "name": "egui",
+    "version": "0.37.0",
+    "file": "eframe-0.37.0/LICENSE-MIT",
+    "source": "https://raw.githubusercontent.com/emilk/egui/3c6eb8261c3293ad9c7ea1ed58487e038860ebef/LICENSE-MIT",
+    "source_revision": "3c6eb8261c3293ad9c7ea1ed58487e038860ebef",
+    "sha256": "95ca92f5f8ea5231f1580b3a2a799e8260af3114b900e1def5355a7f44bcf60c",
+    "target_crate_revision": "7c0b40402271e8d40cda69f87cf3c2617c2e4382",
+    "verification": "Shared egui 0.37 workspace license from the published eframe sibling revision; target revision was unavailable at collection"
+  },
+  {
+    "name": "egui-winit",
+    "version": "0.37.0",
+    "file": "eframe-0.37.0/LICENSE-MIT",
+    "source": "https://raw.githubusercontent.com/emilk/egui/3c6eb8261c3293ad9c7ea1ed58487e038860ebef/LICENSE-MIT",
+    "source_revision": "3c6eb8261c3293ad9c7ea1ed58487e038860ebef",
+    "sha256": "95ca92f5f8ea5231f1580b3a2a799e8260af3114b900e1def5355a7f44bcf60c",
+    "target_crate_revision": "7c0b40402271e8d40cda69f87cf3c2617c2e4382",
+    "verification": "Shared egui 0.37 workspace license from the published eframe sibling revision; target revision was unavailable at collection"
+  },
+  {
+    "name": "egui_glow",
+    "version": "0.37.0",
+    "file": "eframe-0.37.0/LICENSE-MIT",
+    "source": "https://raw.githubusercontent.com/emilk/egui/3c6eb8261c3293ad9c7ea1ed58487e038860ebef/LICENSE-MIT",
+    "source_revision": "3c6eb8261c3293ad9c7ea1ed58487e038860ebef",
+    "sha256": "95ca92f5f8ea5231f1580b3a2a799e8260af3114b900e1def5355a7f44bcf60c",
+    "target_crate_revision": "7c0b40402271e8d40cda69f87cf3c2617c2e4382",
+    "verification": "Shared egui 0.37 workspace license from the published eframe sibling revision; target revision was unavailable at collection"
+  },
+  {
+    "name": "egui_system_font_provider",
+    "version": "0.37.0",
+    "file": "egui_system_font_provider-0.37.0/LICENSE-MIT",
+    "source": "https://raw.githubusercontent.com/emilk/egui/3c6eb8261c3293ad9c7ea1ed58487e038860ebef/LICENSE-MIT",
+    "source_revision": "3c6eb8261c3293ad9c7ea1ed58487e038860ebef",
+    "sha256": "95ca92f5f8ea5231f1580b3a2a799e8260af3114b900e1def5355a7f44bcf60c"
+  },
+  {
+    "name": "emath",
+    "version": "0.37.0",
+    "file": "eframe-0.37.0/LICENSE-MIT",
+    "source": "https://raw.githubusercontent.com/emilk/egui/3c6eb8261c3293ad9c7ea1ed58487e038860ebef/LICENSE-MIT",
+    "source_revision": "3c6eb8261c3293ad9c7ea1ed58487e038860ebef",
+    "sha256": "95ca92f5f8ea5231f1580b3a2a799e8260af3114b900e1def5355a7f44bcf60c",
+    "target_crate_revision": "7c0b40402271e8d40cda69f87cf3c2617c2e4382",
+    "verification": "Shared egui 0.37 workspace license from the published eframe sibling revision; target revision was unavailable at collection"
+  },
+  {
+    "name": "epaint",
+    "version": "0.37.0",
+    "file": "eframe-0.37.0/LICENSE-MIT",
+    "source": "https://raw.githubusercontent.com/emilk/egui/3c6eb8261c3293ad9c7ea1ed58487e038860ebef/LICENSE-MIT",
+    "source_revision": "3c6eb8261c3293ad9c7ea1ed58487e038860ebef",
+    "sha256": "95ca92f5f8ea5231f1580b3a2a799e8260af3114b900e1def5355a7f44bcf60c",
+    "target_crate_revision": "7c0b40402271e8d40cda69f87cf3c2617c2e4382",
+    "verification": "Shared egui 0.37 workspace license from the published eframe sibling revision; target revision was unavailable at collection"
+  },
+  {
+    "name": "epaint_default_fonts",
+    "version": "0.37.0",
+    "file": "eframe-0.37.0/LICENSE-MIT",
+    "source": "https://raw.githubusercontent.com/emilk/egui/3c6eb8261c3293ad9c7ea1ed58487e038860ebef/LICENSE-MIT",
+    "source_revision": "3c6eb8261c3293ad9c7ea1ed58487e038860ebef",
+    "sha256": "95ca92f5f8ea5231f1580b3a2a799e8260af3114b900e1def5355a7f44bcf60c",
+    "target_crate_revision": "7c0b40402271e8d40cda69f87cf3c2617c2e4382",
+    "verification": "Shared egui 0.37 workspace license from the published eframe sibling revision; target revision was unavailable at collection"
+  },
+  {
+    "name": "gl_generator",
+    "version": "0.14.0",
+    "file": "gl_generator-0.14.0/LICENSE",
+    "source": "https://raw.githubusercontent.com/brendanzab/gl-rs/ea503e8d5fb6d73c6030e6191ce738cd3bf3433e/LICENSE",
+    "source_revision": "ea503e8d5fb6d73c6030e6191ce738cd3bf3433e",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  {
+    "name": "khronos_api",
+    "version": "3.1.0",
+    "file": "khronos_api-3.1.0/LICENSE",
+    "source": "https://raw.githubusercontent.com/brendanzab/gl-rs/f150967b1c44ae888e6676f93f639ebc82771bdc/LICENSE",
+    "source_revision": "f150967b1c44ae888e6676f93f639ebc82771bdc",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  {
+    "name": "profiling",
+    "version": "1.0.18",
+    "file": "profiling-1.0.18/LICENSE-MIT",
+    "source": "https://raw.githubusercontent.com/aclysma/profiling/8271551172eb6fa4cba47369aedd93790c623df9/LICENSE-MIT",
+    "source_revision": "8271551172eb6fa4cba47369aedd93790c623df9",
+    "sha256": "c8167fdeeed46d3f244d3f85c5bf998ce889343691c32be2c61a8bc4b5c08333"
+  }
+]

@@ -633,7 +633,7 @@ def rust_archive_notices(stage: Path, archive_path: Path, package: dict, record:
 def rust_inventory(stage: Path, registry: Path | None) -> tuple[list[dict], list[str]]:
     """Keep Cargo.lock checksums and cached license texts; do not invoke Cargo."""
     packages = tomllib.loads((stage / "provenance/Cargo.lock").read_text(encoding="utf-8"))["package"]
-    records, issues = [], []
+    records = []
     if registry is not None:
         plain_path(registry)
         require(registry.is_dir(), "Explicit Cargo registry source directory is missing")
@@ -666,10 +666,33 @@ def rust_inventory(stage: Path, registry: Path | None) -> tuple[list[dict], list
                         destination = stage / "licenses/rust" / f"{package['name']}-{package['version']}" / member
                         checked_copy(origin, destination)
                         record["license_files"].append(destination.relative_to(stage).as_posix())
-        if source and not record["license_files"]:
-            issues.append(f"Rust license text not collected: {package['name']} {package['version']}")
         records.append(record)
+    supplement_rust_notices(stage, records)
+    issues = [f"Rust license text not collected: {item['name']} {item['version']}" for item in records if item.get("source") and not item["license_files"]]
     return records, issues
+
+
+def supplement_rust_notices(stage: Path, records: list[dict]) -> None:
+    """Retain reviewed upstream workspace licenses missing from crate archives."""
+    root = REPO / "resources/licenses/rust"
+    manifest = root / "SUPPLEMENTAL_NOTICES.json"
+    if not manifest.exists():
+        return
+    checked_copy(manifest, stage / "provenance/SUPPLEMENTAL_RUST_NOTICES.json")
+    by_identity = {(item["name"], item["version"]): item for item in records}
+    for notice in read_json(manifest):
+        component = by_identity.get((notice["name"], notice["version"]))
+        if component is None or component["license_files"]:
+            continue
+        source = root / relative_member(notice["file"])
+        data = verified_notice_bytes(source, notice["sha256"])
+        destination = stage / "licenses/rust" / f"{component['name']}-{component['version']}" / ("upstream-" + source.name)
+        plain_path(destination)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with destination.open("xb") as stream:
+            stream.write(data)
+        component["license_files"].append(destination.relative_to(stage).as_posix())
+        component["supplemental_notice_source"] = {key: value for key, value in notice.items() if key not in {"name", "version", "file"}}
 
 
 def validate_output(output: Path, inputs: list[Path]) -> Path:
@@ -1379,6 +1402,27 @@ class BuilderTests(unittest.TestCase):
                 (target.parent / "config.v3.toml").write_text("private runtime config")
                 with self.assertRaisesRegex(BuildError, "application config"):
                     final_manifest(root / "stage")
+
+    def test_supplemental_rust_notices_require_identity_and_verified_bytes(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory(dir=REPO) as temporary:
+            root = Path(temporary)
+            notices = root / "resources/licenses/rust"
+            notices.mkdir(parents=True)
+            body = b"Synthetic upstream MIT license fixture"
+            (notices / "LICENSE").write_bytes(body)
+            write_json(notices / "SUPPLEMENTAL_NOTICES.json", [{"name": "fixture", "version": "1.0", "file": "LICENSE", "sha256": hashlib.sha256(body).hexdigest(), "source": "https://example.invalid/revision/LICENSE"}])
+            stage = root / "stage"
+            stage.mkdir()
+            matching = {"name": "fixture", "version": "1.0", "license_files": []}
+            different = {"name": "fixture", "version": "2.0", "license_files": []}
+            with patch(__name__ + ".REPO", root):
+                supplement_rust_notices(stage, [matching, different])
+                self.assertEqual(len(matching["license_files"]), 1)
+                self.assertEqual(different["license_files"], [])
+                (notices / "LICENSE").write_bytes(b"tampered")
+                with self.assertRaisesRegex(BuildError, "SHA256 mismatch"):
+                    supplement_rust_notices(root / "other-stage", [{"name": "fixture", "version": "1.0", "license_files": []}])
 
     def test_environment_drops_api_proxy_and_python_paths(self):
         from unittest.mock import patch
