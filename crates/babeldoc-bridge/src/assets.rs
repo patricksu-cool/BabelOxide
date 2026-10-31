@@ -27,6 +27,14 @@ pub async fn maintain_assets(
     // the same isolated resource location.
     let worker = WorkerOptions {
         home: Some(home.clone()),
+        // Restore bootstraps an empty home from the explicitly supplied archive.
+        // It must not require the asset manifest that the bundle builder writes
+        // only after the official restore and checksum verification complete.
+        asset_manifest: if matches!(&operation, AssetOperation::RestoreOfflineAssets { .. }) {
+            None
+        } else {
+            worker.asset_manifest.clone()
+        },
         ..worker.clone()
     };
     let mut staging = None;

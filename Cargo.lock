@@ -200,6 +200,7 @@ dependencies = [
  "anyhow",
  "pdf2zh-core",
  "serde_json",
+ "sha2",
  "tempfile",
  "tokio",
  "tokio-util",

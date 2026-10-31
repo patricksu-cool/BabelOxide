@@ -52,6 +52,10 @@ impl LoopbackProvider {
             while !shutdown.load(Ordering::Acquire) {
                 match listener.accept() {
                     Ok((mut stream, _)) => {
+                        // On Windows an accepted socket may inherit the listener's
+                        // nonblocking mode. read_exact needs blocking I/O with the
+                        // bounded timeout below, including for partial arrivals.
+                        stream.set_nonblocking(false).unwrap();
                         stream
                             .set_read_timeout(Some(Duration::from_secs(1)))
                             .unwrap();

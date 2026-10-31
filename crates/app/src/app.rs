@@ -76,13 +76,21 @@ impl NativeApp {
         style.spacing.item_spacing = Vec2::new(9.0, 8.0);
         style.spacing.button_padding = Vec2::new(12.0, 7.0);
         context.egui_ctx.set_style_of(egui::Theme::Light, style);
-        Self::with_renderer(
+        let data_notice = options.store.fallback_from().map(|_| {
+            format!(
+                "Application folder is read-only; settings and cache: {}",
+                options.store.app_root().display()
+            )
+        });
+        let mut app = Self::with_renderer(
             options.settings,
             background,
             chinese,
             preview,
             preview_error,
-        )
+        );
+        app.notice = data_notice;
+        app
     }
     fn with_renderer(
         settings: pdf2zh_config::Settings,

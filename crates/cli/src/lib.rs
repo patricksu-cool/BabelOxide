@@ -13,6 +13,7 @@ pub struct Invocation {
     pub save_config: bool,
     pub cache_file: Option<PathBuf>,
     pub worker: WorkerOptions,
+    worker_home_explicit: bool,
 }
 
 pub fn command() -> Command {
@@ -127,15 +128,25 @@ where
         save_config: matches.get_flag("save-config"),
         cache_file: matches.get_one::<String>("cache-file").map(PathBuf::from),
         worker,
+        worker_home_explicit: matches.get_one::<String>("worker-home").is_some(),
     })
 }
 
 impl Invocation {
     /// The caller chooses which environment to supply; tests use synthetic maps.
     pub fn load(&self, environment: &BTreeMap<String, String>) -> Result<(ConfigStore, Settings)> {
-        let store = ConfigStore::from_environment(environment)?;
+        let store = ConfigStore::from_environment(environment)?.resolve_writable(environment)?;
         let settings = store.load_with_overrides(environment, &self.overrides)?;
         Ok((store, settings))
+    }
+
+    /// Mutable engine data follows configuration, including read-only fallback.
+    pub fn worker_for_store(&self, store: &ConfigStore) -> WorkerOptions {
+        let mut worker = self.worker.clone();
+        if !self.worker_home_explicit {
+            worker.home = Some(store.app_root().join("cache/babeldoc-home"));
+        }
+        worker
     }
 }
 

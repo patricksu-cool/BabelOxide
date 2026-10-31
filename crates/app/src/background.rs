@@ -589,6 +589,7 @@ mod tests {
                 python,
                 script,
                 home: Some(directory.path().join("isolated-home")),
+                asset_manifest: None,
                 startup_timeout: std::time::Duration::from_secs(5),
                 idle_timeout: std::time::Duration::from_secs(30),
                 shutdown_timeout: std::time::Duration::from_millis(150),

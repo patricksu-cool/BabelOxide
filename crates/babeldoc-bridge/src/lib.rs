@@ -1,6 +1,7 @@
 //! Private, bounded, bidirectional stdio transport for the BabelDOC engine.
 
 mod assets;
+mod seed;
 pub use assets::maintain_assets;
 
 use anyhow::{Context, Result, bail, ensure};
@@ -59,6 +60,8 @@ pub struct WorkerOptions {
     pub python: PathBuf,
     pub script: PathBuf,
     pub home: Option<PathBuf>,
+    /// Immutable bundled asset manifest. Only listed files are seeded into home.
+    pub asset_manifest: Option<PathBuf>,
     pub startup_timeout: Duration,
     pub idle_timeout: Duration,
     pub shutdown_timeout: Duration,
@@ -77,7 +80,8 @@ impl Default for WorkerOptions {
                 "runtime/python/bin/python3"
             }),
             script: root.join("babeldoc/worker.py"),
-            home: Some(root.join("resources/worker-home")),
+            home: Some(root.join("cache/babeldoc-home")),
+            asset_manifest: Some(root.join("resources/engine-assets.json")),
             startup_timeout: Duration::from_secs(180),
             idle_timeout: Duration::from_secs(1800),
             shutdown_timeout: Duration::from_secs(10),
@@ -410,6 +414,15 @@ async fn run_session(
         .unwrap_or_else(|| plan.temporary_root.join("worker-home"));
     std::fs::create_dir_all(&home).context("Create worker resource directory")?;
     let home = home.canonicalize()?;
+    if let Some(manifest) = &worker.asset_manifest {
+        let manifest = manifest.clone();
+        let seed_home = home.clone();
+        let seed_cancel = cancel.clone();
+        // Await cooperative cleanup even when cancelled: no detached file writer.
+        tokio::task::spawn_blocking(move || seed::seed_assets(&manifest, &seed_home, &seed_cancel))
+            .await
+            .context("Join bundled asset initialization")??;
+    }
     let mut command = Command::new(python);
     command
         .args(["-I", "-B", "-u"])

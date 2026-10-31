@@ -63,6 +63,7 @@ impl Fixture {
             python,
             script,
             home: Some(directory.path().join("worker-home")),
+            asset_manifest: None,
             startup_timeout: Duration::from_secs(5),
             // Failure tests must finish far before this timeout.
             idle_timeout: Duration::from_secs(60),
@@ -130,8 +131,13 @@ async fn startup_crash_is_reported_without_waiting_for_startup_timeout() -> Resu
 #[tokio::test]
 async fn resource_operations_need_no_pdf_or_translator() -> Result<()> {
     for operation_name in ["warmup", "generate", "restore"] {
-        let fixture = Fixture::new("asset_success")?;
+        let mut fixture = Fixture::new("asset_success")?;
         fs::remove_file(&fixture.job.input_file)?;
+        if operation_name == "restore" {
+            let resources = fixture.directory.path().join("resources");
+            fs::create_dir_all(resources.join("worker-home"))?;
+            fixture.worker.asset_manifest = Some(resources.join("engine-assets.json"));
+        }
         let archive = fixture.directory.path().join("offline.zip");
         fs::write(&archive, b"controlled restore fixture")?;
         let operation = match operation_name {

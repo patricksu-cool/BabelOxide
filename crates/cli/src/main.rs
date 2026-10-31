@@ -41,6 +41,13 @@ fn main() -> ExitCode {
 fn prepare_and_run(invocation: Invocation) -> Result<TaskStatus> {
     let environment: BTreeMap<String, String> = std::env::vars().collect();
     let (store, settings) = invocation.load(&environment)?;
+    if store.fallback_from().is_some() {
+        eprintln!(
+            "Application folder is read-only; settings and cache: {}",
+            store.app_root().display()
+        );
+    }
+    let worker = invocation.worker_for_store(&store);
     let basic = settings.basic()?;
     if !basic.warmup
         && basic.generate_offline_assets.is_some()
@@ -67,11 +74,7 @@ fn prepare_and_run(invocation: Invocation) -> Result<TaskStatus> {
         return tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()?
-            .block_on(run_resources(
-                &invocation.worker,
-                operation,
-                invocation.json,
-            ));
+            .block_on(run_resources(&worker, operation, invocation.json));
     }
     if basic.gui || (basic.input_files.is_empty() && std::env::args_os().len() == 1) {
         let executable = std::env::current_exe()?;
@@ -123,7 +126,7 @@ fn prepare_and_run(invocation: Invocation) -> Result<TaskStatus> {
             }
         }
     };
-    let spec = task_from_settings(&settings, invocation.worker.clone(), cache)?;
+    let spec = task_from_settings(&settings, worker, cache)?;
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?

@@ -37,10 +37,11 @@ pub fn launch(invocation: Invocation, environment: BTreeMap<String, String>) -> 
         .parent()
         .context("Cannot locate the application folder")?
         .to_path_buf();
+    let worker = invocation.worker_for_store(&store);
     launch_with_settings(LaunchOptions {
         store,
         settings,
-        worker: invocation.worker,
+        worker,
         cache_file: invocation.cache_file,
         bundle_root,
     })

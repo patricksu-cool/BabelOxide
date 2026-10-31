@@ -20,6 +20,32 @@ mod http_fixture {
 }
 use http_fixture::LoopbackProvider;
 
+#[test]
+fn loopback_fixture_waits_for_fragmented_request() -> Result<()> {
+    use std::io::{Read, Write};
+    let server = LoopbackProvider::free()?;
+    let address = server
+        .endpoint()
+        .strip_prefix("http://")
+        .unwrap()
+        .split('/')
+        .next()
+        .unwrap();
+    let mut stream = std::net::TcpStream::connect(address)?;
+    stream.set_read_timeout(Some(Duration::from_secs(3)))?;
+    stream.write_all(b"POST /v1/ch")?;
+    std::thread::sleep(Duration::from_millis(50));
+    stream.write_all(
+        b"eck HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+    )?;
+    let mut response = String::new();
+    stream.read_to_string(&mut response)?;
+    ensure!(response.starts_with("HTTP/1.1 200"), "{response}");
+    ensure!(server.requests().len() == 1);
+    ensure!(server.requests()[0]["_path"] == "/v1/check");
+    Ok(())
+}
+
 struct Fixture {
     directory: TempDir,
     worker: WorkerOptions,
@@ -59,6 +85,7 @@ impl Fixture {
             python,
             script,
             home: Some(directory.path().join("home")),
+            asset_manifest: None,
             startup_timeout: Duration::from_secs(5),
             idle_timeout: Duration::from_secs(60),
             shutdown_timeout: Duration::from_millis(250),
@@ -374,13 +401,22 @@ async fn free_recommendations_decide_sharing_after_main_health_and_before_term_c
             json!(server.endpoint()),
         )?;
         let manager = TaskManager::new(1)?;
-        let result = timeout(
-            DEADLINE,
-            manager
-                .submit(task_from_settings(&settings, fixture.worker.clone(), None)?)?
-                .wait(),
-        )
-        .await?;
+        let task = manager.submit(task_from_settings(&settings, fixture.worker.clone(), None)?)?;
+        let result = match timeout(DEADLINE, task.wait()).await {
+            Ok(result) => result,
+            Err(error) => {
+                let paths: Vec<_> = server
+                    .requests()
+                    .iter()
+                    .map(|request| request["_path"].as_str().unwrap_or("?").to_owned())
+                    .collect();
+                let worker_started = fixture.directory.path().join("worker-starts.log").exists();
+                anyhow::bail!(
+                    "term_qps={term_qps:?}: {error}; snapshot={:?}; paths={paths:?}; worker_started={worker_started}",
+                    task.snapshot()
+                );
+            }
+        };
         ensure!(
             result.status == TaskStatus::Succeeded,
             "term_qps={term_qps:?}: {result:?}"
@@ -394,7 +430,7 @@ async fn free_recommendations_decide_sharing_after_main_health_and_before_term_c
         let requests = server.requests();
         ensure!(
             requests.len() == if shared { 7 } else { 12 },
-            "term_qps={term_qps:?}"
+            "term_qps={term_qps:?}, requests={requests:?}, result={result:?}"
         );
         ensure!(requests[0]["_path"].as_str().unwrap().ends_with("/check"));
         ensure!(requests[3]["_path"].as_str().unwrap().ends_with("/config"));
