@@ -241,6 +241,67 @@ fn supplied_sdk_url_fallbacks_apply_only_to_none_and_are_not_persisted() {
 }
 
 #[test]
+fn tencent_environment_credentials_override_config_without_persistence() {
+    let (_directory, store) = fixture();
+    let cli = json!({"tencentmechinetranslation":true,"tencentcloud_secret_id":"configured-id","tencentcloud_secret_key":"configured-key"});
+    let mut env = BTreeMap::from([
+        ("TENCENTCLOUD_SECRET_ID".into(), "environment-id".into()),
+        ("TENCENTCLOUD_SECRET_KEY".into(), "environment-key".into()),
+        (
+            "TENCENTCLOUD_TOKEN".into(),
+            "environment-token-ignored".into(),
+        ),
+    ]);
+    let mut settings = store.load_with_overrides(&env, &cli).unwrap();
+    settings.set("translation.lang_out", json!("de")).unwrap();
+    let config = settings.main_translator_config().unwrap();
+    assert_eq!(config.options["tencentcloud_secret_id"], "environment-id");
+    assert_eq!(config.api_key, "environment-key");
+    assert!(config.options.get("tencentcloud_token").is_none());
+    assert!(!format!("{settings:?} {config:?}").contains("environment-key"));
+    store.save(&settings).unwrap();
+    let saved = fs::read_to_string(store.path()).unwrap();
+    assert!(!saved.contains("environment-id"));
+    assert!(!saved.contains("environment-key"));
+    assert!(!saved.contains("environment-token-ignored"));
+
+    env.remove("TENCENTCLOUD_SECRET_KEY");
+    let partial = store
+        .load_with_overrides(&env, &cli)
+        .unwrap()
+        .main_translator_config()
+        .unwrap();
+    assert_eq!(partial.api_key, "configured-key");
+    assert_eq!(partial.options["tencentcloud_secret_id"], "configured-id");
+
+    env.insert("TENCENTCLOUD_SECRET_KEY".into(), " invalid-key".into());
+    let error = store
+        .load_with_overrides(&env, &cli)
+        .unwrap()
+        .main_translator_config()
+        .unwrap_err();
+    assert_eq!(error.kind, ConfigErrorKind::InvalidField);
+    assert!(!error.to_string().contains("invalid-key"));
+
+    env.remove("TENCENTCLOUD_SECRET_KEY");
+    for key in [
+        "TKE_REGION",
+        "TKE_PROVIDER_ID",
+        "TKE_WEB_IDENTITY_TOKEN_FILE",
+        "TKE_ROLE_ARN",
+    ] {
+        env.insert(key.into(), "synthetic".into());
+    }
+    let error = store
+        .load_with_overrides(&env, &cli)
+        .unwrap()
+        .main_translator_config()
+        .unwrap_err();
+    assert_eq!(error.kind, ConfigErrorKind::UnsupportedCredentialSource);
+    assert!(error.to_string().contains("TKE"));
+}
+
+#[test]
 fn null_codec_matches_dictionary_only_legacy_format_and_unknown_fields_roundtrip() {
     let decoded = decode_toml_content(
         json!({"none":"null","nested":{"none":"null"},"array":["null",{"none":"null"}]}),

@@ -1,0 +1,536 @@
+{
+  "version": 1,
+  "provenance": {
+    "python_baseline": "d18165e",
+    "policy_source": "tests/test_retry_characterization.py::POLICIES and test_all_service_retry_policies",
+    "behavior_source": "tests/test_retry_characterization.py R23-R34; tests/test_api_transport.py T01-T05",
+    "sdk_source": "docs/rust-migration/RETRY_COMPATIBILITY.md (pinned SDK source audit)",
+    "notes": "Frozen characterization, not proof of Python exception-object equivalence. Synthetic values only."
+  },
+  "policies": [
+    {
+      "id": "R01",
+      "module": "anythingllm",
+      "class": "AnythingLLMTranslator",
+      "method": "do_translate",
+      "depth": 0,
+      "attempts": 5,
+      "probe_waits_seconds": [
+        1,
+        2,
+        4,
+        8,
+        15
+      ],
+      "family": "all"
+    },
+    {
+      "id": "R02",
+      "module": "azure",
+      "class": "AzureTranslator",
+      "method": "do_translate",
+      "depth": 0,
+      "attempts": 5,
+      "probe_waits_seconds": [
+        1,
+        2,
+        4,
+        8,
+        15
+      ],
+      "family": "all"
+    },
+    {
+      "id": "R03",
+      "module": "azureopenai",
+      "class": "AzureOpenAITranslator",
+      "method": "do_translate",
+      "depth": 0,
+      "attempts": 100,
+      "probe_waits_seconds": [
+        1,
+        2,
+        4,
+        8,
+        15
+      ],
+      "family": "openai"
+    },
+    {
+      "id": "R04",
+      "module": "azureopenai",
+      "class": "AzureOpenAITranslator",
+      "method": "do_llm_translate",
+      "depth": 0,
+      "attempts": 100,
+      "probe_waits_seconds": [
+        1,
+        2,
+        4,
+        8,
+        15
+      ],
+      "family": "openai"
+    },
+    {
+      "id": "R05",
+      "module": "bing",
+      "class": "BingTranslator",
+      "method": "do_translate",
+      "depth": 0,
+      "attempts": 5,
+      "probe_waits_seconds": [
+        1,
+        2,
+        4,
+        8,
+        15
+      ],
+      "family": "predicate"
+    },
+    {
+      "id": "R06",
+      "module": "claudecode",
+      "class": "ClaudeCodeTranslator",
+      "method": "do_translate",
+      "depth": 0,
+      "attempts": 3,
+      "probe_waits_seconds": [
+        2,
+        4,
+        8
+      ],
+      "family": "process"
+    },
+    {
+      "id": "R07",
+      "module": "clitranslator",
+      "class": "CLITranslatorTranslator",
+      "method": "do_translate",
+      "depth": 0,
+      "attempts": 3,
+      "probe_waits_seconds": [
+        2,
+        4,
+        8
+      ],
+      "family": "process"
+    },
+    {
+      "id": "R08",
+      "module": "deepl",
+      "class": "DeepLTranslator",
+      "method": "do_translate",
+      "depth": 0,
+      "attempts": 5,
+      "probe_waits_seconds": [
+        1,
+        2,
+        4,
+        8,
+        15
+      ],
+      "family": "predicate"
+    },
+    {
+      "id": "R09",
+      "module": "dify",
+      "class": "DifyTranslator",
+      "method": "do_translate",
+      "depth": 0,
+      "attempts": 5,
+      "probe_waits_seconds": [
+        1,
+        2,
+        4,
+        8,
+        15
+      ],
+      "family": "all"
+    },
+    {
+      "id": "R10",
+      "module": "google",
+      "class": "GoogleTranslator",
+      "method": "do_translate",
+      "depth": 0,
+      "attempts": 5,
+      "probe_waits_seconds": [
+        1,
+        2,
+        4,
+        8,
+        15
+      ],
+      "family": "all"
+    },
+    {
+      "id": "R11",
+      "module": "ollama",
+      "class": "OllamaTranslator",
+      "method": "do_translate",
+      "depth": 0,
+      "attempts": 100,
+      "probe_waits_seconds": [
+        1,
+        2,
+        4,
+        8,
+        15
+      ],
+      "family": "ollama"
+    },
+    {
+      "id": "R12",
+      "module": "ollama",
+      "class": "OllamaTranslator",
+      "method": "do_llm_translate",
+      "depth": 0,
+      "attempts": 100,
+      "probe_waits_seconds": [
+        1,
+        2,
+        4,
+        8,
+        15
+      ],
+      "family": "ollama"
+    },
+    {
+      "id": "R13",
+      "module": "openai",
+      "class": "OpenAITranslator",
+      "method": "do_translate",
+      "depth": 0,
+      "attempts": 100,
+      "probe_waits_seconds": [
+        1,
+        2,
+        4,
+        8,
+        15
+      ],
+      "family": "openai"
+    },
+    {
+      "id": "R14",
+      "module": "openai",
+      "class": "OpenAITranslator",
+      "method": "do_llm_translate",
+      "depth": 0,
+      "attempts": 100,
+      "probe_waits_seconds": [
+        1,
+        2,
+        4,
+        8,
+        15
+      ],
+      "family": "openai"
+    },
+    {
+      "id": "R15",
+      "module": "qwenmt",
+      "class": "QwenMtTranslator",
+      "method": "do_translate",
+      "depth": 0,
+      "attempts": 100,
+      "probe_waits_seconds": [
+        1,
+        2,
+        4,
+        8,
+        15
+      ],
+      "family": "openai"
+    },
+    {
+      "id": "R16",
+      "module": "siliconflow",
+      "class": "SiliconFlowTranslator",
+      "method": "do_translate",
+      "depth": 0,
+      "attempts": 100,
+      "probe_waits_seconds": [
+        1,
+        2,
+        4,
+        8,
+        15
+      ],
+      "family": "openai"
+    },
+    {
+      "id": "R17",
+      "module": "siliconflow",
+      "class": "SiliconFlowTranslator",
+      "method": "do_llm_translate",
+      "depth": 0,
+      "attempts": 100,
+      "probe_waits_seconds": [
+        1,
+        2,
+        4,
+        8,
+        15
+      ],
+      "family": "openai"
+    },
+    {
+      "id": "R18",
+      "module": "siliconflowfree",
+      "class": "SiliconFlowFreeTranslator",
+      "method": "do_llm_translate",
+      "depth": 0,
+      "attempts": 3,
+      "probe_waits_seconds": [
+        30,
+        30,
+        30
+      ],
+      "family": "httpx"
+    },
+    {
+      "id": "R19",
+      "module": "siliconflowfree",
+      "class": "SiliconFlowFreeTranslator",
+      "method": "do_llm_translate",
+      "depth": 1,
+      "attempts": 100,
+      "probe_waits_seconds": [
+        4,
+        4,
+        4,
+        8,
+        16
+      ],
+      "family": "free429"
+    },
+    {
+      "id": "R20",
+      "module": "tencentmechinetranslation",
+      "class": "TencentMechineTranslationTranslator",
+      "method": "do_translate",
+      "depth": 0,
+      "attempts": 5,
+      "probe_waits_seconds": [
+        1,
+        2,
+        4,
+        8,
+        15
+      ],
+      "family": "predicate"
+    },
+    {
+      "id": "R21",
+      "module": "xinference",
+      "class": "XinferenceTranslator",
+      "method": "do_translate",
+      "depth": 0,
+      "attempts": 100,
+      "probe_waits_seconds": [
+        1,
+        2,
+        4,
+        8,
+        15
+      ],
+      "family": "runtime"
+    },
+    {
+      "id": "R22",
+      "module": "xinference",
+      "class": "XinferenceTranslator",
+      "method": "do_llm_translate",
+      "depth": 0,
+      "attempts": 100,
+      "probe_waits_seconds": [
+        1,
+        2,
+        4,
+        8,
+        15
+      ],
+      "family": "runtime"
+    }
+  ],
+  "behaviors": {
+    "R23": {
+      "calls": 1,
+      "source": "source",
+      "result": "translated"
+    },
+    "R24": {
+      "failure": "429",
+      "attempts": 5,
+      "sleeps_seconds": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "request_timeout": null,
+      "retry_after_ignored": 120
+    },
+    "R25": {
+      "failure": "503",
+      "attempts": 5,
+      "sleeps_seconds": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "request_timeout": null
+    },
+    "R26": {
+      "failure": "timeout",
+      "attempts": 5,
+      "sleeps_seconds": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "request_timeout": null
+    },
+    "R27": {
+      "sentinel": "IRREPARABLE TRANSLATION ERROR",
+      "recovery_attempts": 2,
+      "admissions": 1,
+      "sleeps_seconds": [
+        1
+      ]
+    },
+    "R28": {
+      "attempts": 5,
+      "sid_fetches": 5,
+      "post_calls": 5,
+      "sleeps_seconds": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "request_timeout": null,
+      "interrupt_recovery_fetches": 2
+    },
+    "R29": {
+      "recovery_attempts": 3,
+      "recovery_sleeps_seconds": [
+        1,
+        2
+      ],
+      "exhausted_attempts": 100,
+      "exhausted_sleeps": 99,
+      "direct_500_calls": 1,
+      "direct_timeout_calls": 1
+    },
+    "R30": {
+      "rate_limit_attempts": 100,
+      "inner_sleep_count": 99,
+      "inner_first_sleeps_seconds": [
+        4,
+        4,
+        4,
+        8,
+        16
+      ],
+      "outer_sleeps_on_429": 0,
+      "http_error_attempts": 3,
+      "outer_sleeps_seconds": [
+        30,
+        30
+      ]
+    },
+    "R31": {
+      "processes": 3,
+      "communicate_per_process": 2,
+      "sleeps_seconds": [
+        2,
+        4
+      ],
+      "last_exception": "TimeoutExpired"
+    },
+    "R32": {
+      "processes": 1,
+      "communicate_per_process": 1,
+      "sleeps_seconds": [],
+      "exception": "ValueError"
+    },
+    "R33": {
+      "qps": 2,
+      "three_admission_sleeps_seconds": [
+        0.5,
+        0.5
+      ],
+      "minimum_valid_qps": 1,
+      "peak_inflight": 2
+    },
+    "R34": {
+      "idle_timeout_seconds": 1800,
+      "cancel_is_control_event": true,
+      "python_fixture": "mocked queue, pipes, threads, child termination"
+    }
+  },
+  "transport": {
+    "T01": {
+      "attempts": 1,
+      "model": "offline-fixture",
+      "text": "測試譯文",
+      "total_tokens": 8
+    },
+    "T02": {
+      "statuses": [
+        429,
+        200
+      ],
+      "attempts": 2,
+      "sdk_retry_header": "false"
+    },
+    "T03": {
+      "status": 400,
+      "attempts": 1,
+      "message": "local invalid model"
+    },
+    "T04": {
+      "empty_choices": "error",
+      "attempts": 1
+    },
+    "T05": {
+      "sdk_timeout_attempts": 3,
+      "sdk_retries": 2,
+      "outer_retry": false
+    }
+  },
+  "sdk": {
+    "openai": {
+      "version": "3.36.1",
+      "max_retries": 2,
+      "retry_after_max_seconds": 120,
+      "default_read_seconds": 600,
+      "default_connect_seconds": 5,
+      "backoff_first_seconds": 0.5,
+      "jitter_fraction": 0.25
+    },
+    "deepl": {
+      "version": "1.32.0",
+      "network_retries": 5,
+      "minimum_request_timeout_seconds": 10,
+      "backoff_initial_seconds": 1,
+      "backoff_multiplier": 1.6,
+      "backoff_cap_seconds": 120,
+      "jitter_fraction": 0.23
+    },
+    "azure": {
+      "azure_core_version": "1.41.0",
+      "total_retries": 10,
+      "connect_retries": 3,
+      "read_retries": 3,
+      "status_retries": 3,
+      "operation_timeout_seconds": 604800,
+      "default_read_seconds": 300
+    }
+  }
+}

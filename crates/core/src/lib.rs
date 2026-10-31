@@ -176,6 +176,8 @@ impl TranslationService {
             .with_redirect_limit(redirect_limit);
         if matches!(config.provider.as_str(), "anythingllm" | "dify") {
             http = http.with_request_scoped_cookies();
+        } else if config.provider == "deepl" {
+            http = http.with_prepared_initial_request();
         }
         Ok(Self {
             rate_limiter: RateLimiter::with_now(qps, runtime.now()),

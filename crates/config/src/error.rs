@@ -46,7 +46,7 @@ impl fmt::Display for ConfigError {
             ConfigErrorKind::InvalidPath => f.write_str("application directory must be an absolute path"),
             ConfigErrorKind::Io => f.write_str("configuration file operation failed"),
             ConfigErrorKind::Serialize => f.write_str("configuration cannot be represented in TOML"),
-            ConfigErrorKind::UnsupportedCredentialSource => f.write_str("Tencent requires explicitly supplied credentials; automatic credential discovery is not implemented"),
+            ConfigErrorKind::UnsupportedCredentialSource => f.write_str("Tencent requires configured credentials; profile, CVM and TKE credential discovery are not supported"),
         }
     }
 }

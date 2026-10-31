@@ -235,9 +235,37 @@ pub(crate) fn build(
             result.api_key = required(&detail, "dify_apikey")?;
         }
         "TencentMechineTranslation" => {
-            let id = text(&detail, "tencentcloud_secret_id");
-            let key = text(&detail, "tencentcloud_secret_key");
+            let mut id = text(&detail, "tencentcloud_secret_id");
+            let mut key = text(&detail, "tencentcloud_secret_key");
             if id.is_empty() || key.is_empty() {
+                return Err(ConfigError::new(
+                    ConfigErrorKind::UnsupportedCredentialSource,
+                ));
+            }
+            let env = &settings.tencent_environment;
+            let env_id = env
+                .get("TENCENTCLOUD_SECRET_ID")
+                .filter(|value| !value.is_empty());
+            let env_key = env
+                .get("TENCENTCLOUD_SECRET_KEY")
+                .filter(|value| !value.is_empty());
+            if let (Some(env_id), Some(env_key)) = (env_id, env_key) {
+                if env_id.trim() != env_id || env_key.trim() != env_key {
+                    return Err(ConfigError::field("Tencent environment credentials"));
+                }
+                id = env_id.clone();
+                key = env_key.clone();
+                // Tencent's environment provider does not consume a token.
+                options.remove("tencentcloud_token");
+            } else if [
+                "TKE_REGION",
+                "TKE_PROVIDER_ID",
+                "TKE_WEB_IDENTITY_TOKEN_FILE",
+                "TKE_ROLE_ARN",
+            ]
+            .iter()
+            .all(|name| env.get(*name).is_some_and(|value| !value.is_empty()))
+            {
                 return Err(ConfigError::new(
                     ConfigErrorKind::UnsupportedCredentialSource,
                 ));

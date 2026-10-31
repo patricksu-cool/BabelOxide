@@ -86,17 +86,31 @@ async fn sdk_send(
     let mut read_budget = 3_i32;
     let mut status_budget = 3_i32;
     let mut history_len = 0_i32;
+    let mut response_error = true;
     let operation_deadline = ctx.runtime.now() + Duration::from_secs(604800);
     loop {
         let remaining = operation_deadline.saturating_duration_since(ctx.runtime.now());
         if remaining.is_zero() {
-            return Err(ctx.error(ErrorKind::ReadTimeout, "Azure operation timed out"));
+            let kind = if response_error {
+                ErrorKind::ReadTimeout
+            } else {
+                ErrorKind::ConnectTimeout
+            };
+            return Err(ctx.error(kind, "Azure operation timed out"));
         }
         let mut req = template.clone();
-        req.timeout = Some(remaining.min(Duration::from_secs(300)));
-        let result = ctx.http.send(req, ctx.cancel).await;
+        req.timeout = Some(Duration::from_secs(300));
+        let result = ctx
+            .http
+            .send_with_connect_timeout(
+                req,
+                Some(remaining.min(Duration::from_secs(300))),
+                ctx.cancel,
+            )
+            .await;
         let server_delay = match result {
             Ok(response) => {
+                response_error = true;
                 if !retry_status(&template.method, &response, total_budget) {
                     return Ok(response);
                 }
@@ -109,6 +123,8 @@ async fn sdk_send(
                 retry_after(ctx, &response)?
             }
             Err(error) => {
+                response_error =
+                    !matches!(error.kind, ErrorKind::Connect | ErrorKind::ConnectTimeout);
                 // A 303 can turn POST into GET. Only then does the SDK method
                 // allowlist admit network retries and its independent budgets.
                 if !safe_method(&template.method)

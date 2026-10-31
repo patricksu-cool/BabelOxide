@@ -19,6 +19,19 @@ use tokio::{
 };
 use tokio_util::sync::CancellationToken;
 
+fn legacy_contract() -> Value {
+    serde_json::from_str(include_str!("fixtures/legacy_retry_contract_v1.json")).unwrap()
+}
+
+fn contract_seconds(values: &Value) -> Vec<Duration> {
+    values
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|value| Duration::from_secs_f64(value.as_f64().unwrap()))
+        .collect()
+}
+
 struct VirtualClock {
     origin: Instant,
     nanos: AtomicU64,
@@ -222,6 +235,7 @@ fn service(
 
 #[tokio::test]
 async fn openai_success_preserves_prompt_and_accounts_usage_before_malformed_choices() {
+    let oracle = legacy_contract();
     let (service, script, _) = service(
         config("openai"),
         vec![
@@ -235,8 +249,13 @@ async fn openai_success_preserves_prompt_and_accounts_usage_before_malformed_cho
             .translate(&request(), &CancellationToken::new())
             .await
             .unwrap(),
-        "測試譯文"
+        oracle["transport"]["T01"]["text"].as_str().unwrap()
     );
+    assert_eq!(
+        service.metrics().usage.total_tokens,
+        oracle["transport"]["T01"]["total_tokens"].as_u64().unwrap()
+    );
+    assert_eq!(script.body(0)["model"], oracle["transport"]["T01"]["model"]);
     assert_eq!(
         script.body(0)["messages"][0]["content"],
         format!(
@@ -256,6 +275,48 @@ async fn openai_success_preserves_prompt_and_accounts_usage_before_malformed_cho
     assert_eq!(metrics.http_attempts, 2);
     assert_eq!(metrics.usage.total_tokens, 12);
     assert_eq!(metrics.usage.cache_hit_prompt_tokens, 2);
+    script.empty();
+}
+
+#[tokio::test]
+async fn frozen_r29_outer_recovery_and_direct_server_error() {
+    let oracle = legacy_contract();
+    let r29 = &oracle["behaviors"]["R29"];
+    let disabled = [("x-should-retry", "false")];
+    let (translator, script, clock) = service(
+        config("openai"),
+        vec![headers(429, &disabled), headers(429, &disabled), chat()],
+        0.0,
+    );
+    assert_eq!(
+        translator
+            .translate(&request(), &CancellationToken::new())
+            .await
+            .unwrap(),
+        "測試譯文"
+    );
+    assert_eq!(
+        script.requests().len(),
+        r29["recovery_attempts"].as_u64().unwrap() as usize
+    );
+    assert_eq!(
+        clock.sleeps(),
+        contract_seconds(&r29["recovery_sleeps_seconds"])
+    );
+    script.empty();
+
+    let (translator, script, clock) = service(config("openai"), vec![headers(500, &disabled)], 0.0);
+    let error = translator
+        .translate_typed(&request(), &CancellationToken::new())
+        .await
+        .err()
+        .unwrap();
+    assert_eq!(error.kind, ErrorKind::HttpStatus(500));
+    assert_eq!(
+        script.requests().len(),
+        r29["direct_500_calls"].as_u64().unwrap() as usize
+    );
+    assert!(clock.sleeps().is_empty());
     script.empty();
 }
 
@@ -493,6 +554,8 @@ async fn azure_qwen_and_siliconflow_preserve_their_wire_options() {
 
 #[tokio::test]
 async fn free_nested_layers_do_not_multiply_rate_limit_exhaustion() {
+    let oracle = legacy_contract();
+    let r30 = &oracle["behaviors"]["R30"];
     let (free, script, clock) = service(
         config("siliconflowfree"),
         vec![reply(429, json!({})); 100],
@@ -515,17 +578,17 @@ async fn free_nested_layers_do_not_multiply_rate_limit_exhaustion() {
         }
         _ => panic!("inner exhaustion expected"),
     };
-    assert_eq!(script.requests().len(), 100);
-    assert_eq!(clock.sleeps().len(), 99);
+    assert_eq!(
+        script.requests().len(),
+        r30["rate_limit_attempts"].as_u64().unwrap() as usize
+    );
+    assert_eq!(
+        clock.sleeps().len(),
+        r30["inner_sleep_count"].as_u64().unwrap() as usize
+    );
     assert_eq!(
         &clock.sleeps()[..5],
-        &[
-            Duration::from_secs(4),
-            Duration::from_secs(4),
-            Duration::from_secs(4),
-            Duration::from_secs(8),
-            Duration::from_secs(16)
-        ]
+        contract_seconds(&r30["inner_first_sleeps_seconds"])
     );
     script.empty();
     let (free, script, clock) = service(
@@ -538,15 +601,25 @@ async fn free_nested_layers_do_not_multiply_rate_limit_exhaustion() {
         .await
         .err()
         .unwrap();
-    assert!(matches!(
-        error.kind,
+    match error.kind {
         ErrorKind::RetryExhausted {
-            layer: "siliconflowfree.http",
-            attempts: 3,
-            ..
+            layer,
+            attempts,
+            last,
+        } => {
+            assert_eq!(layer, "siliconflowfree.http");
+            assert_eq!(
+                attempts as u64,
+                r30["http_error_attempts"].as_u64().unwrap()
+            );
+            assert_eq!(last.kind, ErrorKind::HttpStatus(503));
         }
-    ));
-    assert_eq!(clock.sleeps(), vec![Duration::from_secs(30); 2]);
+        _ => panic!("outer HTTP exhaustion expected"),
+    }
+    assert_eq!(
+        clock.sleeps(),
+        contract_seconds(&r30["outer_sleeps_seconds"])
+    );
     script.empty();
     let (free, script, clock) = service(
         config("siliconflowfree"),
@@ -1143,6 +1216,25 @@ async fn qps_admission_does_not_impose_an_inflight_cap() {
 }
 
 #[tokio::test(start_paused = true)]
+async fn frozen_r33_three_admissions_preserve_half_second_spacing() {
+    let oracle = legacy_contract();
+    let r33 = &oracle["behaviors"]["R33"];
+    let limiter = RateLimiter::new(r33["qps"].as_u64().unwrap() as u32);
+    let cancel = CancellationToken::new();
+    let mut starts = Vec::new();
+    for _ in 0..3 {
+        limiter.wait(&cancel).await.unwrap();
+        starts.push(Instant::now());
+    }
+    let intervals: Vec<_> = starts.windows(2).map(|pair| pair[1] - pair[0]).collect();
+    assert_eq!(
+        intervals,
+        contract_seconds(&r33["three_admission_sleeps_seconds"])
+    );
+    assert!(limiter.set_max_qps(0).await.is_err());
+}
+
+#[tokio::test(start_paused = true)]
 async fn qps_dynamic_updates_idle_spacing_and_cancelled_waiters_preserve_the_next_slot() {
     let limiter = RateLimiter::new(2);
     let cancel = CancellationToken::new();
@@ -1285,6 +1377,10 @@ async fn source_and_credentials_use_original_overlapping_ranges_in_both_directio
 
 #[tokio::test]
 async fn sdk_jitter_extremes_apply_to_real_retry_sequences() {
+    let oracle = legacy_contract();
+    let sdk = &oracle["sdk"]["openai"];
+    let first = sdk["backoff_first_seconds"].as_f64().unwrap();
+    let fraction = sdk["jitter_fraction"].as_f64().unwrap();
     for unit in [0.0, 0.5, 1.0 - f64::EPSILON] {
         let (service, script, clock) = service(
             config("openai"),
@@ -1295,12 +1391,15 @@ async fn sdk_jitter_extremes_apply_to_real_retry_sequences() {
             .translate(&request(), &CancellationToken::new())
             .await
             .unwrap();
-        assert_eq!(script.requests().len(), 3);
+        assert_eq!(
+            script.requests().len(),
+            sdk["max_retries"].as_u64().unwrap() as usize + 1
+        );
         assert_eq!(
             clock.sleeps(),
             vec![
-                Duration::from_secs_f64(0.5 * (1.0 - 0.25 * unit)),
-                Duration::from_secs_f64(1.0 - 0.25 * unit)
+                Duration::from_secs_f64(first * (1.0 - fraction * unit)),
+                Duration::from_secs_f64(2.0 * first * (1.0 - fraction * unit))
             ]
         );
         script.empty();
@@ -1309,12 +1408,26 @@ async fn sdk_jitter_extremes_apply_to_real_retry_sequences() {
 
 #[tokio::test]
 async fn each_openai_family_method_keeps_the_100_attempt_outer_policy() {
-    for provider in ["openai", "azure-openai", "qwen-mt", "siliconflow"] {
+    let oracle = legacy_contract();
+    for (provider, module) in [
+        ("openai", "openai"),
+        ("azure-openai", "azureopenai"),
+        ("qwen-mt", "qwenmt"),
+        ("siliconflow", "siliconflow"),
+    ] {
         for method in ["translate", "llm_translate"] {
             if provider == "qwen-mt" && method == "llm_translate" {
                 continue;
             }
-            let steps = vec![headers(429, &[("x-should-retry", "false")]); 100];
+            let python_method = format!("do_{method}");
+            let row = oracle["policies"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|row| row["module"] == module && row["method"] == python_method)
+                .unwrap();
+            let attempts = row["attempts"].as_u64().unwrap() as usize;
+            let steps = vec![headers(429, &[("x-should-retry", "false")]); attempts];
             let (service, script, clock) = service(config(provider), steps, 0.0);
             let mut input = request();
             input.method = method.into();
@@ -1323,12 +1436,22 @@ async fn each_openai_family_method_keeps_the_100_attempt_outer_policy() {
                 .await
                 .err()
                 .unwrap();
-            assert!(matches!(
-                error.kind,
-                ErrorKind::RetryExhausted { attempts: 100, .. }
-            ));
-            assert_eq!(script.requests().len(), 100);
-            assert_eq!(clock.sleeps().len(), 99);
+            match error.kind {
+                ErrorKind::RetryExhausted {
+                    attempts: actual,
+                    last,
+                    ..
+                } => {
+                    assert_eq!(actual as usize, attempts);
+                    assert_eq!(last.kind, ErrorKind::HttpStatus(429));
+                }
+                _ => panic!("outer exhaustion expected"),
+            }
+            assert_eq!(script.requests().len(), attempts);
+            let sleeps = clock.sleeps();
+            assert_eq!(sleeps.len(), attempts - 1);
+            let expected_waits = contract_seconds(&row["probe_waits_seconds"]);
+            assert_eq!(&sleeps[..expected_waits.len()], expected_waits);
             assert_eq!(service.metrics().admissions, 1);
             script.empty();
         }
@@ -1337,10 +1460,19 @@ async fn each_openai_family_method_keeps_the_100_attempt_outer_policy() {
 
 #[tokio::test]
 async fn ollama_both_methods_retry_all_response_status_errors_100_times() {
+    let oracle = legacy_contract();
     for method in ["translate", "llm_translate"] {
+        let python_method = format!("do_{method}");
+        let row = oracle["policies"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|row| row["module"] == "ollama" && row["method"] == python_method)
+            .unwrap();
+        let expected_attempts = row["attempts"].as_u64().unwrap() as usize;
         let (service, script, clock) = service(
             config("ollama"),
-            vec![reply(400, json!({"error":"model unavailable"})); 100],
+            vec![reply(400, json!({"error":"model unavailable"})); expected_attempts],
             0.0,
         );
         let mut input = request();
@@ -1357,13 +1489,16 @@ async fn ollama_both_methods_retry_all_response_status_errors_100_times() {
                 last,
             } => {
                 assert_eq!(layer, "ollama.application");
-                assert_eq!(attempts, 100);
+                assert_eq!(attempts as usize, expected_attempts);
                 assert_eq!(last.kind, ErrorKind::OllamaResponse(400));
             }
             _ => panic!("Ollama outer exhaustion expected"),
         }
-        assert_eq!(clock.sleeps().len(), 99);
-        assert_eq!(script.requests().len(), 100);
+        let sleeps = clock.sleeps();
+        assert_eq!(sleeps.len(), expected_attempts - 1);
+        let expected_waits = contract_seconds(&row["probe_waits_seconds"]);
+        assert_eq!(&sleeps[..expected_waits.len()], expected_waits);
+        assert_eq!(script.requests().len(), expected_attempts);
         script.empty();
     }
 }

@@ -1,5 +1,6 @@
 use crate::{ConfigError, ConfigErrorKind, Result, Settings, parse_cli_overrides, parse_env_vars};
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 use std::{
     collections::BTreeMap,
     fmt, fs,
@@ -18,6 +19,8 @@ pub struct ConfigStore {
     app_root: PathBuf,
     path: PathBuf,
     legacy_home: Option<PathBuf>,
+    fallback_from: Option<PathBuf>,
+    default_executable_root: bool,
 }
 
 impl fmt::Debug for ConfigStore {
@@ -36,15 +39,19 @@ impl ConfigStore {
             app_root,
             path,
             legacy_home: None,
+            fallback_from: None,
+            default_executable_root: false,
         })
     }
     pub fn for_current_executable() -> Result<Self> {
         let exe = std::env::current_exe().map_err(io_error)?;
-        Self::new(
+        let mut store = Self::new(
             exe.parent()
                 .ok_or_else(|| ConfigError::new(ConfigErrorKind::InvalidPath))?
                 .into(),
-        )
+        )?;
+        store.default_executable_root = true;
+        Ok(store)
     }
     /// All environment access is explicit and injectable. No std::env::vars or
     /// SDK credential discovery occurs here.
@@ -85,6 +92,74 @@ impl ConfigStore {
     }
     pub fn path(&self) -> &Path {
         &self.path
+    }
+
+    /// Original application root when a permission failure required a fallback.
+    pub fn fallback_from(&self) -> Option<&Path> {
+        self.fallback_from.as_deref()
+    }
+
+    /// Select writable config/cache storage after construction, without creating
+    /// a default document. Explicit app directories never silently fall back.
+    /// Permission failures in tests are injected; they do not modify Windows
+    /// ACLs or demonstrate every read-only filesystem configuration.
+    pub fn resolve_writable(&self, env: &BTreeMap<String, String>) -> Result<Self> {
+        self.resolve_writable_with(env, probe_directory)
+    }
+
+    fn resolve_writable_with(
+        &self,
+        env: &BTreeMap<String, String>,
+        probe: impl Fn(&Path) -> io::Result<()>,
+    ) -> Result<Self> {
+        let check = |root: &Path| -> io::Result<()> {
+            probe(&root.join("config"))?;
+            probe(&root.join("cache"))
+        };
+        match check(&self.app_root) {
+            Ok(()) => return Ok(self.clone()),
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    io::ErrorKind::PermissionDenied | io::ErrorKind::ReadOnlyFilesystem
+                ) && self.default_executable_root
+                    && supplied_env(env, "PDF2ZH_APP_DIR").is_none() => {}
+            Err(error) => return Err(io_error(error)),
+        }
+
+        let local = supplied_env(env, "LOCALAPPDATA")
+            .filter(|value| !value.is_empty())
+            .map(PathBuf::from)
+            .or_else(|| {
+                #[cfg(windows)]
+                {
+                    supplied_env(env, "USERPROFILE")
+                        .filter(|value| !value.is_empty())
+                        .or_else(|| supplied_env(env, "HOME").filter(|value| !value.is_empty()))
+                        .map(|home| PathBuf::from(home).join("AppData").join("Local"))
+                }
+                #[cfg(not(windows))]
+                {
+                    None
+                }
+            })
+            .ok_or_else(|| ConfigError::new(ConfigErrorKind::InvalidPath))?;
+        if !local.is_absolute() {
+            return Err(ConfigError::new(ConfigErrorKind::InvalidPath));
+        }
+        let original = self
+            .app_root
+            .to_str()
+            .ok_or_else(|| ConfigError::new(ConfigErrorKind::InvalidPath))?;
+        let root = local
+            .join("PDFMathTranslate")
+            .join(root_fingerprint(original));
+        check(&root).map_err(io_error)?;
+        let mut fallback = Self::new(root)?;
+        fallback.legacy_home = self.legacy_home.clone();
+        fallback.fallback_from = Some(self.app_root.clone());
+        copy_once(&self.path, &fallback.path)?;
+        Ok(fallback)
     }
 
     /// Reads defaults and the application file only. Never writes a default
@@ -136,6 +211,21 @@ impl ConfigStore {
         }
         settings.original_toml = original;
         apply_sdk_url_fallbacks(&mut settings, env);
+        settings.tencent_environment = env
+            .iter()
+            .filter(|(key, _)| {
+                matches!(
+                    key.as_str(),
+                    "TENCENTCLOUD_SECRET_ID"
+                        | "TENCENTCLOUD_SECRET_KEY"
+                        | "TKE_REGION"
+                        | "TKE_PROVIDER_ID"
+                        | "TKE_WEB_IDENTITY_TOKEN_FILE"
+                        | "TKE_ROLE_ARN"
+                )
+            })
+            .map(|(key, value)| (key.clone(), value.clone()))
+            .collect();
         Ok(settings)
     }
 
@@ -250,6 +340,58 @@ fn supplied_env<'a>(env: &'a BTreeMap<String, String>, name: &str) -> Option<&'a
 
 fn io_error(_: io::Error) -> ConfigError {
     ConfigError::new(ConfigErrorKind::Io)
+}
+
+fn root_fingerprint(root: &str) -> String {
+    format!("{:x}", Sha256::digest(root.as_bytes()))[..16].to_owned()
+}
+
+fn probe_directory(path: &Path) -> io::Result<()> {
+    let mut candidate = path;
+    let mut missing = false;
+    loop {
+        match fs::metadata(candidate) {
+            Ok(metadata) if metadata.is_dir() => break,
+            Ok(_) => return Err(io::ErrorKind::NotADirectory.into()),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                missing = true;
+                candidate = candidate.parent().ok_or(io::ErrorKind::NotFound)?;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    // For a missing target, verify that its existing ancestor permits creation
+    // of both a directory and a file without leaving the target tree behind.
+    let temporary_directory = if missing {
+        Some(tempfile::tempdir_in(candidate)?)
+    } else {
+        None
+    };
+    let probe_path = temporary_directory
+        .as_ref()
+        .map_or(candidate, |directory| directory.path());
+    let mut temporary = NamedTempFile::new_in(probe_path)?;
+    temporary.write_all(b"probe")?;
+    temporary.flush()?;
+    temporary.as_file().sync_all()?;
+    Ok(())
+}
+
+fn copy_once(source: &Path, destination: &Path) -> Result<()> {
+    if destination.try_exists().map_err(io_error)? {
+        return Ok(());
+    }
+    let bytes = match fs::read(source) {
+        Ok(bytes) => bytes,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => return Err(io_error(error)),
+    };
+    let temporary = prepare(destination, &bytes)?;
+    match temporary.persist_noclobber(destination) {
+        Ok(_) => sync_parent(destination),
+        Err(error) if error.error.kind() == io::ErrorKind::AlreadyExists => Ok(()),
+        Err(error) => Err(io_error(error.error)),
+    }
 }
 
 fn read(path: &Path) -> Result<Option<(Value, toml::Value)>> {
@@ -399,5 +541,172 @@ fn restore_datetime(target: &mut toml::Value, original: &toml::Value) {
             }
         }
         _ => {}
+    }
+}
+
+#[cfg(test)]
+mod writable_tests {
+    use super::*;
+
+    fn local_env(path: &Path) -> BTreeMap<String, String> {
+        BTreeMap::from([("LOCALAPPDATA".into(), path.to_str().unwrap().into())])
+    }
+
+    #[test]
+    fn fingerprint_matches_known_sha256_vector() {
+        assert_eq!(root_fingerprint(r"C:\PDFMathTranslate"), "4f57006f9d91214a");
+    }
+
+    fn default_store(root: PathBuf) -> ConfigStore {
+        let mut store = ConfigStore::new(root).unwrap();
+        store.default_executable_root = true;
+        store
+    }
+
+    #[test]
+    fn writable_root_is_probed_without_creating_a_default_document() {
+        let directory = tempfile::tempdir().unwrap();
+        let store = ConfigStore::new(directory.path().join("portable")).unwrap();
+        let resolved = store.resolve_writable(&BTreeMap::new()).unwrap();
+        assert_eq!(resolved.app_root(), store.app_root());
+        assert!(resolved.fallback_from().is_none());
+        assert!(!resolved.app_root().exists());
+        assert_eq!(fs::read_dir(directory.path()).unwrap().count(), 0);
+    }
+
+    #[test]
+    fn permission_failure_copies_portable_bytes_once_to_stable_fallback() {
+        let directory = tempfile::tempdir().unwrap();
+        let root = directory.path().join("portable");
+        let home = directory.path().join("home");
+        let store = default_store(root.clone())
+            .with_legacy_home(home.clone())
+            .unwrap();
+        fs::create_dir_all(store.path().parent().unwrap()).unwrap();
+        let original = b"# portable fixture\n[future]\nunknown='preserved'\n";
+        fs::write(store.path(), original).unwrap();
+        let env = local_env(&directory.path().join("local"));
+        let probe = |path: &Path| {
+            if path == root.join("cache") {
+                Err(io::ErrorKind::PermissionDenied.into())
+            } else {
+                probe_directory(path)
+            }
+        };
+        let fallback = store.resolve_writable_with(&env, probe).unwrap();
+        assert_eq!(fallback.fallback_from(), Some(root.as_path()));
+        assert_eq!(fallback.legacy_home.as_deref(), Some(home.as_path()));
+        assert_eq!(
+            fallback.app_root().parent().unwrap(),
+            directory.path().join("local/PDFMathTranslate")
+        );
+        let suffix = fallback.app_root().file_name().unwrap().to_str().unwrap();
+        assert_eq!(suffix.len(), 16);
+        assert!(suffix.bytes().all(|value| value.is_ascii_hexdigit()));
+        assert_eq!(fs::read(fallback.path()).unwrap(), original);
+        assert_eq!(fs::read(store.path()).unwrap(), original);
+        assert_eq!(
+            fallback.load().unwrap().get("future.unknown"),
+            Some(&json!("preserved"))
+        );
+        let existing = b"# existing fallback\n[future]\nunknown='keep'\n";
+        fs::write(fallback.path(), existing).unwrap();
+        let second = store.resolve_writable_with(&env, probe).unwrap();
+        assert_eq!(second.app_root(), fallback.app_root());
+        assert_eq!(fs::read(second.path()).unwrap(), existing);
+        assert_eq!(fs::read(store.path()).unwrap(), original);
+    }
+
+    #[test]
+    fn explicit_root_and_unrelated_errors_never_fall_back() {
+        let directory = tempfile::tempdir().unwrap();
+        let root = directory.path().join("portable");
+        let store = default_store(root.clone());
+        let mut env = local_env(&directory.path().join("local"));
+        env.insert("PDF2ZH_APP_DIR".into(), root.to_str().unwrap().into());
+        let error = store
+            .resolve_writable_with(&env, |_| Err(io::ErrorKind::PermissionDenied.into()))
+            .unwrap_err();
+        assert_eq!(error.kind, ConfigErrorKind::Io);
+        assert!(!directory.path().join("local").exists());
+        env.remove("PDF2ZH_APP_DIR");
+        let custom = ConfigStore::new(root.clone()).unwrap();
+        let error = custom
+            .resolve_writable_with(&env, |_| Err(io::ErrorKind::PermissionDenied.into()))
+            .unwrap_err();
+        assert_eq!(error.kind, ConfigErrorKind::Io);
+        let error = store
+            .resolve_writable_with(&env, |_| Err(io::ErrorKind::InvalidData.into()))
+            .unwrap_err();
+        assert_eq!(error.kind, ConfigErrorKind::Io);
+        assert!(!directory.path().join("local").exists());
+    }
+
+    #[test]
+    fn existing_file_ancestor_is_not_treated_as_missing() {
+        let directory = tempfile::tempdir().unwrap();
+        let file = directory.path().join("not-a-directory");
+        fs::write(&file, b"fixture").unwrap();
+        let store = ConfigStore::new(file.join("app")).unwrap();
+        let error = store.resolve_writable(&BTreeMap::new()).unwrap_err();
+        assert_eq!(error.kind, ConfigErrorKind::Io);
+        assert_eq!(fs::read(file).unwrap(), b"fixture");
+    }
+
+    #[test]
+    fn corrupt_config_directory_error_does_not_trigger_fallback() {
+        let directory = tempfile::tempdir().unwrap();
+        let root = directory.path().join("portable");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("config"), b"not a directory").unwrap();
+        let store = default_store(root);
+        let env = local_env(&directory.path().join("local"));
+        assert_eq!(
+            store.resolve_writable(&env).unwrap_err().kind,
+            ConfigErrorKind::Io
+        );
+        assert!(!directory.path().join("local").exists());
+    }
+
+    #[test]
+    fn fallback_without_source_does_not_create_a_default_document() {
+        let directory = tempfile::tempdir().unwrap();
+        let root = directory.path().join("portable");
+        let store = default_store(root.clone());
+        let env = local_env(&directory.path().join("local"));
+        let fallback = store
+            .resolve_writable_with(&env, |path| {
+                if path.starts_with(&root) {
+                    Err(io::ErrorKind::ReadOnlyFilesystem.into())
+                } else {
+                    probe_directory(path)
+                }
+            })
+            .unwrap();
+        assert!(!fallback.app_root().exists());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn missing_localappdata_uses_explicit_userprofile() {
+        let directory = tempfile::tempdir().unwrap();
+        let root = directory.path().join("portable");
+        let home = directory.path().join("home");
+        let store = default_store(root.clone());
+        let env = BTreeMap::from([("USERPROFILE".into(), home.to_str().unwrap().into())]);
+        let fallback = store
+            .resolve_writable_with(&env, |path| {
+                if path.starts_with(&root) {
+                    Err(io::ErrorKind::PermissionDenied.into())
+                } else {
+                    probe_directory(path)
+                }
+            })
+            .unwrap();
+        assert!(
+            fallback
+                .app_root()
+                .starts_with(home.join("AppData/Local/PDFMathTranslate"))
+        );
     }
 }

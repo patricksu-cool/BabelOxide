@@ -15,6 +15,8 @@ use tokio_util::sync::CancellationToken;
 use crate::{ErrorKind, ProviderError, ProviderResult, RetryRuntime};
 
 pub const MAX_RESPONSE_BYTES: usize = 4 * 1024 * 1024;
+const MAX_CACHED_CLIENTS: usize = 32;
+type TimeoutPair = (Option<Duration>, Option<Duration>);
 
 #[derive(Clone)]
 pub enum HttpBody {
@@ -53,6 +55,16 @@ pub trait HttpExecutor: Send + Sync {
         request: HttpRequest,
         cancel: &'a CancellationToken,
     ) -> Pin<Box<dyn Future<Output = ProviderResult<HttpResponse>> + Send + 'a>>;
+
+    /// An optional connection-only override for SDKs with separate budgets.
+    fn send_with_connect_timeout<'a>(
+        &'a self,
+        request: HttpRequest,
+        _connect_timeout: Option<Duration>,
+        cancel: &'a CancellationToken,
+    ) -> Pin<Box<dyn Future<Output = ProviderResult<HttpResponse>> + Send + 'a>> {
+        self.send(request, cancel)
+    }
 }
 
 impl HttpResponse {
@@ -83,9 +95,10 @@ pub struct HttpTransport {
     pub state: tokio::sync::Mutex<BTreeMap<String, Value>>,
     runtime: RetryRuntime,
     connect_timeout: Option<Duration>,
-    clients: Mutex<BTreeMap<Option<Duration>, Client>>,
+    clients: Mutex<BTreeMap<TimeoutPair, Client>>,
     cookies: Arc<reqwest::cookie::Jar>,
     request_scoped_cookies: bool,
+    prepared_initial_request: bool,
     executor: Option<Arc<dyn HttpExecutor>>,
     redirect_limit: usize,
 }
@@ -104,6 +117,7 @@ impl HttpTransport {
             clients: Mutex::new(BTreeMap::new()),
             cookies: Arc::new(reqwest::cookie::Jar::default()),
             request_scoped_cookies: false,
+            prepared_initial_request: false,
             executor: None,
             redirect_limit: 20,
         }
@@ -127,34 +141,62 @@ impl HttpTransport {
         self
     }
 
-    fn client(&self, timeout: Option<Duration>) -> ProviderResult<Client> {
+    /// DeepL prepares its initial request without merging the session cookie jar.
+    /// Redirects still use that jar, including cookies from previous responses.
+    pub fn with_prepared_initial_request(mut self) -> Self {
+        self.prepared_initial_request = true;
+        self
+    }
+
+    fn client(
+        &self,
+        timeout: Option<Duration>,
+        connect: Option<Duration>,
+    ) -> ProviderResult<Client> {
         if self.request_scoped_cookies {
-            return self.build_client(timeout, Arc::new(reqwest::cookie::Jar::default()));
+            return self.build_client(timeout, connect, Arc::new(reqwest::cookie::Jar::default()));
         }
         let mut clients = self.clients.lock().map_err(|_| {
             ProviderError::new(ErrorKind::Transport, "translation HTTP client lock failed")
         })?;
-        if let Some(client) = clients.get(&timeout) {
+        if let Some(client) = clients.get(&(timeout, connect)) {
             return Ok(client.clone());
         }
-        let client = self.build_client(timeout, self.cookies.clone())?;
-        clients.insert(timeout, client.clone());
+        let client = self.build_client(timeout, connect, self.cookies.clone())?;
+        if clients.len() >= MAX_CACHED_CLIENTS
+            && let Some(victim_key) = clients.keys().next().copied()
+        {
+            clients.remove(&victim_key);
+        }
+        clients.insert((timeout, connect), client.clone());
         Ok(client)
     }
 
     fn build_client(
         &self,
         timeout: Option<Duration>,
+        connect: Option<Duration>,
         cookies: Arc<reqwest::cookie::Jar>,
+    ) -> ProviderResult<Client> {
+        self.build_client_with_cookies(timeout, connect, Some(cookies))
+    }
+
+    fn build_client_with_cookies(
+        &self,
+        timeout: Option<Duration>,
+        connect: Option<Duration>,
+        cookies: Option<Arc<reqwest::cookie::Jar>>,
     ) -> ProviderResult<Client> {
         let mut builder = Client::builder()
             .redirect(reqwest::redirect::Policy::none())
-            .retry(reqwest::retry::never())
-            .cookie_provider(cookies);
+            .retry(reqwest::retry::never());
+        if let Some(cookies) = cookies {
+            builder = builder.cookie_provider(cookies);
+        }
         if let Some(timeout) = timeout {
             builder = builder.read_timeout(timeout);
         }
-        if let Some(connect) = self.connect_timeout.or(timeout) {
+        if let Some(connect) = connect.or(self.connect_timeout).or(timeout) {
             builder = builder.connect_timeout(connect);
         }
         builder.build().map_err(|_| {
@@ -170,24 +212,37 @@ impl HttpTransport {
         request: HttpRequest,
         cancel: &CancellationToken,
     ) -> ProviderResult<HttpResponse> {
+        self.send_with_connect_timeout(request, None, cancel).await
+    }
+
+    pub async fn send_with_connect_timeout(
+        &self,
+        request: HttpRequest,
+        connect_timeout: Option<Duration>,
+        cancel: &CancellationToken,
+    ) -> ProviderResult<HttpResponse> {
         if let Some(executor) = &self.executor {
             return tokio::select! {
                 biased;
                 _ = cancel.cancelled() => Err(ProviderError::cancelled()),
                 result = async {
                     self.runtime.metrics().http();
-                    executor.send(request, cancel).await
+                    executor.send_with_connect_timeout(request, connect_timeout, cancel).await
                 } => result,
             };
         }
         tokio::select! {
             biased;
             _ = cancel.cancelled() => Err(ProviderError::cancelled()),
-            result = self.execute(request) => result,
+            result = self.execute(request, connect_timeout) => result,
         }
     }
 
-    async fn execute(&self, mut request: HttpRequest) -> ProviderResult<HttpResponse> {
+    async fn execute(
+        &self,
+        mut request: HttpRequest,
+        connect_timeout: Option<Duration>,
+    ) -> ProviderResult<HttpResponse> {
         let start = self.runtime.now();
         let mut url = validated_url(&request.url)?;
         if !request.query.is_empty() {
@@ -198,9 +253,19 @@ impl HttpTransport {
                     .map(|(key, value)| (key.as_str(), value.as_str())),
             );
         }
-        let client = self.client(request.timeout)?;
+        let client = self.client(request.timeout, connect_timeout)?;
+        let initial_client = if self.prepared_initial_request {
+            Some(self.build_client_with_cookies(request.timeout, connect_timeout, None)?)
+        } else {
+            None
+        };
         for redirects in 0..=self.redirect_limit {
-            let mut builder = client.request(request.method.clone(), url.clone());
+            let active_client = if redirects == 0 {
+                initial_client.as_ref().unwrap_or(&client)
+            } else {
+                &client
+            };
+            let mut builder = active_client.request(request.method.clone(), url.clone());
             for (key, value) in &request.headers {
                 builder = builder.header(key, value);
             }
@@ -212,6 +277,13 @@ impl HttpTransport {
             };
             self.runtime.metrics().http();
             let mut response = builder.send().await.map_err(classify_http_error)?;
+            if redirects == 0 && self.prepared_initial_request {
+                for cookie in response.headers().get_all(reqwest::header::SET_COOKIE) {
+                    if let Ok(cookie) = cookie.to_str() {
+                        self.cookies.add_cookie_str(cookie, &url);
+                    }
+                }
+            }
             let status = response.status().as_u16();
             if self.redirect_limit > 0
                 && matches!(status, 301 | 302 | 303 | 307 | 308)
@@ -351,4 +423,23 @@ fn classify_http_error(error: reqwest::Error) -> ProviderError {
         "translation HTTP request failed"
     };
     ProviderError::new(kind, message)
+}
+
+#[cfg(test)]
+mod client_cache_tests {
+    use super::*;
+
+    #[test]
+    fn changing_connection_budgets_do_not_grow_client_cache_without_bound() {
+        let transport = HttpTransport::new(RetryRuntime::default(), None);
+        for seconds in 1..=100 {
+            transport
+                .client(
+                    Some(Duration::from_secs(300)),
+                    Some(Duration::from_secs(seconds)),
+                )
+                .unwrap();
+        }
+        assert!(transport.clients.lock().unwrap().len() <= MAX_CACHED_CLIENTS);
+    }
 }

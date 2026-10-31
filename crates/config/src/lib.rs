@@ -24,6 +24,8 @@ pub struct Settings {
     document: Value,
     pub(crate) original_toml: Option<toml::Value>,
     pub(crate) sdk_url_fallbacks: BTreeMap<String, (String, String)>,
+    // Runtime-only SDK environment; never serialized or included in Debug.
+    pub(crate) tencent_environment: BTreeMap<String, String>,
 }
 
 impl fmt::Debug for Settings {
@@ -38,6 +40,7 @@ impl Default for Settings {
             document: schema::defaults(),
             original_toml: None,
             sdk_url_fallbacks: BTreeMap::new(),
+            tencent_environment: BTreeMap::new(),
         }
     }
 }
@@ -173,6 +176,7 @@ impl Settings {
         let mut validated = Self::from_value(candidate)?;
         validated.original_toml = self.original_toml.clone();
         validated.sdk_url_fallbacks = self.sdk_url_fallbacks.clone();
+        validated.tencent_environment = self.tencent_environment.clone();
         *self = validated;
         Ok(())
     }

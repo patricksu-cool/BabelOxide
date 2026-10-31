@@ -138,6 +138,7 @@ struct Script {
     steps: Mutex<VecDeque<MockStep>>,
     requests: Mutex<Vec<HttpRequest>>,
     clock: Arc<TestClock>,
+    connect_timeouts: Mutex<Vec<Option<Duration>>>,
 }
 impl Script {
     fn requests(&self) -> Vec<HttpRequest> {
@@ -151,6 +152,16 @@ impl Script {
     }
 }
 impl HttpExecutor for Script {
+    fn send_with_connect_timeout<'a>(
+        &'a self,
+        request: HttpRequest,
+        timeout: Option<Duration>,
+        cancel: &'a CancellationToken,
+    ) -> Pin<Box<dyn Future<Output = ProviderResult<HttpResponse>> + Send + 'a>> {
+        self.connect_timeouts.lock().unwrap().push(timeout);
+        self.send(request, cancel)
+    }
+
     fn send<'a>(
         &'a self,
         request: HttpRequest,
@@ -215,6 +226,7 @@ impl Harness {
             steps: Mutex::new(steps.into()),
             requests: Mutex::new(Vec::new()),
             clock: clock.clone(),
+            connect_timeouts: Mutex::new(Vec::new()),
         });
         let http = HttpTransport::with_executor(runtime.clone(), script.clone());
         Self {
@@ -457,23 +469,39 @@ async fn google_real_http_query_html_entities_controls_and_sentinel() {
 
 #[tokio::test]
 async fn google_status_timeout_and_parse_failures_have_exact_outer_attempts() {
-    for step in [
-        MockStep::reply(429, "limited").header("retry-after", "120"),
-        MockStep::reply(503, "down"),
-        MockStep::error(ErrorKind::ReadTimeout),
-        MockStep::reply(200, "no translation container"),
+    let contract: Value =
+        serde_json::from_str(include_str!("fixtures/legacy_retry_contract_v1.json")).unwrap();
+    for (id, step, expected) in [
+        (
+            "R24",
+            MockStep::reply(429, "limited").header("retry-after", "120"),
+            ErrorKind::HttpStatus(429),
+        ),
+        (
+            "R25",
+            MockStep::reply(503, "down"),
+            ErrorKind::HttpStatus(503),
+        ),
+        (
+            "R26",
+            MockStep::error(ErrorKind::ReadTimeout),
+            ErrorKind::ReadTimeout,
+        ),
     ] {
-        let harness = Harness::new("google", vec![step; 5]);
+        let oracle = &contract["behaviors"][id];
+        let attempts = oracle["attempts"].as_u64().unwrap() as usize;
+        let harness = Harness::new("google", vec![step; attempts]);
         let error = harness.run().await.err().unwrap();
-        let cause = last_error(&error, "google.application", 5);
-        assert!(matches!(
-            cause.kind,
-            ErrorKind::HttpStatus(429 | 503)
-                | ErrorKind::ReadTimeout
-                | ErrorKind::MalformedResponse
-        ));
-        assert_eq!(harness.clock.seconds(), vec![1.0, 2.0, 4.0, 8.0]);
-        assert_eq!(harness.requests().len(), 5);
+        let cause = last_error(&error, "google.application", attempts as u32);
+        assert_eq!(cause.kind, expected);
+        let waits: Vec<f64> = oracle["sleeps_seconds"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|n| n.as_f64().unwrap())
+            .collect();
+        assert_eq!(harness.clock.seconds(), waits);
+        assert_eq!(harness.requests().len(), attempts);
         assert!(
             harness
                 .requests()
@@ -482,6 +510,16 @@ async fn google_status_timeout_and_parse_failures_have_exact_outer_attempts() {
         );
         harness.drained();
     }
+    let harness = Harness::new(
+        "google",
+        vec![MockStep::reply(200, "no translation container"); 5],
+    );
+    let error = harness.run().await.err().unwrap();
+    assert_eq!(
+        last_error(&error, "google.application", 5).kind,
+        ErrorKind::MalformedResponse
+    );
+    harness.drained();
     let harness = Harness::new("google", vec![MockStep::error(ErrorKind::Interrupt)]);
     assert!(matches!(
         harness.run().await.err().unwrap().kind,
@@ -704,6 +742,39 @@ async fn app_provider_cookies_stay_within_one_redirect_chain() {
         );
         assert_eq!(requests[3].headers["cookie"], "fixture=chain");
     }
+}
+
+#[tokio::test]
+async fn deepl_prepared_requests_omit_session_cookies_until_redirect() {
+    let body = r#"{"translations":[{"text":"translated","billed_characters":1}]}"#;
+    let server = Loopback::start(vec![
+        WireStep::reply(200, body).header("Set-Cookie", "session=retained; Path=/"),
+        WireStep::reply(302, "").header("Location", "/continued"),
+        WireStep::reply(200, body),
+        WireStep::reply(200, body),
+    ])
+    .await;
+    let harness = Harness::loopback("deepl", &server.endpoint);
+    let service = pdf2zh_core::TranslationService::new_with_runtime(
+        harness.config.clone(),
+        harness.runtime.clone(),
+    )
+    .unwrap();
+    for _ in 0..3 {
+        assert_eq!(
+            service
+                .translate_typed(&harness.request, &harness.cancel)
+                .await
+                .unwrap()
+                .text,
+            "translated"
+        );
+    }
+    let requests = server.finish().await;
+    assert!(!requests[0].headers.contains_key("cookie"));
+    assert!(!requests[1].headers.contains_key("cookie"));
+    assert_eq!(requests[2].headers["cookie"], "session=retained");
+    assert!(!requests[3].headers.contains_key("cookie"));
 }
 
 #[tokio::test]
@@ -1161,6 +1232,55 @@ async fn azure_303_preserves_body_while_get_uses_its_own_status_selector() {
         assert_eq!(harness.requests().len(), 3);
         assert_eq!(harness.requests()[1].method, reqwest::Method::GET);
         assert!(harness.clock.seconds().is_empty());
+        harness.drained();
+    }
+}
+
+#[tokio::test]
+async fn azure_deadline_limits_connect_only_and_tracks_last_error_kind() {
+    let harness = Harness::new(
+        "azure",
+        vec![
+            MockStep::reply(303, "").header("location", "/redirected"),
+            MockStep::error(ErrorKind::Connect).elapsed(604600.0),
+            MockStep::reply(200, AZURE_OK),
+        ],
+    );
+    assert_eq!(harness.run().await.unwrap().text, "譯文");
+    assert_eq!(
+        harness.requests()[2].timeout,
+        Some(Duration::from_secs(300))
+    );
+    assert_eq!(
+        harness
+            .script
+            .as_ref()
+            .unwrap()
+            .connect_timeouts
+            .lock()
+            .unwrap()[2],
+        Some(Duration::from_secs(200))
+    );
+    harness.drained();
+
+    for (injected, expected) in [
+        (ErrorKind::Connect, ErrorKind::ConnectTimeout),
+        (ErrorKind::ReadTimeout, ErrorKind::ReadTimeout),
+    ] {
+        let mut steps = Vec::new();
+        for _ in 0..5 {
+            steps.push(MockStep::reply(303, "").header("location", "/redirected"));
+            steps.push(MockStep::error(injected.clone()).elapsed(604800.0));
+        }
+        let harness = Harness::new("azure", steps);
+        let error = match harness.run().await {
+            Err(error) => error,
+            Ok(_) => panic!("expected Azure operation timeout"),
+        };
+        match error.kind {
+            ErrorKind::RetryExhausted { last, .. } => assert_eq!(last.kind, expected),
+            kind => panic!("unexpected error: {kind:?}"),
+        }
         harness.drained();
     }
 }
