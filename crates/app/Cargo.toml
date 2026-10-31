@@ -24,4 +24,4 @@ eframe = { version = "=0.37.0", default-features = false, features = ["glow", "d
 
 [target.'cfg(windows)'.dependencies]
 rfd = { version = "=0.17.2", default-features = false }
-windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }

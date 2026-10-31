@@ -6,7 +6,7 @@
 
 BabelDOC 的套件宣告閉包包含 OpenAI、Peewee、Tenacity、Pillow、ONNX Runtime、xsdata extras 及 Ruff 等。名稱像應用程式或開發工具，不代表可從該閉包刪除。以下列出每個保留項目的直接相依來源，並不表示每次 PDF 都會 import 所有套件。模型、字型、CMap、tokenizer、Python 標準函式庫與 native DLL 另外保留。
 
-本機 builder 以已驗證的離線輸入組裝；缺 wheel／資產或 hash 不符會停止。Worker 32 項邊界測試、隔離 installed metadata 閉包及真 PDF 回歸分別驗證不同風險。開發腳本與 fake worker 是測試工具，不隨執行包發布。歷史原碼可從 Git 基準回復，無需保留第二套正式 App。
+本機 builder 以已驗證的離線輸入組裝；缺 wheel／資產或 hash 不符會停止。Worker 35 項邊界測試、隔離 installed metadata 閉包及真 PDF 回歸分別驗證不同風險。Worker 也保留超長 Windows runtime 路徑的 OpenCV 原生初始化相容處理，未包含翻譯服務或重試邏輯。開發腳本與 fake worker 是測試工具，不隨執行包發布。歷史原碼可從 Git 基準回復，無需保留第二套正式 App。
 | Distribution | Effective version | Required by (metadata closure) |
 |---|---|---|
 | annotated-types | 0.8.0 | pydantic |

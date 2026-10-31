@@ -1,6 +1,6 @@
 # Rust / BabelDOC IPC v1
 
-更新：2026-10-30；Python對照基準：`d18165e`。本文描述目前公開wire contract、程式審查結論與待驗證項目。**核心整合成功不等於完整provider等價、正式發行或乾淨Windows驗證。** 測試是否實際通過以TEST_REPORT為準。
+更新：2026-10-31；Python對照基準：`d18165e`。本文描述目前 wire contract 與邊界。測試範圍、個人執行包驗收與限制以 [FINAL_STATUS](FINAL_STATUS.md) 為準，不代表所有 provider SDK 行為或乾淨 Windows 環境完全等價。
 
 最初PoC審查曾因graph連線不可用而採直接source fallback；本輪工具已恢復。2026-10-28T12:16:29Z的coverage對bridge、process、CLI、worker與相關測試皆為metadata_match／no_recorded_issue；這是best-effort freshness訊號，關鍵協定與程序保證仍以source及實測核對。既有Python的34案例對照見RETRY_COMPATIBILITY。
 

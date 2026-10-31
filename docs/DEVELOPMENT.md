@@ -2,7 +2,7 @@
 
 ## 環境
 
-使用既有 Rust、Git、uv 與 Poppler，不修改全域 PATH 或系統 Python。Workspace 最低 Rust 1.88；本機驗證工具鏈為 Rust 1.99.1、Windows x64 GNU，`.cargo/config.toml` 使用隨 Rust 提供的 rust-lld。實際相依版本以 `Cargo.lock` 為準。
+使用既有 Rust、Git、uv 與 Poppler，不修改全域 PATH 或系統 Python。Workspace 共用最低 Rust 1.88，GUI crate 要求 1.95；本機驗證工具鏈為 Rust 1.99.1、Windows x64 GNU，`.cargo/config.toml` 使用隨 Rust 提供的 rust-lld。實際相依版本以 `Cargo.lock` 為準。
 
 Python 只用於 BabelDOC Worker 與開發工具。根目錄是非套件式 uv 專案，開發環境只有 pytest／Ruff；執行期的 85 個 wheel 由 `python-worker/` 的獨立 profile 鎖定，包含 BabelDOC 0.6.3、CPython 3.13.16、Pillow 13.0.0。不要把開發 venv 複製到執行版本。
 
@@ -26,7 +26,7 @@ Rust 的程序測試預設使用專案 `.venv`，也可明確設定 `PDF2ZH_TEST
 
 ```powershell
 uv run python script/build_hybrid_windows.py --plan --output dist/final
-uv run python script/build_hybrid_windows.py --output dist/final --allow-unresolved-native
+uv run python script/build_hybrid_windows.py --output dist/final --source-commit (git rev-parse HEAD) --cargo-registry-src "$env:USERPROFILE\.cargo\registry\src" --allow-unresolved-native
 ```
 
 目前 ONNX Runtime 的兩個模組會引用未內附的 `msvcp140_1.dll`。`--allow-unresolved-native` 僅允許在已安裝官方 VC++ x64 Runtime 的個人 Windows 上組包，仍驗證其餘雜湊、依賴與 assets；不會把報告標成乾淨機／公開再散布已通過。不要從 System32 複製 DLL。可用 `--runtime-source`、`--runtime-manifest`、`--pdfium-source`、`--assets-zip`、`--wheel-cache` 指向其他已查核輸入；所有預設均為專案相對路徑。

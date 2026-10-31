@@ -21,6 +21,21 @@ SPEC.loader.exec_module(worker)
 
 
 @pytest.mark.parametrize(
+    "platform,path_length,expected",
+    [("win32", 300, [1]), ("win32", 100, []), ("linux", 300, [])],
+)
+def test_native_parallel_workaround_only_applies_to_long_windows_runtime(
+    monkeypatch, platform, path_length, expected
+):
+    threads = []
+    monkeypatch.setattr(worker.sys, "platform", platform)
+    monkeypatch.setattr(worker.os.path, "realpath", lambda _: "x" * path_length)
+    monkeypatch.setitem(sys.modules, "cv2", SimpleNamespace(setNumThreads=threads.append))
+    worker.configure_native_runtime()
+    assert threads == expected
+
+
+@pytest.mark.parametrize(
     "raw",
     [
         b"{}\n",

@@ -523,6 +523,17 @@ class RustTranslatorAdapter:
         return "</style>", r"<\s*\/\s*style\s*>"
 
 
+def configure_native_runtime():
+    # The locked Windows OpenCV Concurrency backend throws for a deeply nested
+    # process image. Its explicit one-thread mode bypasses that backend; only
+    # image kernels change, not ONNX or the Rust translator's request pool.
+    if sys.platform == "win32" and len(os.path.realpath(sys.executable)) >= 260:
+        import cv2
+
+        cv2.setNumThreads(1)
+        logging.warning("Long runtime path: using one OpenCV image-processing thread")
+
+
 def main():
     boundary = EngineBoundary(isolate_stdout())
     try:
@@ -536,6 +547,7 @@ def main():
         version = importlib.metadata.version("babeldoc")
         if version != "0.6.3":
             raise ProtocolError("Worker requires locked BabelDOC 0.6.3")
+        configure_native_runtime()
         boundary.send(
             "ready", babeldoc_version=version,
             operations=["pdf", "warmup", "generate_offline_assets", "restore_offline_assets"],

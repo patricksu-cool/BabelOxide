@@ -5,6 +5,8 @@ mod app;
 mod background;
 mod dialogs;
 mod model;
+#[cfg(windows)]
+mod windows_launch;
 
 use anyhow::{Context, Result, ensure};
 use babeldoc_bridge::WorkerOptions;
@@ -28,6 +30,10 @@ pub struct LaunchOptions {
 /// Load the shared CLI configuration with the caller's explicit environment,
 /// then launch the desktop UI. No translation or Python process starts here.
 pub fn launch(invocation: Invocation, environment: BTreeMap<String, String>) -> Result<()> {
+    #[cfg(windows)]
+    if windows_launch::relaunch_if_needed()? {
+        return Ok(());
+    }
     let (store, settings) = invocation.load(&environment)?;
     if invocation.save_config {
         store.save_user_defaults(&settings)?;

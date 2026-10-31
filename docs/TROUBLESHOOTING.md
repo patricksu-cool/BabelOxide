@@ -26,7 +26,9 @@ Tencent 目前支援設定中的靜態 ID／Key，以及完整環境 ID／Key �
 
 資料夾不可寫時，GUI／CLI 顯示使用者資料備援路徑。備援依來源資料夾識別，已有設定不會被初始化取代。`PDF2ZH_APP_DIR` 可明確選擇設定與 cache 根目錄；`--worker-home` 與 `--cache-file` 可另外指定。選擇自己可寫的位置，並保持完整 bundle 可讀。
 
-Windows 的超長路徑還受啟動器與原生套件限制。Worker 使用獨立暫存工作目錄，並優先採用磁碟既有的 8.3 短檔名啟動 Python，以避開 OpenCV 的原生長路徑限制；不會修改系統政策。若磁碟未提供短檔名，或 Windows 啟動器拒絕超過 260 字元的 EXE 路徑，請把完整程式資料夾移到較短的可寫位置。開發 smoke harness 會為超長 EXE 加上 Windows extended-path prefix。
+Windows 的超長路徑還受啟動器與原生套件限制。Worker 使用獨立暫存工作目錄；當 Python 的實際路徑達 260 字元時，只將 OpenCV 影像運算設為單執行緒，避開該版本 Windows Concurrency 後端的例外。ONNX 與翻譯 API 並行數不變，也不修改系統政策。開發 smoke harness 會為超長 EXE 加上 Windows extended-path prefix；若其他 Windows 啟動器拒絕這種路徑，請把完整程式資料夾移到較短位置。
+
+GUI 的 Windows COM／OLE 也需要較短的 process image 路徑，因此超長 EXE 會透過磁碟既有的短檔名重啟，並等待視窗關閉。沒有可用短檔名時會顯示縮短路徑的提示；不修改磁碟或安全政策。OpenCV 的單執行緒模式依其[原生實作](https://github.com/opencv/opencv/blob/4.x/modules/core/src/parallel.cpp)避開 Concurrency scheduler，僅作為此版本極長路徑的相容處理。
 
 若 BabelDOC 資產與內附 manifest 不同，程式會保留檔案並停止。先備份自己的模型／字型，再改用新的空白 `--worker-home`；不要直接刪除不明資料。清 cache 前關閉所有任務，保留需要的 glossary 與輸出 PDF。
 
