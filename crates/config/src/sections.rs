@@ -62,7 +62,7 @@ impl Default for GuiSettings {
             disable_config_auto_save: false,
             server_port: 7860,
             server_name: "127.0.0.1".into(),
-            ui_lang: Some("en".into()),
+            ui_lang: Some("zh-TW".into()),
             extra: Map::new(),
         }
     }

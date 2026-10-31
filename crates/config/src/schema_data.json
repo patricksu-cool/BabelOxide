@@ -155,7 +155,7 @@
       "flag": "ui-lang",
       "env": "PDF2ZH_UI_LANG",
       "kind": "String",
-      "default": "en",
+      "default": "zh-TW",
       "nullable": true,
       "secret": false,
       "help": "UI language"
@@ -2516,7 +2516,7 @@
       "disable_config_auto_save": false,
       "server_port": 7860,
       "server_name": "127.0.0.1",
-      "ui_lang": "en"
+      "ui_lang": "zh-TW"
     },
     "translation": {
       "min_text_length": 5,
