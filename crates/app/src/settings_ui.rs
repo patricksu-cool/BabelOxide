@@ -63,7 +63,8 @@ pub fn visible(editor: &Editor, spec: &FieldSpec) -> bool {
     {
         return true;
     }
-    if spec.path.ends_with("deepseek_reasoning_effort")
+    if (spec.path.ends_with("deepseek_reasoning_effort")
+        || spec.path.ends_with("deepseek_thinking_mode"))
         && !editor.drafts.contains_key(&spec.path)
         && editor
             .settings
@@ -108,7 +109,9 @@ pub fn visible(editor: &Editor, spec: &FieldSpec) -> bool {
             .map(|value| value == "true")
             .unwrap_or_else(|| editor.settings.get(&path).and_then(Value::as_bool) == Some(true));
     }
-    if spec.path.ends_with("deepseek_reasoning_effort") {
+    if spec.path.ends_with("deepseek_reasoning_effort")
+        || spec.path.ends_with("deepseek_thinking_mode")
+    {
         let (section, _) = spec.path.split_once('.').unwrap_or(("", ""));
         let prefix = if section.starts_with("term_") {
             "term_"
@@ -125,7 +128,8 @@ pub fn visible(editor: &Editor, spec: &FieldSpec) -> bool {
                 .or_else(|| editor.settings.get(p).and_then(Value::as_str))
                 .unwrap_or("")
         };
-        return read(&mode) == "enabled" && read(&model).starts_with("deepseek-v4-");
+        return read(&model).starts_with("deepseek-v4-")
+            && (spec.path.ends_with("deepseek_thinking_mode") || read(&mode) == "enabled");
     }
     true
 }
@@ -515,6 +519,37 @@ mod tests {
             )
             .unwrap();
         assert!(visible(&editor, thinking));
+    }
+    #[test]
+    fn deepseek_thinking_controls_follow_model_and_preserve_values() {
+        for prefix in ["", "term_"] {
+            let section = format!("{prefix}deepseek_detail");
+            let model = format!("{section}.{prefix}deepseek_model");
+            let mode = format!("{section}.{prefix}deepseek_thinking_mode");
+            let effort = format!("{section}.{prefix}deepseek_reasoning_effort");
+            let mut editor = Editor::new(pdf2zh_config::Settings::default());
+            editor.set(&model, json!("deepseek-chat")).unwrap();
+            editor.set(&mode, json!("enabled")).unwrap();
+            editor.set(&effort, json!("high")).unwrap();
+            assert!(!visible(&editor, spec(&mode)));
+            assert!(!visible(&editor, spec(&effort)));
+            editor
+                .drafts
+                .insert(model.clone(), "deepseek-v4-pro".into());
+            assert!(visible(&editor, spec(&mode)));
+            assert!(visible(&editor, spec(&effort)));
+            editor.set(&mode, json!("disabled")).unwrap();
+            assert!(visible(&editor, spec(&mode)));
+            assert!(!visible(&editor, spec(&effort)));
+            editor.drafts.remove(&model);
+            assert!(!visible(&editor, spec(&mode)));
+            assert_eq!(editor.settings.get(&mode), Some(&json!("disabled")));
+            assert_eq!(editor.settings.get(&effort), Some(&json!("high")));
+            editor.drafts.insert(mode.clone(), "invalid".into());
+            assert!(visible(&editor, spec(&mode)));
+            editor.drafts.insert(effort.clone(), "invalid".into());
+            assert!(visible(&editor, spec(&effort)));
+        }
     }
     #[test]
     fn painting_unedited_nullable_values_does_not_create_drafts() {

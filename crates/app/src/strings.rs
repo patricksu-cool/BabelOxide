@@ -7,6 +7,7 @@ pub fn ui(key: &'static str, chinese: bool) -> &'static str {
     }
     match key {
         "Settings saved" => "設定已保存",
+        "Saved snapshot; newer edits remain unsaved" => "已保存先前的設定；較新的修改尚未保存。",
         "Saved to" => "已另存為",
         "Translate PDFs, keep the layout" => "翻譯 PDF 並保留版面",
         "Save settings" => "保存設定",
@@ -24,6 +25,9 @@ pub fn ui(key: &'static str, chinese: bool) -> &'static str {
         "Leave empty to use the source folder" => "留空使用原文件資料夾",
         "Translated PDF" => "譯文 PDF",
         "Bilingual PDF" => "雙語 PDF",
+        "Original" => "原文",
+        "Translated" => "譯文",
+        "Bilingual" => "雙語",
         "Pages (e.g. 1-3,5; empty for all)" => "頁碼（例如 1-3,5；留空為全部）",
         "Glossary CSV" => "術語表 CSV",
         "Separate multiple files with commas" => "多份以逗號分隔",
@@ -290,6 +294,17 @@ pub fn field_label(spec: &FieldSpec, chinese: bool) -> String {
 }
 
 pub fn field_help(spec: &FieldSpec, chinese: bool) -> String {
+    if spec.path.ends_with("deepseek_model")
+        || spec.path.ends_with("deepseek_thinking_mode")
+        || spec.path.ends_with("deepseek_reasoning_effort")
+    {
+        let hint = if chinese {
+            "思考模式與推理強度只適用於 deepseek-v4-* 模型；推理強度還需要啟用思考模式。"
+        } else {
+            "Thinking mode and reasoning effort apply only to deepseek-v4-* models; reasoning effort also requires thinking mode to be enabled."
+        };
+        return format!("{hint}\n--{}", spec.flag);
+    }
     if !chinese {
         return format!("{}\n--{}", spec.help, spec.flag);
     }
@@ -439,6 +454,44 @@ pub fn stage(name: &str, chinese: bool) -> String {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn dynamically_selected_ui_labels_are_translated() {
+        for (key, expected) in [
+            ("Original", "原文"),
+            ("Translated", "譯文"),
+            ("Bilingual", "雙語"),
+            ("All pages", "全部頁面"),
+            ("First page", "第一頁"),
+            ("First five pages", "前五頁"),
+            ("Basic translation settings", "基本翻譯設定"),
+            ("PDF processing", "PDF 處理"),
+            ("Other advanced settings", "其他進階設定"),
+            ("All PDF results", "全部 PDF 結果"),
+            ("Mono PDF results", "譯文 PDF 結果"),
+            ("Dual PDF results", "雙語 PDF 結果"),
+            (
+                "Saved snapshot; newer edits remain unsaved",
+                "已保存先前的設定；較新的修改尚未保存。",
+            ),
+        ] {
+            assert_eq!(super::ui(key, true), expected);
+            assert_eq!(super::ui(key, false), key);
+        }
+    }
+    #[test]
+    fn deepseek_model_help_explains_thinking_requirements() {
+        for path in [
+            "deepseek_detail.deepseek_model",
+            "term_deepseek_detail.term_deepseek_model",
+        ] {
+            let spec = pdf2zh_config::field_specs()
+                .iter()
+                .find(|spec| spec.path == path)
+                .unwrap();
+            assert!(super::field_help(spec, true).contains("deepseek-v4-*"));
+            assert!(super::field_help(spec, false).contains("deepseek-v4-*"));
+        }
+    }
     #[test]
     fn all_schema_fields_have_chinese_labels() {
         for spec in pdf2zh_config::field_specs() {
