@@ -182,6 +182,9 @@ impl NativeApp {
                 }
                 Event::Saved(settings) => {
                     let unchanged = self.editor.saved_at(settings, self.save_revision);
+                    if unchanged {
+                        self.apply_ui_language();
+                    }
                     self.saving = false;
                     self.notice = Some(
                         self.text(if unchanged {
@@ -214,6 +217,7 @@ impl NativeApp {
                         let files = self.editor.files.clone();
                         self.editor = Editor::new(settings);
                         self.editor.files = files;
+                        self.apply_ui_language();
                         self.notice = Some(self.text("Settings reloaded").into());
                         self.error = None;
                     }
@@ -322,6 +326,9 @@ impl NativeApp {
         }
     }
     fn save(&mut self) {
+        if self.saving || self.download_cancel.is_some() {
+            return;
+        }
         match self.editor.snapshot(false) {
             Ok(settings) => {
                 self.save_revision = self.editor.revision;
@@ -331,6 +338,31 @@ impl NativeApp {
             }
             Err(error) => self.fail(error),
         }
+    }
+    fn reload(&mut self) {
+        if self.saving || self.download_cancel.is_some() || self.editor.dirty {
+            return;
+        }
+        self.save_revision = self.editor.revision;
+        if self.command(Command::Reload) {
+            self.saving = true;
+        }
+    }
+    fn apply_ui_language(&mut self) {
+        self.chinese = self
+            .editor
+            .settings
+            .gui()
+            .ok()
+            .and_then(|gui| gui.ui_lang)
+            .is_none_or(|language| !language.starts_with("en"));
+    }
+    fn toggle_ui_language(&mut self) {
+        self.chinese = !self.chinese;
+        self.edit(
+            "gui_settings.ui_lang",
+            json!(if self.chinese { "zh-TW" } else { "en" }),
+        );
     }
     fn heading(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
@@ -348,27 +380,26 @@ impl NativeApp {
                     "繁體中文"
                 };
                 if ui.small_button(language).clicked() {
-                    self.chinese = !self.chinese;
-                    self.edit("gui_settings.ui_lang", json!(self.text("en")));
+                    self.toggle_ui_language();
                 }
                 if ui
-                    .add_enabled(!self.saving, egui::Button::new(self.text("Save settings")))
+                    .add_enabled(
+                        !self.saving && self.download_cancel.is_none(),
+                        egui::Button::new(self.text("Save settings")),
+                    )
                     .clicked()
                 {
                     self.save();
                 }
                 if ui
                     .add_enabled(
-                        !self.saving && !self.editor.dirty,
+                        !self.saving && self.download_cancel.is_none() && !self.editor.dirty,
                         egui::Button::new(self.text("Reload settings")),
                     )
                     .on_hover_text(self.text("Save edits before reloading"))
                     .clicked()
                 {
-                    self.save_revision = self.editor.revision;
-                    if self.command(Command::Reload) {
-                        self.saving = true;
-                    }
+                    self.reload();
                 }
                 let can_submit = !self.submitting
                     && !self.saving
@@ -1362,6 +1393,66 @@ mod tests {
         }
     }
 
+    #[test]
+    fn saving_or_reloading_cannot_disable_an_active_downloads_cancel_control() {
+        let mut harness = Harness::new(Settings::default());
+        harness.app.download_cancel = Some(tokio_util::sync::CancellationToken::new());
+        harness.app.save();
+        assert!(!harness.app.saving);
+        harness.app.reload();
+        assert!(!harness.app.saving);
+        assert!(harness.app.download_cancel.is_some());
+    }
+    #[test]
+    fn reload_applies_interface_language_and_keeps_pdf_inputs() {
+        let mut harness = Harness::new(Settings::default());
+        let store = ConfigStore::new(harness.directory.path().into()).unwrap();
+        store.save_user_defaults(&Settings::default()).unwrap();
+        harness.app.editor.files.push(PathBuf::from("current.pdf"));
+        assert!(!harness.app.chinese);
+        harness.app.reload();
+        let context = egui::Context::default();
+        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        while harness.app.saving {
+            assert!(std::time::Instant::now() < deadline);
+            harness.app.poll(&context);
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        assert!(harness.app.chinese);
+        assert_eq!(harness.app.editor.files, [PathBuf::from("current.pdf")]);
+    }
+    #[test]
+    fn interface_language_switch_persists_the_actual_language_code() {
+        let mut harness = Harness::new(Settings::default());
+        harness.app.toggle_ui_language();
+        assert!(harness.app.chinese);
+        assert_eq!(
+            harness
+                .app
+                .editor
+                .snapshot(false)
+                .unwrap()
+                .gui()
+                .unwrap()
+                .ui_lang
+                .as_deref(),
+            Some("zh-TW")
+        );
+        harness.app.toggle_ui_language();
+        assert!(!harness.app.chinese);
+        assert_eq!(
+            harness
+                .app
+                .editor
+                .snapshot(false)
+                .unwrap()
+                .gui()
+                .unwrap()
+                .ui_lang
+                .as_deref(),
+            Some("en")
+        );
+    }
     #[test]
     fn a_real_headless_frame_does_not_start_workers_or_auto_save() {
         let mut settings = Settings::default();
