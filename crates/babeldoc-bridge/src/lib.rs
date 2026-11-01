@@ -607,6 +607,7 @@ async fn run_session(
         }
     };
     let tree_cleanup = scope.terminate_and_wait().await;
+    #[cfg(windows)]
     drop(scope);
     let _writer_ok = if writer_finished {
         false
