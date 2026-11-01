@@ -6,12 +6,19 @@ use std::{
     thread,
     time::Duration,
 };
+
+fn publish_pid(root: &std::path::Path, name: &str) {
+    let temporary = root.join(format!("{name}.tmp"));
+    fs::write(&temporary, process::id().to_string()).unwrap();
+    fs::rename(temporary, root.join(name)).unwrap();
+}
+
 fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
     let exe = env::current_exe().unwrap();
     let root = exe.parent().unwrap();
     if args.first().map(String::as_str) == Some("--grandchild") {
-        fs::write(root.join("descendant.pid"), process::id().to_string()).unwrap();
+        publish_pid(root, "descendant.pid");
         thread::sleep(Duration::from_secs(300));
         return;
     }
@@ -43,7 +50,7 @@ fn main() {
     .unwrap();
     match mode {
         "sleep" | "claude-sleep" | "tree" => {
-            fs::write(root.join("child.pid"), process::id().to_string()).unwrap();
+            publish_pid(root, "child.pid");
             let _descendant = if mode == "tree" {
                 Some(Command::new(&exe).arg("--grandchild").spawn().unwrap())
             } else {

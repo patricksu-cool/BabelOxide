@@ -224,7 +224,7 @@ fn path_kind(spec: &FieldSpec) -> Option<bool> {
         _ => None,
     }
 }
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 fn pick_path(frame: &eframe::Frame, directory: bool) -> Option<std::path::PathBuf> {
     let dialog = rfd::FileDialog::new().set_parent(frame);
     if directory {
@@ -233,7 +233,7 @@ fn pick_path(frame: &eframe::Frame, directory: bool) -> Option<std::path::PathBu
         dialog.pick_file()
     }
 }
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "macos")))]
 fn pick_path(_frame: &eframe::Frame, _directory: bool) -> Option<std::path::PathBuf> {
     None
 }

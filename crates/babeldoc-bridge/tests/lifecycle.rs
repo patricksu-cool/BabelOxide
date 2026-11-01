@@ -5,9 +5,10 @@ use std::{collections::BTreeMap, fs, path::PathBuf, sync::Arc, time::Duration};
 
 use anyhow::{Context, Result, bail, ensure};
 use babeloxide_bridge::{
-    AssetOperation, FactoryInitialization, WorkerOptions, maintain_assets, translate_pdf,
-    translate_pdf_with_initialization, translate_pdf_with_services,
+    AssetOperation, WorkerOptions, maintain_assets, translate_pdf, translate_pdf_with_services,
 };
+#[cfg(any(windows, unix))]
+use babeloxide_bridge::{FactoryInitialization, translate_pdf_with_initialization};
 use babeloxide_core::{
     CacheBackend, CacheError, CacheFuture, CacheKey, PdfJob, TranslationService, TranslatorConfig,
 };
@@ -282,19 +283,19 @@ async fn resource_cancellation_waits_for_worker_tree_and_preserves_archive() -> 
         event = timeout(DEADLINE, progress.recv()) => { ensure!(event?.context("progress closed")?["stage"] == "assets blocked"); }
         result = &mut operation => bail!("Resource operation ended before cancel: {result:?}"),
     }
-    #[cfg(windows)]
-    let worker = windows_process::ObservedProcess::from_pid_file(
+    #[cfg(any(windows, unix))]
+    let worker = process_observer::ObservedProcess::from_pid_file(
         fixture.directory.path().join("worker.pid"),
     )?;
-    #[cfg(windows)]
-    let descendant = windows_process::ObservedProcess::from_pid_file(
+    #[cfg(any(windows, unix))]
+    let descendant = process_observer::ObservedProcess::from_pid_file(
         fixture.directory.path().join("descendant.pid"),
     )?;
     cancel.cancel();
     timeout(DEADLINE, &mut operation)
         .await?
         .expect_err("cancel must fail");
-    #[cfg(windows)]
+    #[cfg(any(windows, unix))]
     {
         worker.assert_exited_now()?;
         descendant.assert_exited_now()?;
@@ -723,8 +724,8 @@ async fn cancellation_force_kills_worker_that_ignores_stdin() -> Result<()> {
         result = &mut operation => bail!("worker ended before cancellation: {result:?}"),
     };
     ensure!(event["stage"] == "worker_ready");
-    #[cfg(windows)]
-    let worker = windows_process::ObservedProcess::from_pid_file(
+    #[cfg(any(windows, unix))]
+    let worker = process_observer::ObservedProcess::from_pid_file(
         fixture.directory.path().join("worker.pid"),
     )?;
     cancel.cancel();
@@ -733,9 +734,52 @@ async fn cancellation_force_kills_worker_that_ignores_stdin() -> Result<()> {
         .context("cancellation did not force worker cleanup")?
         .expect_err("cancel must not succeed");
     ensure!(format!("{error:#}").contains("cancelled"));
-    #[cfg(windows)]
+    #[cfg(any(windows, unix))]
     worker.assert_exited().await?;
     Ok(())
+}
+
+#[cfg(windows)]
+use windows_process as process_observer;
+
+#[cfg(unix)]
+mod process_observer {
+    use super::*;
+    mod snapshot {
+        include!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../test-support/unix_process.rs"
+        ));
+    }
+
+    pub struct ObservedProcess(snapshot::Process);
+
+    impl ObservedProcess {
+        pub fn from_pid_file(path: PathBuf) -> Result<Self> {
+            let pid = fs::read_to_string(path)?.trim().parse()?;
+            Ok(Self(snapshot::Process::observe(pid)?))
+        }
+
+        pub async fn assert_exited(&self) -> Result<()> {
+            timeout(Duration::from_secs(3), async {
+                while self.0.running()? {
+                    tokio::time::sleep(Duration::from_millis(20)).await;
+                }
+                Ok::<_, anyhow::Error>(())
+            })
+            .await
+            .context("fixture process survived bridge cleanup")??;
+            Ok(())
+        }
+
+        pub fn assert_exited_now(&self) -> Result<()> {
+            ensure!(
+                !self.0.running()?,
+                "process still active when bridge returned"
+            );
+            Ok(())
+        }
+    }
 }
 
 #[cfg(windows)]
@@ -800,7 +844,7 @@ mod windows_process {
     }
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, unix))]
 #[tokio::test]
 async fn crash_is_observed_while_descendant_keeps_stdout_open() -> Result<()> {
     let fixture = Fixture::new("crash_with_descendant")?;
@@ -818,10 +862,10 @@ async fn crash_is_observed_while_descendant_keeps_stdout_open() -> Result<()> {
         result = &mut operation => bail!("worker ended before crash gate: {result:?}"),
     };
     ensure!(event["stage"] == "descendant_ready");
-    let worker = windows_process::ObservedProcess::from_pid_file(
+    let worker = process_observer::ObservedProcess::from_pid_file(
         fixture.directory.path().join("worker.pid"),
     )?;
-    let descendant = windows_process::ObservedProcess::from_pid_file(
+    let descendant = process_observer::ObservedProcess::from_pid_file(
         fixture.directory.path().join("descendant.pid"),
     )?;
     fs::write(
@@ -838,7 +882,7 @@ async fn crash_is_observed_while_descendant_keeps_stdout_open() -> Result<()> {
     Ok(())
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, unix))]
 #[tokio::test]
 async fn cancellation_force_kills_the_entire_contained_tree() -> Result<()> {
     let fixture = Fixture::new("cancel_hang_with_descendant")?;
@@ -857,10 +901,10 @@ async fn cancellation_force_kills_the_entire_contained_tree() -> Result<()> {
         result = &mut operation => bail!("worker ended before cancellation: {result:?}"),
     };
     ensure!(event["stage"] == "descendant_ready");
-    let worker = windows_process::ObservedProcess::from_pid_file(
+    let worker = process_observer::ObservedProcess::from_pid_file(
         fixture.directory.path().join("worker.pid"),
     )?;
-    let descendant = windows_process::ObservedProcess::from_pid_file(
+    let descendant = process_observer::ObservedProcess::from_pid_file(
         fixture.directory.path().join("descendant.pid"),
     )?;
     cancel.cancel();
@@ -874,32 +918,36 @@ async fn cancellation_force_kills_the_entire_contained_tree() -> Result<()> {
     Ok(())
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, unix))]
 #[tokio::test]
 async fn cancelling_a_cli_request_waits_for_native_process_tree_cleanup() -> Result<()> {
     cancel_cli_process_tree(false).await
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, unix))]
 #[tokio::test]
 async fn cancelling_factory_health_reaps_native_tree_without_starting_python() -> Result<()> {
     cancel_cli_process_tree(true).await
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, unix))]
 async fn cancel_cli_process_tree(initialize: bool) -> Result<()> {
     let mut fixture = Fixture::new("cli_pending")?;
     // This timeout must not abort CLI providers while they kill and reap.
     fixture.worker.shutdown_timeout = Duration::ZERO;
     let source = fixture.directory.path().join("offline_cli.rs");
-    let executable = fixture.directory.path().join("offline_cli.exe");
+    let executable = fixture.directory.path().join(if cfg!(windows) {
+        "offline_cli.exe"
+    } else {
+        "offline_cli"
+    });
     fs::write(
         &source,
         include_str!("../../core/src/providers/legacy/fixtures/offline_cli.rs"),
     )?;
     let mut compiler = std::process::Command::new("rustc");
     compiler.args(["--edition=2024", "--crate-name", "bridge_cli_fixture"]);
-    #[cfg(target_env = "gnu")]
+    #[cfg(all(windows, target_env = "gnu"))]
     compiler.args([
         "-C",
         "linker=rust-lld",
@@ -954,10 +1002,10 @@ async fn cancel_cli_process_tree(initialize: bool) -> Result<()> {
         }
         Ok::<_, anyhow::Error>(())
     }).await.context("native process did not become ready")??;
-    let child = windows_process::ObservedProcess::from_pid_file(
+    let child = process_observer::ObservedProcess::from_pid_file(
         fixture.directory.path().join("child.pid"),
     )?;
-    let descendant = windows_process::ObservedProcess::from_pid_file(
+    let descendant = process_observer::ObservedProcess::from_pid_file(
         fixture.directory.path().join("descendant.pid"),
     )?;
     cancel.cancel();

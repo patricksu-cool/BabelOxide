@@ -490,3 +490,30 @@ fn windows_replace_failure_preserves_old_file_and_cleans_its_private_tempfile() 
         Some(&json!(2))
     );
 }
+
+#[cfg(unix)]
+#[test]
+fn atomic_replacement_preserves_an_open_readers_snapshot() {
+    use std::io::Read;
+    let (_directory, store) = fixture();
+    let mut settings = Settings::default();
+    settings.set("future.generation", json!(1)).unwrap();
+    store.save(&settings).unwrap();
+    let old = fs::read(store.path()).unwrap();
+    let mut reader = fs::File::open(store.path()).unwrap();
+    settings.set("future.generation", json!(2)).unwrap();
+    store.save(&settings).unwrap();
+    let mut snapshot = Vec::new();
+    reader.read_to_end(&mut snapshot).unwrap();
+    assert_eq!(snapshot, old);
+    assert_eq!(
+        store.load().unwrap().get("future.generation"),
+        Some(&json!(2))
+    );
+    assert_eq!(
+        fs::read_dir(store.path().parent().unwrap())
+            .unwrap()
+            .count(),
+        1
+    );
+}

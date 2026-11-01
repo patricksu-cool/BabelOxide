@@ -1,16 +1,13 @@
-//! Windows workers join a kill-on-close job before their first thread runs.
-
-use anyhow::Result;
-use tokio::process::{Child, Command};
+//! Workers use a Windows kill-on-close job or an owned Unix process group.
 
 #[cfg(windows)]
 mod windows {
-    use super::*;
-    use anyhow::Context;
+    use anyhow::{Context, Result};
     use std::{
         mem::{size_of, zeroed},
         ptr::null,
     };
+    use tokio::process::{Child, Command};
     use windows_sys::Win32::{
         Foundation::{CloseHandle, HANDLE, INVALID_HANDLE_VALUE},
         System::{
@@ -133,18 +130,23 @@ mod windows {
 #[cfg(windows)]
 pub use windows::*;
 
-#[cfg(not(windows))]
+#[cfg(any(unix, test))]
+mod unix;
+#[cfg(unix)]
+pub use unix::{ProcessScope, contain_and_resume, prepare};
+
+#[cfg(not(any(windows, unix)))]
 pub struct ProcessScope;
-#[cfg(not(windows))]
+#[cfg(not(any(windows, unix)))]
 impl ProcessScope {
     /// Non-Windows callers still kill and wait on their direct child separately.
-    pub async fn terminate_and_wait(&self) -> Result<()> {
+    pub async fn terminate_and_wait(&self) -> anyhow::Result<()> {
         Ok(())
     }
 }
-#[cfg(not(windows))]
-pub fn prepare(_command: &mut Command) {}
-#[cfg(not(windows))]
-pub fn contain_and_resume(_child: &mut Child) -> Result<ProcessScope> {
+#[cfg(not(any(windows, unix)))]
+pub fn prepare(_command: &mut tokio::process::Command) {}
+#[cfg(not(any(windows, unix)))]
+pub fn contain_and_resume(_child: &mut tokio::process::Child) -> anyhow::Result<ProcessScope> {
     Ok(ProcessScope)
 }

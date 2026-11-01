@@ -167,7 +167,7 @@ async fn kill_and_reap(
     child: &mut tokio::process::Child,
     scope: crate::process::ProcessScope,
 ) -> ProviderResult<()> {
-    // Wait for the entire Windows job, including descendants owning a pipe.
+    // Wait for the entire job/process group, including descendants owning a pipe.
     // Cleanup is independent of the already-cancelled request token.
     let tree_result = scope.terminate_and_wait().await;
     let _ = child.start_kill();
@@ -444,6 +444,20 @@ pub(super) async fn claude(ctx: &ProviderContext<'_>) -> ProviderResult<Provider
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(unix)]
+    #[test]
+    fn executable_validation_requires_a_regular_file_with_execute_permission() {
+        use std::os::unix::fs::PermissionsExt;
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("fixture");
+        std::fs::write(&path, b"fixture").unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+        assert!(!is_executable_file(&path));
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o700)).unwrap();
+        assert!(is_executable_file(&path));
+        assert!(!is_executable_file(directory.path()));
+    }
 
     #[test]
     fn command_parser_matches_python_shlex_without_shell_expansion() {

@@ -754,6 +754,31 @@ mod writable_tests {
         assert!(!fallback.app_root().exists());
     }
 
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn missing_localappdata_uses_macos_application_support() {
+        let directory = tempfile::tempdir().unwrap();
+        let root = directory.path().join("portable");
+        let home = directory.path().join("home");
+        let store = default_store(root.clone());
+        let env = BTreeMap::from([("HOME".into(), home.to_str().unwrap().into())]);
+        let fallback = store
+            .resolve_writable_with(&env, |path| {
+                if path.starts_with(&root) {
+                    Err(io::ErrorKind::PermissionDenied.into())
+                } else {
+                    probe_directory(path)
+                }
+            })
+            .unwrap();
+        assert!(
+            fallback
+                .app_root()
+                .starts_with(home.join("Library/Application Support/BabelOxide"))
+        );
+        assert!(!fallback.path().exists());
+    }
+
     #[cfg(windows)]
     #[test]
     fn missing_localappdata_uses_explicit_userprofile() {
