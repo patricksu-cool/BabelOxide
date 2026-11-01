@@ -4,7 +4,7 @@ Windows 個人使用的 PDF 翻譯工具，保留公式、圖表與版面，輸�
 
 ## 直接使用
 
-完整自用版本位於 `dist/final/`。執行 **`pdf2zh-gui.exe`**，選擇翻譯服務，設定 Base URL／模型／Key 與語言，加入 PDF，按「開始翻譯」。可切換原文、譯文與雙語預覽，翻頁、縮放、取消或另存結果。
+完整自用版本位於 `dist/gui-ux-20261101/`，舊 `dist/final/` 與個人資料保留。執行 **`pdf2zh-gui.exe`**，選擇翻譯服務，設定 Base URL／模型／Key 與語言，加入 PDF，按「開始翻譯」。可切換原文、譯文與雙語預覽，翻頁、縮放、取消或另存結果，並匯出整個批次的 PDF ZIP。
 
 請搬移完整資料夾，包含 runtime、babeldoc、resources 與 native；不要只搬 EXE。不需另外安裝 Python、Rust、uv 或 BabelDOC。ONNX Runtime 部分模組仍需要系統的 Microsoft Visual C++ x64 Runtime，未宣稱零系統依賴或乾淨 VM 驗收。
 

@@ -1,0 +1,242 @@
+{
+  "date": "2026-11-01",
+  "scope": "personal Windows x64; local fixed identity, error and delayed APIs",
+  "baseline_main": "06ac7699a5d8254b87b1ba073e015ed62b28e307",
+  "artifact_code_commit": "a9d6dd127e3d9db92af454d1671abf98f1fddbea",
+  "bundle": {
+    "path": "dist/gui-ux-20261101",
+    "manifest_items": 13070,
+    "bytes_without_manifest": 1248861672,
+    "manifest_sha256": "4f65ba8cb244deb0ae499e62c7ae876a888caddbcd510cc8c944fcfdfe287b98",
+    "gui_sha256": "c8831d251bddc964b64f58f31234018c86cec66eeb9f67ffa418c64e9314c797",
+    "cli_sha256": "cb7e27a01c85445f3bab0130bc195982331c1e6b5dbf7069eb51d43f77a74237",
+    "source_and_full_copy_hashes_sizes_file_sets": "PASS",
+    "copy_path_has_chinese_and_spaces": true,
+    "original_dist_final_preserved": true,
+    "release_ready": false
+  },
+  "tests": {
+    "rust_passed": 292,
+    "rust_failed": 0,
+    "default_ignored": 1,
+    "app_passed": 64,
+    "explicit_native_preview_passed": 1,
+    "worker_passed": 35,
+    "builder_passed": 35,
+    "fmt": "PASS",
+    "clippy_all_targets_deny_warnings": "PASS",
+    "workspace_release_build": "PASS"
+  },
+  "manual_checks": [
+    "語言選擇與交換",
+    "服務切換並保留各服務設定",
+    "停用 Google 後從服務選單消失",
+    "可空布林欄位",
+    "保存及重新載入設定",
+    "加入及移除 PDF",
+    "冷啟動後成功從 W3C HTTPS 下載 PDF",
+    "全部／第一頁／前五頁及自訂不連續範圍",
+    "術語啟用控制限流欄位",
+    "1頁與4頁同名PDF批次翻譯及全部／單語／雙語ZIP匯出",
+    "HTTP400失敗後重新執行成功及翻譯中取消",
+    "單語／雙語翻頁、縮放及單份另存",
+    "最終完整包的原生選檔、包內設定保存與處理中關閉"
+  ],
+  "desktop_full_workflow": {
+    "exe_sha256": "a4a5967641a9ac65821b68fb0e36e38223e5d1a54b4b1fa75307ba3e954f3de0",
+    "api_requests": 294,
+    "batch_requests": 105,
+    "modes": {
+      "identity": 280,
+      "error": 1,
+      "slow": 13
+    },
+    "exits": [
+      0,
+      0
+    ],
+    "pdfs": [
+      "單份 雙語.pdf"
+    ],
+    "synthetic_key_in_logs": false
+  },
+  "desktop_final_complete_bundle": {
+    "exe_sha256": "c8831d251bddc964b64f58f31234018c86cec66eeb9f67ffa418c64e9314c797",
+    "api_requests": 2,
+    "batch_requests": 0,
+    "modes": {
+      "identity": 2,
+      "error": 0,
+      "slow": 0
+    },
+    "exits": [
+      0
+    ],
+    "pdfs": [],
+    "synthetic_key_in_logs": false
+  },
+  "desktop_version_boundary": "Full workflow ran on f25d271 GUI; the final a9d6dd1 change only translates four engine stages. The final complete bundle GUI was separately tested for native PDF selection/preview, portable save, Chinese loading stage and close during an active Worker. Its CLI performed the complete four-page regression.",
+  "active_close": {
+    "gui_pid": 24224,
+    "worker_pid": 14520,
+    "both_exited": true
+  },
+  "pdf_source_sha256": "d0a8367aa014b52929af86f42b5164ade3bb551c69717734a975ba122369498f",
+  "cli": {
+    "exit_code": 0,
+    "timed_out": false,
+    "api_requests": 107,
+    "batch_requests": 36,
+    "worker_runtime": "bundle defaults",
+    "working_directory": "isolated non-source directory",
+    "contains_synthetic_key": false,
+    "pdfs": [
+      {
+        "name": "High_speed_buffer_latch_ISCAS03.no_watermark.zh-CN.dual.pdf",
+        "bytes": 771107
+      },
+      {
+        "name": "High_speed_buffer_latch_ISCAS03.no_watermark.zh-CN.mono.pdf",
+        "bytes": 471435
+      }
+    ]
+  },
+  "pdf_comparison": {
+    "renderer": "Poppler 96 DPI RGB",
+    "runs": [
+      {
+        "mode": "mono",
+        "page_counts": [
+          4,
+          4
+        ],
+        "text_equal": true,
+        "character_coordinates_equal": true,
+        "images_equal": true,
+        "render": [
+          {
+            "page": 1,
+            "same_dimensions": true,
+            "changed_pixel_fraction": 0.0,
+            "mean_channel_difference": 0.0
+          },
+          {
+            "page": 2,
+            "same_dimensions": true,
+            "changed_pixel_fraction": 0.0,
+            "mean_channel_difference": 0.0
+          },
+          {
+            "page": 3,
+            "same_dimensions": true,
+            "changed_pixel_fraction": 0.0,
+            "mean_channel_difference": 0.0
+          },
+          {
+            "page": 4,
+            "same_dimensions": true,
+            "changed_pixel_fraction": 0.0,
+            "mean_channel_difference": 0.0
+          }
+        ]
+      },
+      {
+        "mode": "dual",
+        "page_counts": [
+          4,
+          4
+        ],
+        "text_equal": true,
+        "character_coordinates_equal": true,
+        "images_equal": true,
+        "render": [
+          {
+            "page": 1,
+            "same_dimensions": true,
+            "changed_pixel_fraction": 0.0,
+            "mean_channel_difference": 0.0
+          },
+          {
+            "page": 2,
+            "same_dimensions": true,
+            "changed_pixel_fraction": 0.0,
+            "mean_channel_difference": 0.0
+          },
+          {
+            "page": 3,
+            "same_dimensions": true,
+            "changed_pixel_fraction": 0.0,
+            "mean_channel_difference": 0.0
+          },
+          {
+            "page": 4,
+            "same_dimensions": true,
+            "changed_pixel_fraction": 0.0,
+            "mean_channel_difference": 0.0
+          }
+        ]
+      }
+    ]
+  },
+  "font_comparison": [
+    {
+      "mode": "mono",
+      "pages": 4,
+      "per_page_font_metadata_and_embedded_stream_sha256": "PASS"
+    },
+    {
+      "mode": "dual",
+      "pages": 4,
+      "per_page_font_metadata_and_embedded_stream_sha256": "PASS"
+    }
+  ],
+  "gui_zip_and_save": {
+    "source_pdf_page_counts": [
+      1,
+      1,
+      4,
+      4
+    ],
+    "exports": [
+      {
+        "filename": "批次 全部.zip",
+        "files": 4,
+        "pages": [
+          1,
+          1,
+          4,
+          4
+        ],
+        "crc_hashes_unique_names_extraction": "PASS"
+      },
+      {
+        "filename": "mono.zip",
+        "files": 2,
+        "pages": [
+          1,
+          4
+        ],
+        "crc_hashes_unique_names_extraction": "PASS"
+      },
+      {
+        "filename": "dual.zip",
+        "files": 2,
+        "pages": [
+          1,
+          4
+        ],
+        "crc_hashes_unique_names_extraction": "PASS"
+      }
+    ],
+    "single_pdf_save_hash": "PASS"
+  },
+  "post_merge_verification": "PENDING",
+  "not_verified": [
+    "all real provider APIs and all 235 fields by hand",
+    "official Windows release GUI execution",
+    "clean Windows VM",
+    "different physical drive",
+    "real read-only ACL",
+    "all external-network download cancellation and redirect scenarios by hand"
+  ]
+}

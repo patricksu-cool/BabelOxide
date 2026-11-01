@@ -1,7 +1,7 @@
 {
   "metadata": {
     "baseline_commit": "06ac7699a5d8254b87b1ba073e015ed62b28e307",
-    "rust_gui_snapshot": "feature/gui-ux-improvements：整合中的 app.rs／settings_ui.rs／languages.rs 靜態對照；桌面互動尚未驗證",
+    "rust_gui_snapshot": "feature/gui-ux-improvements：app.rs／settings_ui.rs／languages.rs 靜態對照；僅 manual_checks 中列出的子集已實際操作",
     "official_reference": "https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/tree/v2.9.0",
     "official_gui_source": "https://raw.githubusercontent.com/PDFMathTranslate-next/PDFMathTranslate-next/v2.9.0/pdf2zh_next/gui.py",
     "official_provider_source": "https://raw.githubusercontent.com/PDFMathTranslate-next/PDFMathTranslate-next/v2.9.0/pdf2zh_next/config/translate_engine_model.py",
@@ -14,7 +14,24 @@
       "Float": 4
     },
     "interpretation": "default/nullable/secret 來自本地嵌入 schema；range 分列本地驗證與官方 GUI 限制。未指定不代表無限制；required 是條件式執行驗證，nullable 不能推斷是否必填。 current_rust_advanced 指目前介面分組，非官方進階分類；不適用表示目前沒有可編輯控制項。",
-    "baseline_gui_snapshot": "每欄 baseline_rust_gui 保存 commit 06ac769 的原控制項"
+    "baseline_gui_snapshot": "每欄 baseline_rust_gui 保存 commit 06ac769 的原控制項",
+    "manual_checks": [
+      "語言選擇與交換",
+      "服務切換並保留各服務設定",
+      "停用 Google 後從服務選單消失",
+      "可空布林欄位",
+      "保存及重新載入設定",
+      "加入及移除 PDF",
+      "冷啟動後成功從 W3C HTTPS 下載 PDF",
+      "全部／第一頁／前五頁及自訂不連續範圍",
+      "術語啟用控制限流欄位",
+      "1頁與4頁同名PDF批次翻譯及全部／單語／雙語ZIP匯出",
+      "HTTP400失敗後重新執行成功及翻譯中取消",
+      "單語／雙語翻頁、縮放及單份另存",
+      "最終完整包的原生選檔、包內設定保存與處理中關閉"
+    ],
+    "manual_checks_scope": "以上是實際操作子集，不代表逐一操作所有235欄或連線全部服務；成品雜湊與各次桌面驗證界線見 FINAL_STATUS.md 及 validation/gui-ux-verification.json。",
+    "other_gui_changes": "已處理冷啟動TLS、繁中預覽頁籤與已知引擎進度；同名批次輸出隔離及ZIP內容完整性已實測。"
   },
   "fields": [
     {
@@ -2132,7 +2149,7 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "服務條件式下拉：未設定／enabled／disabled",
-      "current_rust_gui": "正文所選服務的服務選項折疊區：選項下拉",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：選項下拉；deepseek-v4- 模型時顯示；無效既存值或草稿維持可見",
       "nullable": true,
       "scope": "正文／一般",
       "flag": "deepseek-thinking-mode",
@@ -2152,7 +2169,7 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "服務條件式下拉：high／max；thinking enabled 時顯示",
-      "current_rust_gui": "正文所選服務的服務選項折疊區：選項下拉；thinking enabled 且 deepseek-v4 模型時顯示",
+      "current_rust_gui": "正文所選服務的服務選項折疊區：選項下拉；thinking enabled 且 deepseek-v4- 模型時顯示；無效既存值或草稿維持可見",
       "nullable": true,
       "scope": "正文／一般",
       "flag": "deepseek-reasoning-effort",
@@ -2252,7 +2269,7 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "服務條件式下拉：未設定／enabled／disabled",
-      "current_rust_gui": "術語所選服務的服務選項折疊區：選項下拉",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：選項下拉；deepseek-v4- 模型時顯示；無效既存值或草稿維持可見",
       "nullable": true,
       "scope": "術語引擎",
       "flag": "term-deepseek-thinking-mode",
@@ -2272,7 +2289,7 @@
       "advanced": "官方未另標；基準 Rust 依模型／敏感欄／URL 與其他欄位分組",
       "secret": false,
       "official_gui": "服務條件式下拉：high／max；thinking enabled 時顯示",
-      "current_rust_gui": "術語所選服務的服務選項折疊區：選項下拉；thinking enabled 且 deepseek-v4 模型時顯示",
+      "current_rust_gui": "術語所選服務的服務選項折疊區：選項下拉；thinking enabled 且 deepseek-v4- 模型時顯示；無效既存值或草稿維持可見",
       "nullable": true,
       "scope": "術語引擎",
       "flag": "term-deepseek-reasoning-effort",
