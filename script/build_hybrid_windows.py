@@ -135,9 +135,36 @@ def read_json(path: Path):
     return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
+def macos_system_path(path: Path) -> Path:
+    """Resolve only verified OS roots; never canonicalize user/asset subtrees."""
+    for name in ("var", "tmp"):
+        alias = Path("/") / name
+        if not path.is_relative_to(alias):
+            continue
+        info = alias.lstat()
+        if not stat.S_ISLNK(info.st_mode):
+            return path
+        for root in (Path("/"), Path("/private")):
+            anchor = root.lstat()
+            require(stat.S_ISDIR(anchor.st_mode) and anchor.st_uid == 0 and not anchor.st_mode & 0o022,
+                    f"Untrusted build system root: {root}")
+        expected = Path("/private") / name
+        require(info.st_uid == 0 and alias.readlink() in (expected, Path("private") / name),
+                f"Untrusted build system alias: {alias}")
+        resolved = alias.resolve(strict=True)
+        target = expected.lstat()
+        require(resolved == expected and stat.S_ISDIR(target.st_mode) and target.st_uid == 0,
+                f"Unexpected build system alias target: {alias}")
+        return resolved / path.relative_to(alias)
+    return path
+
+
 def plain_path(path: Path) -> Path:
-    """Refuse links/junctions in either existing inputs or output ancestors."""
-    path = Path(os.path.abspath(path))  # noqa: PTH100 -- inspect reparse points before resolving links
+    """Refuse links/junctions below verified macOS system roots or on Windows."""
+    # Inspect link/.. before lexical normalization can erase the link component.
+    path = path.absolute()
+    if sys.platform == "darwin":
+        path = macos_system_path(path)
     for component in (path, *path.parents):
         try:
             info = component.lstat()
@@ -148,7 +175,7 @@ def plain_path(path: Path) -> Path:
             and not getattr(info, "st_file_attributes", 0) & 0x400,
             f"Links or reparse points are not allowed: {component}",
         )
-    return path
+    return Path(os.path.abspath(path))  # noqa: PTH100 -- normalize only after inspecting every ancestor
 
 
 def relative_member(name: str) -> PurePosixPath:
@@ -169,7 +196,7 @@ def relative_member(name: str) -> PurePosixPath:
 
 
 def files_below(root: Path) -> list[Path]:
-    plain_path(root)
+    root = plain_path(root)
     require(root.is_dir(), f"Required directory is missing: {root}")
     files = []
     for directory, dirs, names in os.walk(root, followlinks=False):
@@ -183,7 +210,7 @@ def files_below(root: Path) -> list[Path]:
 
 
 def checked_copy(source: Path, destination: Path, expected: tuple[int, str] | None = None) -> None:
-    plain_path(source)
+    source = plain_path(source)
     require(source.is_file(), f"Required source file is missing: {source}")
     destination.parent.mkdir(parents=True, exist_ok=True)
     require(not destination.exists(), f"Refusing to replace a staged file: {destination}")
@@ -193,7 +220,7 @@ def checked_copy(source: Path, destination: Path, expected: tuple[int, str] | No
 
 
 def verify_file(path: Path, size: int, sha256: str) -> None:
-    plain_path(path)
+    path = plain_path(path)
     require(path.is_file() and path.stat().st_size == size, f"Size mismatch or missing file: {path}")
     require(digest(path) == sha256.lower(), f"SHA256 mismatch: {path}")
 
@@ -314,6 +341,7 @@ def write_lock_file(path: Path, content: str) -> None:
 
 
 def runtime_files(source: Path, manifest: Path) -> list[dict]:
+    source = plain_path(source)
     records = read_json(manifest)
     require(isinstance(records, list), "Runtime manifest must be a file list")
     selected = []
@@ -374,7 +402,7 @@ def verify_zip(path: Path, expected: dict[str, dict]) -> None:
 
 
 def verify_restored(home: Path, expected: dict[str, dict]) -> None:
-    cache = home / ".cache/babeldoc"
+    cache = plain_path(home / ".cache/babeldoc")
     for name, entry in expected.items():
         path = plain_path(cache / name)
         require(path.is_file() and path.stat().st_size == entry["bytes"], f"Missing restored asset: {name}")
@@ -461,6 +489,7 @@ def pe_imports(path: Path) -> dict:
 
 
 def native_inventory(stage: Path) -> tuple[list[dict], list[dict]]:
+    stage = plain_path(stage)
     files = files_below(stage)
     dlls = collections.defaultdict(list)
     for path in files:
@@ -539,7 +568,8 @@ def verified_notice_bytes(source: Path, expected_sha256: str) -> bytes:
 
 
 def python_inventory(stage: Path, wheels: list[dict], engine: dict, *, site: Path | None = None) -> tuple[list[dict], list[str]]:
-    site = site or stage / "runtime/python/site-packages"
+    stage = plain_path(stage)
+    site = plain_path(site or stage / "runtime/python/site-packages")
     expected = {wheel["name"]: wheel for wheel in wheels}
     installed = {}
     issues = []
@@ -609,6 +639,7 @@ def exclude_generated_launcher(path: Path, python: Path, entry_value: str) -> bo
 
 
 def generated_entrypoints(stage: Path) -> list[dict]:
+    stage = plain_path(stage)
     site = stage / "runtime/python/site-packages"
     records = []
     for distribution in importlib.metadata.distributions(path=[str(site)]):
@@ -632,6 +663,7 @@ def generated_entrypoints(stage: Path) -> list[dict]:
 
 def rust_archive_notices(stage: Path, archive_path: Path, package: dict, record: dict) -> None:
     """Read notices from a checksum-verified .crate without extracting source."""
+    stage = plain_path(stage)
     with plain_path(archive_path).open("rb") as source:
         require(hashlib.file_digest(source, "sha256").hexdigest() == package["checksum"], "Cargo archive checksum mismatch")
         source.seek(0)
@@ -664,10 +696,11 @@ def rust_archive_notices(stage: Path, archive_path: Path, package: dict, record:
 
 def rust_inventory(stage: Path, registry: Path | None) -> tuple[list[dict], list[str]]:
     """Keep Cargo.lock checksums and cached license texts; do not invoke Cargo."""
+    stage = plain_path(stage)
     packages = tomllib.loads((stage / "provenance/Cargo.lock").read_text(encoding="utf-8"))["package"]
     records = []
     if registry is not None:
-        plain_path(registry)
+        registry = plain_path(registry)
         require(registry.is_dir(), "Explicit Cargo registry source directory is missing")
     for package in sorted(packages, key=lambda p: (p["name"], p["version"])):
         record = {key: package[key] for key in ("name", "version", "source", "checksum") if key in package}
@@ -1419,6 +1452,90 @@ class BuilderTests(unittest.TestCase):
                 write_lock_file(path, "must not be written")
             self.assertEqual(sentinel.read_bytes(), b"synthetic user file")
             self.assertFalse(path.exists())
+
+    def test_system_alias_mapping_requires_root_owned_anchors_and_exact_targets(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        for name in ("var", "tmp"):
+            alias = Path("/") / name
+            expected = Path("/private") / name
+
+            def trusted_stat(item):
+                mode = stat.S_IFLNK | 0o777 if item == alias else stat.S_IFDIR | 0o755
+                return SimpleNamespace(st_mode=mode, st_uid=0)
+
+            for link in (expected, Path("private") / name):
+                with self.subTest(name=name, link=link), patch.object(Path, "lstat", trusted_stat), \
+                        patch.object(Path, "readlink", return_value=link), \
+                        patch.object(Path, "resolve", return_value=expected):
+                    self.assertEqual(macos_system_path(alias / "cache/new/file"), expected / "cache/new/file")
+                    self.assertEqual(macos_system_path(expected / "cache/new/file"), expected / "cache/new/file")
+                    self.assertEqual(macos_system_path(Path("/") / (name + "-other/file")), Path("/") / (name + "-other/file"))
+
+    def test_link_before_parent_traversal_is_checked_before_normalization(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory(dir=REPO) as directory:
+            root = Path(directory)
+            sentinel = root / "requirements.txt"
+            sentinel.write_bytes(b"existing user file")
+            link = root / "linked"
+            original_lstat = Path.lstat
+
+            def inspected_stat(item):
+                if item == link:
+                    return SimpleNamespace(st_mode=stat.S_IFLNK | 0o777, st_file_attributes=0x400)
+                return original_lstat(item)
+
+            with patch.object(Path, "lstat", inspected_stat), self.assertRaises(BuildError):
+                write_lock_file(link / ".." / sentinel.name, "must not replace user file\n")
+            self.assertEqual(sentinel.read_bytes(), b"existing user file")
+            self.assertEqual(list(root.glob("*.tmp")), [])
+            (root / "ordinary").mkdir()
+            self.assertEqual(plain_path(root / "ordinary/../new"), root / "new")
+
+    def test_system_alias_rejects_untrusted_roots_and_redirected_or_linked_targets(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        alias, expected = Path("/var"), Path("/private/var")
+        cases = (
+            (alias, stat.S_IFLNK | 0o777, 501, expected, expected),
+            (Path("/"), stat.S_IFDIR | 0o755, 501, expected, expected),
+            (Path("/private"), stat.S_IFDIR | 0o777, 0, expected, expected),
+            (Path("/private"), stat.S_IFLNK | 0o755, 0, expected, expected),
+            (expected, stat.S_IFLNK | 0o755, 0, expected, expected),
+            (expected, stat.S_IFDIR | 0o755, 501, expected, expected),
+            (None, 0, 0, Path("/elsewhere"), expected),
+            (None, 0, 0, expected, Path("/elsewhere")),
+        )
+        for changed, mode, uid, link, resolved in cases:
+            def inspected_stat(item):
+                if item == changed:
+                    return SimpleNamespace(st_mode=mode, st_uid=uid)
+                return SimpleNamespace(st_mode=(stat.S_IFLNK | 0o777 if item == alias else stat.S_IFDIR | 0o755), st_uid=0)
+            with self.subTest(changed=changed, link=link, resolved=resolved), \
+                    patch.object(Path, "lstat", inspected_stat), \
+                    patch.object(Path, "readlink", return_value=link), \
+                    patch.object(Path, "resolve", return_value=resolved), self.assertRaises(BuildError):
+                macos_system_path(alias / "cache/new/file")
+
+    def test_plain_paths_and_asset_verification_use_consistent_system_roots(self):
+        bases = [None]
+        if sys.platform == "darwin":
+            bases += ["/var/tmp", "/tmp", "/private/tmp"]
+        for base in bases:
+            with self.subTest(base=base), tempfile.TemporaryDirectory(dir=base) as directory:
+                home = Path(directory)
+                self.assertEqual(plain_path(home), home.resolve(strict=True))
+                asset = home / ".cache/babeldoc/fonts/example.ttf"
+                asset.parent.mkdir(parents=True)
+                asset.write_bytes(b"fixed font fixture")
+                expected = {"fonts/example.ttf": {"bytes": asset.stat().st_size, "sha3_256": digest(asset, "sha3_256")}}
+                verify_restored(home, expected)
+                self.assertEqual(files_below(home), [asset.resolve(strict=True)])
+                lock = home / "new.lock"
+                write_lock_file(lock, "synthetic lock\n")
+                self.assertEqual(lock.read_text(), "synthetic lock\n")
 
     def test_unsafe_archive_and_manifest_paths_are_rejected(self):
         for name in ("../outside", "/absolute", "C:/outside", "a\\b", "a//b", "a/./b", "a/../b", "NUL.txt", "a/name.", "a/name ", "a/file:stream", "a/\x00b"):
