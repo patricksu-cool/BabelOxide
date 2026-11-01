@@ -1,6 +1,7 @@
 """Compare controlled old/new PDFs by structure, coordinates and Poppler rasters."""
 
 import argparse
+import hashlib
 import json
 import shutil
 import subprocess
@@ -32,7 +33,14 @@ def signature(document):
             for image in page.get_image_info(hashes=True)
         ]
         pages.append(
-            {"text": page.get_text(), "characters": characters, "images": images}
+            {
+                "text": page.get_text(), "characters": characters, "images": images,
+                "geometry": list(page.rect),
+                "fonts": [
+                    [list(font[1:]), hashlib.sha256(document.extract_font(font[0])[3]).hexdigest()]
+                    for font in page.get_fonts(full=True)
+                ],
+            }
         )
     return pages
 
@@ -62,6 +70,8 @@ def main():
             == [page["characters"] for page in b],
             "images_equal": [page["images"] for page in a]
             == [page["images"] for page in b],
+            "fonts_equal": [page["fonts"] for page in a] == [page["fonts"] for page in b],
+            "geometry_equal": [page["geometry"] for page in a] == [page["geometry"] for page in b],
             "render": [],
         }
         for label, path in (("baseline", old), ("candidate", new)):
@@ -103,7 +113,7 @@ def main():
             item["page_counts"][0] != item["page_counts"][1]
             or not all(
                 item[key]
-                for key in ("text_equal", "character_coordinates_equal", "images_equal")
+                for key in ("text_equal", "character_coordinates_equal", "images_equal", "fonts_equal", "geometry_equal")
             )
             or any(row.get("changed_pixel_fraction", 1) != 0 for row in item["render"])
             for item in results

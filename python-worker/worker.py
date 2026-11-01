@@ -545,8 +545,8 @@ def main():
     status = 0
     try:
         version = importlib.metadata.version("babeldoc")
-        if version != "0.6.3":
-            raise ProtocolError("Worker requires locked BabelDOC 0.6.3")
+        if version != "0.6.4":
+            raise ProtocolError("Worker requires locked BabelDOC 0.6.4")
         configure_native_runtime()
         boundary.send(
             "ready", babeldoc_version=version,

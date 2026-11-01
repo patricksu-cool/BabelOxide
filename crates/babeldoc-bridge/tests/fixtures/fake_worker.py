@@ -118,7 +118,7 @@ def main():
     if scenario == "startup_hang":
         hang()
 
-    send("ready", babeldoc_version="0.6.3", operations=[
+    send("ready", babeldoc_version="0.6.4", operations=[
         "pdf", "warmup", "generate_offline_assets", "restore_offline_assets"
     ])
     start = json.loads(sys.stdin.buffer.readline())

@@ -501,7 +501,7 @@ async fn run_session(
             _ = child.wait() => bail!("Worker exited during startup"),
             hello = timeout(worker.startup_timeout, read_frame(&mut stdout, &mut frame_buffer)) => hello.context("Worker startup timed out")??.context("Worker exited before ready")?,
         };
-        ensure!(hello["type"] == "ready" && hello["babeldoc_version"] == "0.6.3", "Worker initialization failed or engine version differs");
+        ensure!(hello["type"] == "ready" && hello["babeldoc_version"] == "0.6.4", "Worker initialization failed or engine version differs");
         session = hello["session"].as_str().context("Missing worker session")?.to_owned();
         ensure!(session.len() == 32 && session.bytes().all(|b| b.is_ascii_hexdigit()), "Invalid worker session");
         if plan.operation != "pdf" {

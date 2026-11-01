@@ -1,5 +1,5 @@
 {
-  "babeldoc_version": "0.6.3",
+  "babeldoc_version": "0.6.4",
   "asset_tag": "b485a82328a20d1e4b5c37bb9c6472e7af9943333bdffd39a05b1f57d6d7a1da",
   "scope": "official runtime manifest after cleanup of unused font metadata; actual CLI generate and fresh-home restore, each SHA3 verified",
   "counts": {
