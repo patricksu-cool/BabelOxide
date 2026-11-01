@@ -10,11 +10,42 @@ import subprocess
 import sys
 import venv
 import uuid
+from collections import deque
 from pathlib import Path
 
-from build_support import ROOT, PINS, fetch, run, verify_manifest, zip_bundle
+from build_support import ROOT, PINS, fetch, verify_manifest, zip_bundle
 from build_hybrid_windows import BuildError, require
 from build_portable import CLI_NAME, product_version
+
+
+def print_log_tail(log: Path) -> None:
+    """Show bounded failure diagnostics without replacing the original error."""
+    try:
+        with log.open(encoding="utf-8", errors="replace") as stream:
+            lines = deque(stream, maxlen=100)
+        print(f"\n--- Last 100 lines of {log} ---", file=sys.stderr)
+        sys.stderr.writelines(lines)
+        if lines and not lines[-1].endswith("\n"):
+            print(file=sys.stderr)
+        print(f"--- End of {log.name} ---", file=sys.stderr, flush=True)
+    except (OSError, UnicodeError) as error:
+        try:
+            print(f"Cannot display log {log}: {error}", file=sys.stderr, flush=True)
+        except (OSError, UnicodeError):
+            pass
+
+
+def run(command: list[str | Path], work: Path, env: dict[str, str], *, timeout: int = 1800, label: str) -> None:
+    """Keep complete CI logs and re-raise command failures after printing a tail."""
+    print(label + "...", flush=True)
+    log = work / f"{label}.log"
+    try:
+        with log.open("wb") as stream:
+            subprocess.run([str(arg) for arg in command], cwd=work, env=env, stdout=stream,
+                           stderr=subprocess.STDOUT, timeout=timeout, check=True)
+    except (OSError, subprocess.SubprocessError):
+        print_log_tail(log)
+        raise
 
 
 def bootstrap(name: str, work: Path) -> Path:
@@ -48,6 +79,7 @@ def check(uv: Path, work: Path, env: dict[str, str]) -> None:
     run([python, "-m", "pytest", ROOT / "python-worker/tests", "-q", "--basetemp", work / "pytest"], work, env, label="worker-tests")
     run([python, ROOT / "script/build_hybrid_windows.py", "--self-test"], work, env, label="windows-builder-tests")
     run([python, "-m", "unittest", "discover", "-s", ROOT / "script", "-p", "test_build_portable.py"], work, env, label="portable-builder-tests")
+    run([python, "-m", "unittest", "discover", "-s", ROOT / "script", "-p", "test_ci.py"], work, env, label="ci-diagnostics-tests")
     run([python, "-m", "ruff", "check", ROOT / "python-worker", ROOT / "script"], work, env, label="python-lint")
     if os.name == "nt":
         powershell = Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"
@@ -128,9 +160,19 @@ def main() -> None:
         build(args.platform, uv, work, env)
 
 
-if __name__ == "__main__":
+def cli() -> int:
     try:
         main()
     except (BuildError, OSError, subprocess.SubprocessError) as error:
-        print("CI failed: " + str(error), file=sys.stderr)
-        raise SystemExit(1)
+        try:
+            print("CI failed: " + str(error), file=sys.stderr)
+        except (OSError, UnicodeError):
+            pass
+        if isinstance(error, subprocess.CalledProcessError):
+            return error.returncode if error.returncode >= 0 else 128 - error.returncode
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(cli())
