@@ -26,4 +26,12 @@ Release GUI 已實際操作：組合切換／自訂保存／重開；Key、模�
 
 ## 尚待完成
 
-跨平台 workflow／macOS 組包、BabelOxide 品牌、清理與法律入口、最終整合驗收仍在後續階段。macOS 未在此 Windows 主機上驗證；Windows ONNX Runtime 仍需官方 VC++ x64 Runtime。沒有 Push 或發布 Release。
+## 建置管線
+
+已建立雙 runner 的 `.github/workflows/build.yml`、公開下載與 hash pins、Mac 84 個固定 wheel、Mac 原生開檔／結果開啟／設定 fallback／PDFium arm64 loader，以及完整 `.app` builder。Node24 Actions、唯讀權限、不發布、7 天 Artifacts 的 YAML 契約檢查通過。
+
+本機執行同一 `script/ci.py` 入口：Rust **298 passed**（另 1 預設 ignored）、Worker 35、Windows Builder 35、Portable Builder 7、引擎案例 4、明確原生 PDFium 1、fmt／Clippy／Ruff、完整包 relocation／native import／資產還原／本機 Mock mono+dual／manifest／ZIP CRC 全部通過。過渡驗證 ZIP 為 **697,876,167 bytes**；當時 workspace 仍是 2.9.0，並非最終 v1.0.0 成品。
+
+**Mac blocker：此機為 Windows，未執行原生 Mac build／dylib import／GUI；未 Push 或觸發遠端 Actions。** 已驗證官方 Mac PDFium 的 arm64 Mach-O 與系統依賴、Python archive SHA256，以及 macOS 14+ 的整套 wheel 解析；這些不等於 Mac 原生驗收。Mac job 有缺失時明確失敗，沒有 placeholder 或 continue-on-error。
+
+BabelOxide 品牌、清理與法律入口、最終整合驗收仍在後續階段。Windows ONNX Runtime 仍需官方 VC++ x64 Runtime。沒有 Push 或發布 Release。

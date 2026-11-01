@@ -138,7 +138,13 @@ impl ConfigStore {
                         .or_else(|| supplied_env(env, "HOME").filter(|value| !value.is_empty()))
                         .map(|home| PathBuf::from(home).join("AppData").join("Local"))
                 }
-                #[cfg(not(windows))]
+                #[cfg(target_os = "macos")]
+                {
+                    supplied_env(env, "HOME")
+                        .filter(|value| !value.is_empty())
+                        .map(|home| PathBuf::from(home).join("Library/Application Support"))
+                }
+                #[cfg(not(any(windows, target_os = "macos")))]
                 {
                     None
                 }

@@ -1,0 +1,67 @@
+name: BabelOxide build and test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, feature/babeloxide-v1, 'codex/**']
+    paths: ['crates/**', 'python-worker/**', 'script/**', 'resources/**', '.github/workflows/build.yml', '.cargo/**', 'Cargo.toml', 'Cargo.lock', 'pyproject.toml', 'uv.lock', 'LICENSE', 'THIRD_PARTY_NOTICES.md']
+  pull_request:
+    paths: ['crates/**', 'python-worker/**', 'script/**', 'resources/**', '.github/workflows/build.yml', '.cargo/**', 'Cargo.toml', 'Cargo.lock', 'pyproject.toml', 'uv.lock', 'LICENSE', 'THIRD_PARTY_NOTICES.md']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 65
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-latest
+            platform: windows-x64
+          - runner: macos-latest
+            platform: macos-arm64
+    env:
+      PYTHONUTF8: '1'
+      MACOSX_DEPLOYMENT_TARGET: '14.0'
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          clean: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13.16'
+      - name: Product metadata
+        id: metadata
+        run: python script/ci.py --platform ${{ matrix.platform }} --metadata
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            .uv-cache
+          key: deps-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Cargo.lock', 'uv.lock', 'python-worker/*.json', 'python-worker/*.txt', 'resources/build-inputs.lock.json') }}
+      - name: Install pinned Rust toolchain
+        run: >-
+          python -c "import json,subprocess; version=json.load(open('resources/build-inputs.lock.json'))['rust_toolchain']; subprocess.run(['rustup','toolchain','install',version,'--profile','minimal','--component','rustfmt','--component','clippy'],check=True)"
+      - name: Format, lint, Rust, Worker and builder tests
+        run: python script/ci.py --platform ${{ matrix.platform }} --check
+      - name: Complete runtime bundle and local IPC/native smoke
+        run: python script/ci.py --platform ${{ matrix.platform }} --build
+      - name: Upload complete bundle
+        uses: actions/upload-artifact@v6
+        with:
+          name: BabelOxide-v${{ steps.metadata.outputs.version }}-${{ matrix.platform }}
+          path: dist/BabelOxide-v${{ steps.metadata.outputs.version }}-${{ matrix.platform }}.zip
+          retention-days: 7
+          if-no-files-found: error
+          compression-level: 0

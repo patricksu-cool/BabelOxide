@@ -26,6 +26,8 @@ babeldoc-bridge = { path = "../babeldoc-bridge" }
 pdf2zh-pdf-preview = { path = "../pdf-preview" }
 eframe = { version = "=0.37.0", default-features = false, features = ["glow", "default_fonts", "system_fonts", "clipboard"] }
 
-[target.'cfg(windows)'.dependencies]
+[target.'cfg(any(windows, target_os = "macos"))'.dependencies]
 rfd = { version = "=0.17.2", default-features = false }
+
+[target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }

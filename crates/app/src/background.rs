@@ -514,7 +514,23 @@ fn open_result(path: &std::path::Path) -> Result<()> {
     anyhow::ensure!((result as isize) > 32, "Cannot open result");
     Ok(())
 }
-#[cfg(not(windows))]
+#[cfg(target_os = "macos")]
+fn open_result(path: &std::path::Path) -> Result<()> {
+    if path.is_dir() {
+        anyhow::ensure!(path.is_absolute(), "Choose an absolute output folder");
+    } else {
+        validate_result_path(path)?;
+    }
+    let status = std::process::Command::new("/usr/bin/open")
+        .arg("--")
+        .arg(path)
+        .status()
+        .context("Cannot open the result")?;
+    anyhow::ensure!(status.success(), "Cannot open the result");
+    Ok(())
+}
+
+#[cfg(not(any(windows, target_os = "macos")))]
 fn open_result(_path: &std::path::Path) -> Result<()> {
     anyhow::bail!("Opening results is currently available on Windows")
 }

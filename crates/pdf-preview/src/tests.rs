@@ -103,11 +103,29 @@ fn bundled_loader_uses_only_fixed_absolute_path_and_rejects_missing_invalid_or_w
     );
     let native = root.path().join("native/pdfium");
     fs::create_dir_all(&native).unwrap();
-    let dll = native.join("pdfium.dll");
+    let dll = native.join(crate::platform::LIBRARY_FILENAME);
+    let native_image = |machine: u16, dll: bool| {
+        if cfg!(target_os = "macos") {
+            let mut data = vec![0u8; 32];
+            data[..4].copy_from_slice(&[0xcf, 0xfa, 0xed, 0xfe]);
+            data[4..8].copy_from_slice(
+                &(if machine == 0x8664 {
+                    0x0100000cu32
+                } else {
+                    0x01000007u32
+                })
+                .to_le_bytes(),
+            );
+            data[12..16].copy_from_slice(&(if dll { 6u32 } else { 2u32 }).to_le_bytes());
+            data
+        } else {
+            synthetic_pe(machine, dll)
+        }
+    };
     for data in [
         b"not a DLL".to_vec(),
-        synthetic_pe(0x14c, true),
-        synthetic_pe(0x8664, false),
+        native_image(0x14c, true),
+        native_image(0x8664, false),
     ] {
         fs::write(&dll, data).unwrap();
         assert_eq!(
@@ -117,7 +135,7 @@ fn bundled_loader_uses_only_fixed_absolute_path_and_rejects_missing_invalid_or_w
             PreviewErrorKind::DllInvalid
         );
     }
-    fs::write(&dll, synthetic_pe(0x8664, true)).unwrap();
+    fs::write(&dll, native_image(0x8664, true)).unwrap();
     assert_eq!(
         crate::platform::bundled_library(root.path()).unwrap(),
         dll.canonicalize().unwrap()

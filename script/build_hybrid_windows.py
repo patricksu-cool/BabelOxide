@@ -353,7 +353,9 @@ def asset_members(inventory: dict) -> dict[str, dict]:
 
 
 def verify_zip(path: Path, expected: dict[str, dict]) -> None:
-    verify_file(path, ASSET_BYTES, ASSET_SHA256)
+    # ZIP timestamps/encoding are not asset identity. Fresh CI builds may
+    # recreate the archive; every member remains size- and SHA3-locked.
+    require(path.is_file() and path.stat().st_size <= sum(entry["bytes"] for entry in expected.values()) + 1024 * 1024, "Unexpected asset archive size")
     with zipfile.ZipFile(path) as archive:
         seen = set()
         for entry in archive.infolist():
@@ -362,6 +364,8 @@ def verify_zip(path: Path, expected: dict[str, dict]) -> None:
             seen.add(name)
             require(name in expected and entry.file_size == expected[name]["bytes"], "Unexpected asset ZIP entry or size")
             require(not entry.flag_bits & 1 and not stat.S_ISLNK(entry.external_attr >> 16), "Encrypted/link asset ZIP entry")
+            with archive.open(entry) as stream:
+                require(hashlib.file_digest(stream, "sha3_256").hexdigest() == expected[name]["sha3_256"], "Asset ZIP content checksum mismatch")
         require(seen == set(expected), "Asset ZIP does not match the effective engine manifest")
 
 
@@ -526,8 +530,8 @@ def verified_notice_bytes(source: Path, expected_sha256: str) -> bytes:
     return data
 
 
-def python_inventory(stage: Path, wheels: list[dict], engine: dict) -> tuple[list[dict], list[str]]:
-    site = stage / "runtime/python/site-packages"
+def python_inventory(stage: Path, wheels: list[dict], engine: dict, *, site: Path | None = None) -> tuple[list[dict], list[str]]:
+    site = site or stage / "runtime/python/site-packages"
     expected = {wheel["name"]: wheel for wheel in wheels}
     installed = {}
     issues = []
@@ -548,7 +552,7 @@ def python_inventory(stage: Path, wheels: list[dict], engine: dict) -> tuple[lis
                     checked_copy(source, destination)
                 record["license_files"].append(destination.relative_to(stage).as_posix())
         installed[name] = record
-    require(set(installed) == set(expected), "Installed distribution closure differs from the 85-package lock")
+    require(set(installed) == set(expected), "Installed distribution closure differs from the platform lock")
     supplement = REPO / "resources/licenses/python/ADDITIONAL_LICENSES.json"
     for notice in read_json(supplement):
         for package in notice["packages"]:
@@ -932,7 +936,7 @@ def build(args: argparse.Namespace, plan: dict) -> Path:
         write_json(provenance / "RUNTIME_SOURCE_FILES.json", plan["runtime"])
         write_json(provenance / "WHEELS.json", plan["wheels"])
         archive = stage / "engine-assets" / f"offline_assets_{ASSET_TAG}.zip"
-        checked_copy(args.assets_zip, archive, (ASSET_BYTES, ASSET_SHA256))
+        checked_copy(args.assets_zip, archive, (args.assets_zip.stat().st_size, digest(args.assets_zip)))
         if args.asset_notices:
             for origin in files_below(args.asset_notices):
                 checked_copy(origin, stage / "licenses/engine-assets" / origin.relative_to(args.asset_notices))
@@ -985,7 +989,7 @@ def build(args: argparse.Namespace, plan: dict) -> Path:
             "rust_built_by_builder": False, "source_commit": args.source_commit,
             "runtime_python": PYTHON_VERSION, "babeldoc": "0.6.4", "python_distribution_count": ENGINE_COUNT,
             "pdfium": PDFIUM_VERSION, "pdfium_dll_sha256": PDFIUM_SHA256,
-            "assets_tag": ASSET_TAG, "assets_archive_sha256": ASSET_SHA256, "assets_verified_files": len(plan["assets"]),
+            "assets_tag": ASSET_TAG, "assets_archive_sha256": digest(archive), "assets_verified_files": len(plan["assets"]),
             "engine_seed_manifest_sha256": digest(seed_manifest),
             "offline_assets_restored_and_sha3_verified": True, "editable": False, "directml": False,
             "pth": PTH_CONTENT.splitlines(), "environment": "allowlisted; no user config/API credentials/proxy/index environment",
