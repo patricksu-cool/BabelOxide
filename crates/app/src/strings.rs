@@ -438,6 +438,10 @@ pub fn stage(name: &str, chinese: bool) -> String {
         return name.to_owned();
     }
     match name {
+        "Loading PDF engine" => "載入 PDF 引擎",
+        "Starting PDF engine" => "啟動 PDF 引擎",
+        "Save PDF" => "儲存 PDF",
+        "Subset font" => "整理字型子集",
         "Parse PDF and Create Intermediate Representation" => "解析 PDF 文件",
         "DetectScannedFile" => "偵測掃描文件",
         "Parse Page Layout" => "分析頁面版面",
@@ -511,6 +515,10 @@ mod tests {
     }
     #[test]
     fn stage_translates_known_names_and_preserves_unknown_names() {
+        assert_eq!(super::stage("Loading PDF engine", true), "載入 PDF 引擎");
+        assert_eq!(super::stage("Starting PDF engine", true), "啟動 PDF 引擎");
+        assert_eq!(super::stage("Save PDF", true), "儲存 PDF");
+        assert_eq!(super::stage("Subset font", true), "整理字型子集");
         assert_eq!(super::stage("Parse Page Layout", true), "分析頁面版面");
         assert_eq!(super::stage("custom stage", true), "custom stage");
         assert_eq!(super::stage("Typesetting", false), "Typesetting");
