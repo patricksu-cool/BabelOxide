@@ -6,6 +6,36 @@ pub fn ui(key: &'static str, chinese: bool) -> &'static str {
         return key;
     }
     match key {
+        "Documents and settings" => "文件與常用設定",
+        "Add PDFs, choose a preset, then translate" => "加入 PDF → 選擇常用組合 → 開始翻譯",
+        "Configure service and API key…" => "設定服務網址與 API 密鑰…",
+        "Output and page range" => "輸出位置與頁碼範圍",
+        "Save or finish the current operation first" => "請先完成目前操作，或確認翻譯服務已啟用。",
+        "Translation presets" => "翻譯預設組合",
+        "Custom" => "自訂",
+        "Save or rename preset" => "保存／重新命名組合",
+        "Preset name" => "組合名稱",
+        "Presets keep API keys and request limits unchanged" => {
+            "組合保留各服務密鑰、網址、限流與並行設定。"
+        }
+        "Save preset" => "保存組合",
+        "Rename" => "重新命名",
+        "Task queue" => "任務佇列",
+        "PDFs run one at a time; request concurrency is unchanged" => {
+            "PDF 依序處理；文字請求沿用原有並行設定。"
+        }
+        "Settings" => "設定",
+        "Basic" => "基本",
+        "Provider" => "服務",
+        "Performance" => "效能",
+        "Advanced" => "進階",
+        "Translate workspace" => "翻譯工作區",
+        "Preview and results" => "預覽與成果",
+        "Unprocessed PDFs can be retried with the original settings" => {
+            "未處理的文件可使用原任務設定重試；已完成成果會保留。"
+        }
+        "Retry unfinished PDFs" => "重試未完成文件",
+        "Open folder" => "開啟資料夾",
         "Settings saved" => "設定已保存",
         "Saved snapshot; newer edits remain unsaved" => "已保存先前的設定；較新的修改尚未保存。",
         "Saved to" => "已另存為",

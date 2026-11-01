@@ -7,6 +7,7 @@ mod dialogs;
 mod languages;
 mod model;
 mod output_paths;
+mod presets;
 mod settings_ui;
 mod strings;
 mod transfers;
@@ -74,7 +75,7 @@ pub fn launch_with_settings(options: LaunchOptions) -> Result<()> {
         viewport: eframe::egui::ViewportBuilder::default()
             .with_title("PDFMathTranslate")
             .with_inner_size([1180.0, 820.0])
-            .with_min_inner_size([900.0, 620.0]),
+            .with_min_inner_size([640.0, 520.0]),
         renderer: eframe::Renderer::Glow,
         ..Default::default()
     };

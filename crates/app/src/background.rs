@@ -338,8 +338,11 @@ async fn run(
                 }
                 let prepared = match task_from_settings(&settings, worker.clone(), cache) {
                     Ok(mut spec) => tokio::task::spawn_blocking(move || -> Result<_> {
-                        let guards =
+                        let mut guards =
                             crate::output_paths::isolate_colliding_outputs(&mut spec.jobs)?;
+                        guards.extend(crate::output_paths::preserve_existing_outputs(
+                            &mut spec.jobs,
+                        )?);
                         Ok((spec, guards))
                     })
                     .await
@@ -489,7 +492,11 @@ pub(crate) fn copy_result(source: &std::path::Path, destination: &std::path::Pat
 fn open_result(path: &std::path::Path) -> Result<()> {
     use std::os::windows::ffi::OsStrExt;
     use windows_sys::Win32::UI::{Shell::ShellExecuteW, WindowsAndMessaging::SW_SHOWNORMAL};
-    validate_result_path(path)?;
+    if path.is_dir() {
+        anyhow::ensure!(path.is_absolute(), "Choose an absolute output folder");
+    } else {
+        validate_result_path(path)?;
+    }
     let filename: Vec<u16> = path.as_os_str().encode_wide().chain(Some(0)).collect();
     let verb: Vec<u16> = "open".encode_utf16().chain(Some(0)).collect();
     // No command line or shell expansion: this opens one validated result path

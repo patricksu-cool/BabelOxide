@@ -6,6 +6,43 @@ use pdf2zh_core::PdfJob;
 use std::{collections::HashMap, path::PathBuf};
 use tempfile::TempDir;
 
+/// Keep earlier results when a user submits or retries the same PDF again.
+/// Preparation and directory cleanup have the same transaction as collisions.
+pub(crate) fn preserve_existing_outputs(jobs: &mut [PdfJob]) -> Result<Vec<TempDir>> {
+    let mut guards = Vec::new();
+    let mut replacements = Vec::new();
+    for (index, job) in jobs.iter().enumerate() {
+        let stem = job
+            .input_file
+            .file_stem()
+            .context("PDF 輸入檔名無效")?
+            .to_string_lossy()
+            .to_lowercase();
+        std::fs::create_dir_all(&job.output_dir).context("無法建立 PDF 輸出資料夾")?;
+        let mut exists = false;
+        for entry in std::fs::read_dir(&job.output_dir).context("無法讀取 PDF 輸出資料夾")?
+        {
+            let entry = entry?;
+            let name = entry.file_name().to_string_lossy().to_lowercase();
+            if name.starts_with(&format!("{stem}.")) && name.ends_with(".pdf") {
+                exists = true;
+                break;
+            }
+        }
+        if exists {
+            let guard = tempfile::Builder::new()
+                .prefix("pdf2zh-batch-")
+                .tempdir_in(&job.output_dir)?;
+            replacements.push((index, guard.path().to_path_buf()));
+            guards.push(guard);
+        }
+    }
+    for (index, output) in replacements {
+        jobs[index].output_dir = output;
+    }
+    Ok(guards)
+}
+
 /// Run on a blocking background worker before submitting the task. Keep every
 /// returned guard only after submission succeeds; dropping an uncommitted guard
 /// removes its private directories. Kept result directories survive app exit.
@@ -82,6 +119,25 @@ mod tests {
     use super::*;
     use pdf2zh_config::Settings;
     use std::path::Path;
+
+    #[test]
+    fn repeating_one_pdf_preserves_previous_outputs() -> Result<()> {
+        let temporary = tempfile::tempdir()?;
+        let output = temporary.path().join("output");
+        std::fs::create_dir(&output)?;
+        std::fs::write(output.join("report.zh.mono.pdf"), b"previous result")?;
+        let mut jobs = vec![job(input(temporary.path(), "one", "report.pdf"), &output)];
+        let guards = preserve_existing_outputs(&mut jobs)?;
+        assert_eq!(guards.len(), 1);
+        assert_ne!(jobs[0].output_dir, output);
+        assert_eq!(
+            std::fs::read(output.join("report.zh.mono.pdf"))?,
+            b"previous result"
+        );
+        drop(guards);
+        assert!(!jobs[0].output_dir.exists());
+        Ok(())
+    }
 
     fn input(root: &Path, directory: &str, name: &str) -> PathBuf {
         let parent = root.join(directory);
