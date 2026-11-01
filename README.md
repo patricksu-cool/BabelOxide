@@ -43,7 +43,7 @@ tests/baseline/  上游行為與 PDF 基準資料
 docs/           建置、架構、設計、限制與驗證狀態
 ```
 
-參閱 [BUILD](docs/BUILD.md)、[ARCHITECTURE](docs/ARCHITECTURE.md)、[DESIGN](docs/DESIGN.md) 與 [STATUS](docs/STATUS.md)。Actions 只 Build／Test／上傳完整 Artifacts，保留 7 天，不自動發布 Release。
+參閱 [BUILD](docs/BUILD.md)、[ARCHITECTURE](docs/ARCHITECTURE.md)、[DESIGN](docs/DESIGN.md)、[LIMITATIONS](docs/LIMITATIONS.md) 與 [STATUS](docs/STATUS.md)。Actions 只 Build／Test／上傳完整 Artifacts，保留 7 天，不自動發布 Release。
 
 ## 授權
 

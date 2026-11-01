@@ -38,4 +38,6 @@ Release GUI 已實際操作：組合切換／自訂保存／重開；Key、模�
 
 **Mac blocker：此機為 Windows，未執行原生 Mac build／dylib import／GUI；未 Push 或觸發遠端 Actions。** 已驗證官方 Mac PDFium 的 arm64 Mach-O 與系統依賴、Python archive SHA256，以及 macOS 14+ 的整套 wheel 解析；這些不等於 Mac 原生驗收。Mac job 有缺失時明確失敗，沒有 placeholder 或 continue-on-error。
 
-文件精簡、完整依賴授權審查與最終整合驗收仍在後續階段。Windows ONNX Runtime 仍需官方 VC++ x64 Runtime。沒有 Push 或發布 Release。
+文件精簡已完成：移除 18 份已追蹤的歷史報告／重複說明，必要 IPC、cache、retry、服務與排解契約整併至 ARCHITECTURE／LIMITATIONS／BUILD。README、LICENSE、notices 與五份主要維護文件的連結有效；fixtures、frozen oracle、Worker／locks 及第三方授權原文未刪改。加入明確文字／二進位換行規則及 Windows CI 原始碼封裝測試。Rust 301、Worker 35、Windows Builder 35、Portable Builder 7、來源封裝 22、fmt／Clippy／Ruff／workflow 檢查通過。
+
+完整依賴授權審查與最終整合驗收仍在後續階段。Windows ONNX Runtime 仍需官方 VC++ x64 Runtime。沒有 Push 或發布 Release。

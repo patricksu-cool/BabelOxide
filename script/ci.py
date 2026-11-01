@@ -49,6 +49,12 @@ def check(uv: Path, work: Path, env: dict[str, str]) -> None:
     run([python, ROOT / "script/build_hybrid_windows.py", "--self-test"], work, env, label="windows-builder-tests")
     run([python, "-m", "unittest", "discover", "-s", ROOT / "script", "-p", "test_build_portable.py"], work, env, label="portable-builder-tests")
     run([python, "-m", "ruff", "check", ROOT / "python-worker", ROOT / "script"], work, env, label="python-lint")
+    if os.name == "nt":
+        powershell = Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"
+        # A PowerShell 7 parent can export incompatible module paths to 5.1.
+        # Let Windows PowerShell discover its own system modules for this child.
+        ps_env = {key: value for key, value in env.items() if key.upper() != "PSMODULEPATH"}
+        run([powershell, "-NoLogo", "-NoProfile", "-NonInteractive", "-File", ROOT / "tests/source-review/test_packaging.ps1"], work, ps_env, label="source-packaging-tests")
 
 
 def build(name: str, uv: Path, work: Path, env: dict[str, str]) -> None:

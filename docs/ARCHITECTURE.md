@@ -1,60 +1,80 @@
-# Rust + BabelDOC 架構
+# BabelOxide 架構
 
-Rust 負責全部應用程式功能：原生 GUI、CLI、設定、翻譯服務、HTTP、重試與限流、SQLite 翻譯快取、批次排程、取消、程序樹、PDF 預覽與檔案另存。Python 只保留 BabelDOC 0.6.3 引擎及 `python-worker/worker.py` 邊界；沒有 Gradio、Python App 或 Python 翻譯 client。
+Rust 負責應用程式；最小 Python Worker 只橋接 **BabelDOC 0.6.4**。沒有 Gradio、Python GUI／CLI、provider HTTP client、應用重試或第二套排程器。開發／封裝 Python 腳本不屬於使用者執行流程。
 
-| Workspace crate | 職責 |
+| Crate | 職責 |
 | --- | --- |
-| `app` | eframe 原生桌面介面、設定編輯、進度、預覽與原子另存 |
-| `cli` | clap 參數與共用載入流程；執行翻譯、資產維護或開啟 GUI |
-| `config` | 舊 TOML 相容、235 項設定描述、24 個服務選項、合併優先序與原子儲存 |
-| `core` | 16 種 provider、transport、retry、limiter、metrics、SQLite cache、程序控制 |
-| `tasks` | 共用主／術語 translator factory、批次佇列、生命週期與 shutdown |
-| `babeldoc-bridge` | 私有雙向 stdio、握手、回呼路由、取消、Worker 回收與資產初始化 |
-| `pdf-preview` | 專用執行緒持有 PDFium；有界請求與最新結果去重 |
+| `babeloxide-app` | egui／eframe 視窗、設定草稿、檔案加入、佇列、預覽與另存 |
+| `babeloxide-cli` | clap、共用設定載入、翻譯與資產維護入口 |
+| `babeloxide-config` | 235 項 schema、24 個服務選項、TOML 相容、合併與原子保存 |
+| `babeloxide-core` | 16 個 provider、HTTP、重試／限流、usage、SQLite cache、受控程序 |
+| `babeloxide-tasks` | 主／術語服務 factory、串列批次、取消與 shutdown |
+| `babeloxide-bridge` | 位於 `crates/babeldoc-bridge/`；Worker／私有 stdio、資產初始化與清理 |
+| `babeloxide-pdf-preview` | 專用執行緒持有包內 PDFium、有界渲染佇列與舊結果去重 |
 
 ```mermaid
 flowchart LR
-    GUI[原生 Rust GUI] --> Tasks[Rust tasks]
+    GUI[Rust GUI] --> Tasks[Rust tasks]
     CLI[Rust CLI] --> Tasks
     GUI --> Config[Rust config]
     CLI --> Config
-    GUI --> Preview[Rust PDFium preview]
+    GUI --> Preview[PDFium preview]
     Tasks --> Core[Rust providers / retry / cache]
     Tasks --> Bridge[Rust bridge]
     Bridge <-->|私有 NDJSON stdio| Worker[最小 Python Worker]
-    Worker --> BabelDOC[BabelDOC PDF 引擎]
+    Worker --> Engine[BabelDOC]
     Worker -->|翻譯 RPC| Bridge
     Bridge --> Core
-    BabelDOC --> PDF[單語 / 雙語 PDF]
+    Engine --> PDF[單語 / 雙語 PDF]
 ```
 
-## 翻譯與取消
+## 任務與設定
 
-先驗證文件、glossary 與設定，再由共用 factory 為每份 PDF 建立服務。保留原版 main → 推薦參數 → term 的初始化順序，普通 Hello 健康檢查略過 cache；raw term QPS 決定是否共享 instance。主／術語服務與每 PDF 生命週期不藏在 Worker。
+TaskManager 保持一批次執行，多份 PDF 依序處理。主／術語服務由共用 factory 初始化，保留健康檢查、推薦參數及服務共享規則；健康檢查可能呼叫 API。批次保存提交時的設定快照；手動重試只提交未完成文件，不重播已完成文件。GUI 同名輸入及已有成果使用獨立輸出子目錄，另存／ZIP 使用原子發布。
 
-Bridge 啟動獨立 Python，將 stdin/stdout 留給版本化 NDJSON；Python／CRT／Win32 診斷輸出隔離至 stderr。session/task/request ID、有界 frame 與在途數、輸出路徑檢查可防止錯配或無界記憶體。API Key 不傳入 Worker。詳見 [IPC](IPC_PROTOCOL.md)。
+設定優先序：CLI → 環境變數 → 明確設定檔 → portable 設定 → 預設。新 `BABELOXIDE_*` 優先於同名舊 `PDF2ZH_*`。保存保留未知欄位、清空本次 input_files；無效草稿不部分套用。自訂組合只保存白名單值，以 `babeloxide.presets_json` 字串放在既有 TOML，不含 Key、網址、檔案路徑或執行限制。
 
-BabelDOC 負責 PDF 解析、版面模型、段落／公式、引擎 prompt、排版、字型及 PDF 輸出。Worker 只轉接同步翻譯 callback、進度、取消與 BabelDOC 資源 API；不自行實作 API、retry、cache manager 或任務政策。
-
-取消為獨立控制訊號，不當作可重試 provider 錯誤。Rust 等待 cooperative 清理；逾時終止並回收 Windows Job Object 內的 Worker／後代。GUI 關閉會先停止新動作，再等待 tasks、cache writer 與 PDFium 清理，最後關閉視窗。
-
-## 設定與資源
-
-預設使用 EXE 所在資料夾，與工作目錄無關：
+相對於 EXE 的預設布局（Mac 位於 `.app/Contents/MacOS/`）：
 
 ```text
 config/config.v3.toml          使用者設定
 cache/translations.v2.db       Rust 翻譯快取
-cache/babeldoc-home/           BabelDOC 的可變 HOME/cache
+cache/babeldoc-home/           BabelDOC 可變 HOME
 resources/worker-home/         包內唯讀模型、字型、CMap、tokenizer 種子
 resources/engine-assets.json   精確種子清單、大小與 SHA256
-runtime/python/                隔離 CPython 與必要引擎依賴
-babeldoc/worker.py             最小 Worker
-native/pdfium/                預覽 DLL 與必要資訊
+runtime/python/                獨立 CPython 與引擎閉包
+babeldoc/worker.py             唯一正式 Worker
+native/pdfium/                固定平台 PDFium 與版本檔
 ```
 
-首次翻譯時 Rust 只將 manifest 列出的 182 項資產原子複製到可寫 HOME，不複製 DB 或使用者翻譯 cache。已存在而雜湊不同的檔案會保留並回報錯誤；可指定新的 `--worker-home`，不默默覆寫使用者模型。初始化中取消會等待 writer 退出，沒有背景寫入工作遺留。
+程式目錄不可寫時，Windows 使用 LOCALAPPDATA（或 HOME 的 AppData/Local），Mac 使用 HOME/Library/Application Support；新資料夾為 `BabelOxide/<安裝路徑 SHA256 前16碼>/`。同一安裝已有 `PDFMathTranslate/<fingerprint>/` config／cache 且新路徑不存在時，原地沿用，保留 SQLite WAL 與模型修改。明確指定 `BABELOXIDE_APP_DIR`（或舊別名）失敗即報錯，不擅自換路徑。
 
-程式資料夾不可寫時，以呼叫端明確提供的 LOCALAPPDATA／HOME 解析使用者資料目錄，使用 `PDFMathTranslate/<來源資料夾 SHA256 前16碼>/` 避免不同安裝互相覆寫。原 portable 設定只複製一次且不取代已有備援設定，GUI／CLI 會顯示實際位置。明確指定 `PDF2ZH_APP_DIR` 失敗時會報錯，不擅自換位置。
+舊 home `.config/pdf2zh/config.v3.toml` 只在新設定不存在時讀取、驗證並以不覆寫方式發布；原檔不變。壞檔不發布成新設定。讀取本身不重寫預設或重置憑證。首次引擎初始化只原子複製 manifest 的 182 項種子；既有內容不同時保留並報錯，不覆寫使用者模型。
 
-設定優先序與原格式相容：CLI →環境變數→明確設定檔→portable 設定→預設。讀取不寫預設；保存清除本次 input_files，並以原子替換保護既有 bytes。敏感 Debug／錯誤遮罩、跨來源 redirect 移除憑證與回應大小界線仍保留。詳見 [服務相容性](PROVIDERS.md) 與 [cache](CACHE_COMPATIBILITY.md)。
+## IPC 與清理
+
+每份 PDF 使用獨立 Worker。雙向 UTF-8 JSONL 的每個 frame（含 LF）上限 1 MiB；`v:1`、session、task_id 與 `w-N` request ID 區分身分及逆序回覆。Host 先準備服務，再協商在途容量（最少 128，最多 1,000,000）；ID 長度及曾用 ID 數量另有界限。
+
+Worker 傳 `ready`（精確 BabelDOC 版號）、`translate`、白名單進度、`finished`／`error`；Host 回 `start`、`translated`、`cancel`、`shutdown`。API Key、provider endpoint／config 不傳入 Worker。stdout 專供協定；Python／CRT／Win32 診斷改送 stderr，Rust 持續排空。
+
+Python reader／engine thread 分離，以 pending Future 配對翻譯；Rust reader 路由獨立 async 請求，不等待 HTTP／QPS／重試。寫入 channel 有界；慢 UI 進度可丟棄，terminal 由任務回傳，不依賴 UI queue。錯誤 framing、錯 session、未知／重複 ID、RPC 失敗或缺少要求的輸出都使任務失敗，不能被 BabelDOC fallback 掩蓋。
+
+取消為獨立控制事件，停止新 admission／重試並等待 cooperative cache／程序清理。cancel_ack 不表示清理完成。成功須合法 finished、無 pending、mono／dual 路徑位於核准 output 內、要求的檔案存在且 Worker 正常退出；exit 0 或 EOF 單獨不足。
+
+預設 startup 180 秒；PDF activity idle 1800 秒；Worker RPC 等待另有 1800 秒護欄；shutdown 10 秒。資產維護則使用 start 後絕對期限，進度不續命。它們與 provider connect／read timeout、重試預算不同。Windows Job Object 在 child resume 前完成指派，逾時終止、確認整棵程序樹退出並 wait。Mac 目前沒有同等 process-group 保證，詳見 [限制](LIMITATIONS.md)。
+
+## 重試、限流與快取
+
+每次 logical translation：計數／取消檢查 → 可用時讀 cache → provider preflight → concurrency permit → 一次 QPS admission → provider 及各層重試 → 寫入成功文字。Cache hit 不消耗 QPS／HTTP／usage；SDK 與應用層不能合併成一個通用重試。取消不能被 provider retry predicate 捕捉。
+
+`tests/baseline/` 與 `crates/core/tests/fixtures/legacy_retry_contract_v1.json` 保留獨立 Python oracle：22 個 policy、R23–R34、T01–T05 及 SDK 常數。原始 Python／歷史稽核可從 `codex/baseline-final-integration-20261031` 回復到另一路 checkout；凍結檔的歷史來源路徑不改寫。此次品牌／UI 不改 retry、backoff、QPS、concurrency 或 cache identity 演算法。
+
+SQLite 新表 `rust_translation_cache_v2` 使用版本化 namespace digest，區分 provider、endpoint、model、語言、方法、角色與影響輸出的參數；排除明確 Key 與 QPS／concurrency／timeout 等操作值。舊 `pdf2zh-rust-cache-v2` identity 字串刻意保留。輸入及譯文按既有行為明文保存，沒有 TTL、淘汰或 singleflight。
+
+Cache read／write 的普通錯誤計入 metrics，仍可返回有效 provider 文字；取消不吞掉。SQLite busy／locked 最多使用既有一秒預算；取消等待 blocking writer 完成／回滾，已完成的 commit 不可撤回。舊 `_translationcache` 不刪改；精確讀取／提升須 caller 明確綁定已驗證的 namespace、方法與角色，不自動猜測歸屬。
+
+## 執行期與驗證
+
+BabelDOC 處理 PDF 解析、版面、公式、引擎 prompt、字型與生成；Worker 不重做演算法。Windows 85／Mac 84 個固定 wheel（差異 colorama）與 182 項資產由 builder 查核；OpenAI、Peewee、Tenacity 等屬引擎宣告閉包，不能因名稱像舊 App 就移除。PDFium 使用固定包內絕對路徑，Windows 驗 PE，Mac 驗 arm64 Mach-O；不從 PATH 猜測版本。
+
+來源與建置 pins 見 [BUILD](BUILD.md)；SDK 差異、平台與安全邊界見 [LIMITATIONS](LIMITATIONS.md)。測試與真正執行結果只記錄於 [STATUS](STATUS.md)，靜態 graph 或假 Worker 不能證明 PDF 品質與跨平台實際行為。

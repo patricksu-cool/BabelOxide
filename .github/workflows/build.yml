@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
   push:
     branches: [main, feature/babeloxide-v1, 'codex/**']
-    paths: ['crates/**', 'python-worker/**', 'script/**', 'resources/**', '.github/workflows/build.yml', '.cargo/**', 'Cargo.toml', 'Cargo.lock', 'pyproject.toml', 'uv.lock', 'LICENSE', 'THIRD_PARTY_NOTICES.md']
+    paths: ['crates/**', 'python-worker/**', 'script/**', 'resources/**', 'tests/**', '.github/workflows/build.yml', '.cargo/**', 'Cargo.toml', 'Cargo.lock', 'pyproject.toml', 'uv.lock', 'LICENSE', 'THIRD_PARTY_NOTICES.md', '打包原始碼.cmd', '.gitattributes']
   pull_request:
-    paths: ['crates/**', 'python-worker/**', 'script/**', 'resources/**', '.github/workflows/build.yml', '.cargo/**', 'Cargo.toml', 'Cargo.lock', 'pyproject.toml', 'uv.lock', 'LICENSE', 'THIRD_PARTY_NOTICES.md']
+    paths: ['crates/**', 'python-worker/**', 'script/**', 'resources/**', 'tests/**', '.github/workflows/build.yml', '.cargo/**', 'Cargo.toml', 'Cargo.lock', 'pyproject.toml', 'uv.lock', 'LICENSE', 'THIRD_PARTY_NOTICES.md', '打包原始碼.cmd', '.gitattributes']
 
 permissions:
   contents: read
