@@ -501,11 +501,20 @@ impl NativeApp {
                 }
             });
         if let Some(index) = remove {
-            self.editor.remove_file(index);
-            self.original_file = self
-                .original_file
-                .min(self.editor.files.len().saturating_sub(1));
+            self.remove_input_file(index);
         }
+    }
+    fn remove_input_file(&mut self, index: usize) {
+        if index >= self.editor.files.len() {
+            return;
+        }
+        self.editor.remove_file(index);
+        if index < self.original_file {
+            self.original_file -= 1;
+        }
+        self.original_file = self
+            .original_file
+            .min(self.editor.files.len().saturating_sub(1));
     }
     fn engine(&mut self, ui: &mut egui::Ui, frame: &eframe::Frame, term: bool) {
         let current = if term {
@@ -1521,11 +1530,35 @@ mod tests {
         ];
         harness.paint(event).drop_without_applying_deltas();
         assert_eq!(harness.app.editor.files, vec![first, second]);
-        harness.app.editor.remove_file(0);
+        harness.app.original_file = 1;
+        harness.app.remove_input_file(0);
         assert_eq!(harness.app.editor.files.len(), 1);
+        assert_eq!(harness.app.original_file, 0);
         assert_eq!(
             std::fs::read_dir(harness.directory.path()).unwrap().count(),
             0
         );
+    }
+    #[test]
+    fn removing_an_earlier_input_preserves_the_selected_document() {
+        let mut harness = Harness::new(Settings::default());
+        harness
+            .app
+            .editor
+            .add_files(vec![
+                PathBuf::from("one.pdf"),
+                PathBuf::from("two.pdf"),
+                PathBuf::from("three.pdf"),
+            ])
+            .unwrap();
+        harness.app.original_file = 1;
+        harness.app.remove_input_file(0);
+        assert_eq!(harness.app.original_file, 0);
+        assert_eq!(harness.app.editor.files[0], PathBuf::from("two.pdf"));
+        harness.app.remove_input_file(1);
+        assert_eq!(harness.app.original_file, 0);
+        harness.app.remove_input_file(0);
+        assert_eq!(harness.app.original_file, 0);
+        assert!(harness.app.editor.files.is_empty());
     }
 }

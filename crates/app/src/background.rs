@@ -336,10 +336,32 @@ async fn run(
                 if shutdown.requested.load(Ordering::Acquire) {
                     break;
                 }
-                let submitted = task_from_settings(&settings, worker.clone(), cache)
-                    .and_then(|spec| manager.submit(spec));
+                let prepared = match task_from_settings(&settings, worker.clone(), cache) {
+                    Ok(mut spec) => tokio::task::spawn_blocking(move || -> Result<_> {
+                        let guards =
+                            crate::output_paths::isolate_colliding_outputs(&mut spec.jobs)?;
+                        Ok((spec, guards))
+                    })
+                    .await
+                    .context("Cannot prepare batch output folders")
+                    .and_then(|result| result),
+                    Err(error) => Err(error),
+                };
+                // Preparation can involve filesystem I/O. Dropping its guards
+                // cleans the private folders if closing won the race.
+                if shutdown.requested.load(Ordering::Acquire) {
+                    break;
+                }
+                let submitted = prepared.and_then(|(spec, guards)| {
+                    let handle = manager.submit(spec)?;
+                    let isolated = !guards.is_empty();
+                    for guard in guards {
+                        let _ = guard.keep();
+                    }
+                    Ok((handle, isolated))
+                });
                 match submitted {
-                    Ok(handle) => {
+                    Ok((handle, isolated)) => {
                         let mut updates = handle.subscribe();
                         let wake = shutdown.clone();
                         tokio::spawn(async move {
@@ -352,6 +374,16 @@ async fn run(
                             }
                         });
                         emit(&events, &shutdown, Event::Submitted { handle, inputs }).await;
+                        if isolated {
+                            emit(
+                                &events,
+                                &shutdown,
+                                Event::Warning(
+                                    "PDFs with matching names use separate output subfolders",
+                                ),
+                            )
+                            .await;
+                        }
                     }
                     Err(error) => {
                         emit(

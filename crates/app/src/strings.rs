@@ -405,6 +405,10 @@ pub fn friendly_error(message: &str, chinese: bool) -> String {
         "Translation cache is unavailable; continuing without it" => {
             "翻譯快取無法使用，將繼續執行但不使用快取。".into()
         }
+        "Cannot prepare batch output folders" => "無法準備批次輸出資料夾。".into(),
+        "PDFs with matching names use separate output subfolders" => {
+            "同名 PDF 已分別儲存至獨立輸出子資料夾，避免互相覆寫。".into()
+        }
         "Cannot save this result to the selected destination" => {
             "無法將結果保存至所選位置。".into()
         }

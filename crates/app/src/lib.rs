@@ -6,6 +6,7 @@ mod background;
 mod dialogs;
 mod languages;
 mod model;
+mod output_paths;
 mod settings_ui;
 mod strings;
 mod transfers;
