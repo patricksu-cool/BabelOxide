@@ -48,3 +48,5 @@ GUI 支援公開 HTTP(S) PDF 下載：標準連接埠、每次 DNS／redirect �
 ## 授權與發布
 
 完整 AGPL、來源、修改告知與依賴 notices 位於 [LICENSE](../LICENSE)、[THIRD_PARTY_NOTICES](../THIRD_PARTY_NOTICES.md)、GUI「關於 BabelOxide」及執行包 `licenses/`／`provenance/`。這些不是正式法務認證；公開散布或網路提供修改版功能前仍須符合對應原始碼及各元件授權要求。沒有自動 Push、簽章、公證或 Release。
+
+Cargo 全目標清單保留 `dispatch 0.2.0` 授權原文缺項（manifest 宣告 MIT）；objc2 目標版本的 Apple SDK 授權說明也保留。Mac standalone CPython 自帶 LICENSE 已收錄，內含原生程式庫的散布條件仍需在 Mac 成品審查。不得把 notices 已收集解讀為所有平台的正式再散布認證。

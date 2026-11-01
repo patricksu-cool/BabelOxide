@@ -6,7 +6,7 @@
 
 - [PDFMathTranslate-next v2.9.0](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/tree/v2.9.0)：設定、CLI、翻譯服務與相容行為的來源；[原始 LICENSE](https://github.com/PDFMathTranslate-next/PDFMathTranslate-next/blob/v2.9.0/LICENSE) 為 AGPL-3.0。
 - [BabelDOC v0.6.4](https://github.com/funstory-ai/BabelDOC/tree/v0.6.4)：PDF 解析、排版、公式／圖表保留與生成引擎；[原始 LICENSE](https://github.com/funstory-ai/BabelDOC/blob/v0.6.4/LICENSE) 為 AGPL-3.0。Python import、套件名稱與第三方版本均保留。
-- 上游 v2.9.0 的 pyproject authors／maintainers 與 BabelDOC wheel METADATA 標示作者 **awwaawwa**；其他作者及貢獻者依上游原始碼、Git 歷史與各元件 notices 保留。LICENSE 開頭的 FSF copyright 屬於授權文字，不據此宣稱 FSF 是本程式作者。
+- 上游 v2.9.0 的 pyproject authors／maintainers 與 BabelDOC wheel METADATA 標示作者 **awwaawwa**；BabelDOC v0.6.4 LICENSE 的專案告知另載 `Copyright (C) 2024 <funstory.ai limited>`，其完整原文隨引擎授權保留。其他作者及貢獻者依上游原始碼、Git 歷史與各元件 notices 保留。LICENSE 開頭的 FSF copyright 屬於授權文字，不據此宣稱 FSF 是本程式作者。
 
 ## 修改聲明
 
@@ -19,6 +19,8 @@
 Rust crates、Python wheels、PDFium、ONNX Runtime、CPython、模型及字型仍受各自授權約束。必要文件保留在原始碼的 `resources/licenses/`；完整執行包另產生 `licenses/`、`THIRD_PARTY_COMPONENTS.json`、`NATIVE_DEPENDENCIES.json` 及 `provenance/`，保留 wheel／Cargo／資產版本、來源、大小與雜湊。BabelDOC、PyMuPDF 等 AGPL 元件、PDFium 及 ONNX 的 notices、Adobe CMap、DocLayout 模型與各字型的授權不可因品牌重整而移除。
 
 `resources/babeloxide.svg` 及從它產生的 PNG／ICO／ICNS 為本專案新增幾何圖示，以相同專案授權提供，沒有使用上游 logo 或第三方字型。
+
+Rust workspace 內缺少獨立授權檔的元件，另保存固定 commit／SHA256 的補充原文。objc2 類元件同時保留目標版本的 LICENSE.md 及已驗證的共用 MIT 文字／署名；其 Apple SDK 條件不因收集 notices 而消失。`dispatch 0.2.0` 的 manifest 宣告 MIT，但其發布來源沒有找到授權原文，仍列為 release review item，未拿其他專案文字冒充該版本來源。
 
 ## 散布與網路使用
 

@@ -10,6 +10,9 @@ pub fn ui(key: &'static str, chinese: bool) -> &'static str {
         "Free software under AGPL-3.0-only; no warranty" => {
             "自由軟體 · AGPL-3.0-only · 不提供任何擔保"
         }
+        "You may redistribute this software under AGPL-3.0-only" => {
+            "你可依 AGPL-3.0-only 條款散布本程式。"
+        }
         "Modified derivative; upstream authors and sources are retained" => {
             "經修改與重新實作的衍生作品；保留原作者權利與來源。"
         }

@@ -142,12 +142,12 @@ def build_macos(args, runtime: Path, assets: Path, work: Path) -> Path:
         windows.checked_copy(origin, stage / "licenses/pdfium" / origin.name)
     shutil.copytree(pdfium / "licenses", stage / "licenses/pdfium/licenses")
     windows.checked_copy(ROOT / "LICENSE", stage / "licenses/project/LICENSE")
-    if (ROOT / "THIRD_PARTY_NOTICES.md").exists():
-        windows.checked_copy(ROOT / "THIRD_PARTY_NOTICES.md", stage / "licenses/project/THIRD_PARTY_NOTICES.md")
+    windows.checked_copy(ROOT / "THIRD_PARTY_NOTICES.md", stage / "licenses/project/THIRD_PARTY_NOTICES.md")
+    windows.checked_copy(stage / "runtime/python/lib/python3.13/LICENSE.txt", stage / "licenses/python-runtime/LICENSE.txt")
     shutil.copytree(ROOT / "resources/licenses/engine-assets", stage / "licenses/engine-assets")
     windows.checked_copy(ROOT / "resources/config.example.toml", stage / "config/config.example.toml")
     provenance = stage / "provenance"
-    for source in (PINS, lock, ROOT / "python-worker/wheels-macos-arm64.json", windows.ASSET_INVENTORY, windows.INVENTORY, ROOT / "Cargo.lock", ROOT / "Cargo.toml", Path(__file__), ROOT / "script/build_support.py"):
+    for source in (PINS, lock, ROOT / "python-worker/wheels-macos-arm64.json", windows.ASSET_INVENTORY, windows.INVENTORY, ROOT / "Cargo.lock", ROOT / "Cargo.toml", Path(__file__), ROOT / "script/build_support.py", ROOT / "script/build_hybrid_windows.py", ROOT / "docs/BUILD.md"):
         windows.checked_copy(source, provenance / source.name)
     write_json(provenance / "WHEELS.json", wheels)
     (stage / "engine-assets").mkdir()

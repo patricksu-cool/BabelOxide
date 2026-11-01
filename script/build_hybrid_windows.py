@@ -708,10 +708,12 @@ def supplement_rust_notices(stage: Path, records: list[dict]) -> None:
         return
     checked_copy(manifest, stage / "provenance/SUPPLEMENTAL_RUST_NOTICES.json")
     by_identity = {(item["name"], item["version"]): item for item in records}
+    missing = {key for key, value in by_identity.items() if not value["license_files"]}
     for notice in read_json(manifest):
-        component = by_identity.get((notice["name"], notice["version"]))
-        if component is None or component["license_files"]:
+        identity = (notice["name"], notice["version"])
+        if identity not in missing:
             continue
+        component = by_identity[identity]
         source = root / relative_member(notice["file"])
         data = verified_notice_bytes(source, notice["sha256"])
         destination = stage / "licenses/rust" / f"{component['name']}-{component['version']}" / ("upstream-" + source.name)
@@ -720,7 +722,9 @@ def supplement_rust_notices(stage: Path, records: list[dict]) -> None:
         with destination.open("xb") as stream:
             stream.write(data)
         component["license_files"].append(destination.relative_to(stage).as_posix())
-        component["supplemental_notice_source"] = {key: value for key, value in notice.items() if key not in {"name", "version", "file"}}
+        metadata = {key: value for key, value in notice.items() if key not in {"name", "version", "file"}}
+        component.setdefault("supplemental_notice_source", metadata)
+        component.setdefault("supplemental_notice_sources", []).append(metadata)
 
 
 def validate_output(output: Path, inputs: list[Path]) -> Path:
@@ -1531,14 +1535,21 @@ class BuilderTests(unittest.TestCase):
             notices.mkdir(parents=True)
             body = b"Synthetic upstream MIT license fixture"
             (notices / "LICENSE").write_bytes(body)
-            write_json(notices / "SUPPLEMENTAL_NOTICES.json", [{"name": "fixture", "version": "1.0", "file": "LICENSE", "sha256": hashlib.sha256(body).hexdigest(), "source": "https://example.invalid/revision/LICENSE"}])
+            extra = b"Synthetic upstream attribution and platform conditions"
+            (notices / "NOTICE").write_bytes(extra)
+            write_json(notices / "SUPPLEMENTAL_NOTICES.json", [
+                {"name": "fixture", "version": "1.0", "file": "LICENSE", "sha256": hashlib.sha256(body).hexdigest(), "source": "https://example.invalid/revision/LICENSE"},
+                {"name": "fixture", "version": "1.0", "file": "NOTICE", "sha256": hashlib.sha256(extra).hexdigest(), "source": "https://example.invalid/revision/NOTICE"},
+            ])
             stage = root / "stage"
             stage.mkdir()
             matching = {"name": "fixture", "version": "1.0", "license_files": []}
             different = {"name": "fixture", "version": "2.0", "license_files": []}
             with patch(__name__ + ".REPO", root):
                 supplement_rust_notices(stage, [matching, different])
-                self.assertEqual(len(matching["license_files"]), 1)
+                self.assertEqual(len(matching["license_files"]), 2)
+                self.assertEqual(len(matching["supplemental_notice_sources"]), 2)
+                self.assertEqual((stage / matching["license_files"][1]).read_bytes(), extra)
                 self.assertEqual(different["license_files"], [])
                 (notices / "LICENSE").write_bytes(b"tampered")
                 with self.assertRaisesRegex(BuildError, "SHA256 mismatch"):

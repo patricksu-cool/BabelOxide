@@ -40,4 +40,10 @@ Release GUI 已實際操作：組合切換／自訂保存／重開；Key、模�
 
 文件精簡已完成：移除 18 份已追蹤的歷史報告／重複說明，必要 IPC、cache、retry、服務與排解契約整併至 ARCHITECTURE／LIMITATIONS／BUILD。README、LICENSE、notices 與五份主要維護文件的連結有效；fixtures、frozen oracle、Worker／locks 及第三方授權原文未刪改。加入明確文字／二進位換行規則及 Windows CI 原始碼封裝測試。Rust 301、Worker 35、Windows Builder 35、Portable Builder 7、來源封裝 22、fmt／Clippy／Ruff／workflow 檢查通過。
 
-完整依賴授權審查與最終整合驗收仍在後續階段。Windows ONNX Runtime 仍需官方 VC++ x64 Runtime。沒有 Push 或發布 Release。
+## 授權檢查
+
+根目錄完整 LICENSE 與 PDFMathTranslate-next v2.9.0 原文一致；BabelDOC 0.6.4 的額外 `Copyright (C) 2024 <funstory.ai limited>` 告知保留於 notices、GUI 與引擎授權。來源、修改日期、可再散布權利、無擔保與完整授權檢視入口已加入 About。
+
+針對 Cargo 全目標 439 項（含 owned crates），補充 33 個發布 archive 遺漏的 workspace notices，固定官方來源 commit／SHA256；多份授權與署名可同時收錄。尚有 `dispatch 0.2.0` 缺少 upstream 授權原文（manifest 宣告 MIT）；objc2 目標版本的 Apple SDK 說明及 Mac standalone 原生庫散布審查保留。Windows 85 個 Python 元件已有 notices；PDFium、CPython、ONNX、34 字型、146 CMap、模型／tokenizer 來源保留。沒有正式法務認證或對應原始碼已公開的宣稱。
+
+最終整合驗收仍在後續階段。Windows ONNX Runtime 仍需官方 VC++ x64 Runtime。沒有 Push 或發布 Release。
