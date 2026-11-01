@@ -22,6 +22,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import time
 import unittest
 import urllib.parse
 import uuid
@@ -78,6 +79,25 @@ class BuildError(Exception):
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise BuildError(message)
+
+
+def rename_with_transient_retry(source: Path, destination: Path) -> Path:
+    """Retry short-lived Windows access/sharing failures without replacing output."""
+    deadline = time.monotonic() + 8.0
+    for attempt in range(33):
+        # Recheck between attempts: another process may have created the target.
+        if os.path.lexists(destination):
+            raise FileExistsError(f"Destination already exists: {destination}")
+        try:
+            return source.rename(destination)
+        except PermissionError as error:
+            if getattr(error, "winerror", None) not in (5, 32) or attempt == 32:
+                raise
+            delay = min(0.25, deadline - time.monotonic())
+            if delay <= 0:
+                raise
+            time.sleep(delay)
+    raise AssertionError("unreachable")
 
 
 def canonical_name(name: str) -> str:
@@ -933,7 +953,7 @@ def build(args: argparse.Namespace, plan: dict) -> Path:
         # This exercises the shipped application after moving the complete tree.
         relocated = work / "relocation-smoke"
         require(not relocated.exists(), "Relocation smoke directory already exists")
-        stage.rename(relocated)
+        rename_with_transient_retry(stage, relocated)
         stage = relocated
         runtime = stage / "runtime/python"
         python = runtime / "python.exe"
@@ -982,7 +1002,7 @@ def build(args: argparse.Namespace, plan: dict) -> Path:
         plain_path(output.parent)
         # On Windows rename fails if the destination exists. Same-volume rename
         # publishes the complete stage, with no recursive move or delete.
-        stage.rename(output)
+        rename_with_transient_retry(stage, output)
         print(json.dumps({"output": str(output), "files": len(records), "bytes": sum(r["bytes"] for r in records), "manifest_sha256": digest(output / "RELEASE_FILES.json"), "release_ready": False, "logs": str(work)}, indent=2))
         return output
     except BaseException:
@@ -1047,6 +1067,95 @@ def main(argv: list[str] | None = None) -> int:
 
 class BuilderTests(unittest.TestCase):
     """Synthetic boundary tests, deliberately independent of the user's setup."""
+
+    def test_rename_retries_transient_windows_permission_then_succeeds(self):
+        from unittest.mock import patch
+
+        with tempfile.TemporaryDirectory(dir=REPO) as temporary:
+            root = Path(temporary)
+            source, destination = root / "stage", root / "relocated"
+            source.mkdir()
+            (source / "marker").write_text("preserved", encoding="utf-8")
+            original = Path.rename
+            error = PermissionError("synthetic sharing violation")
+            error.winerror = 32
+            calls = []
+
+            def transient_once(path, target):
+                calls.append((path, target))
+                if len(calls) == 1:
+                    raise error
+                return original(path, target)
+
+            with patch.object(Path, "rename", autospec=True, side_effect=transient_once), patch.object(time, "sleep") as sleep:
+                self.assertEqual(rename_with_transient_retry(source, destination), destination)
+            self.assertEqual(len(calls), 2)
+            sleep.assert_called_once_with(0.25)
+            self.assertFalse(source.exists())
+            self.assertEqual((destination / "marker").read_text(encoding="utf-8"), "preserved")
+
+    def test_rename_persistent_permission_preserves_source_and_old_output(self):
+        from unittest.mock import patch
+
+        with tempfile.TemporaryDirectory(dir=REPO) as temporary:
+            root = Path(temporary)
+            source, destination, old_output = root / "stage", root / "relocated", root / "final"
+            source.mkdir()
+            old_output.mkdir()
+            (source / "marker").write_text("new", encoding="utf-8")
+            (old_output / "marker").write_text("old", encoding="utf-8")
+            error = PermissionError("synthetic access denied")
+            error.winerror = 5
+            with patch.object(Path, "rename", autospec=True, side_effect=error) as rename, patch.object(time, "sleep") as sleep, patch.object(time, "monotonic", return_value=0):
+                with self.assertRaises(PermissionError):
+                    rename_with_transient_retry(source, destination)
+            self.assertEqual(rename.call_count, 33)
+            self.assertEqual(sleep.call_count, 32)
+            self.assertLessEqual(sum(call.args[0] for call in sleep.call_args_list), 8.0)
+            self.assertEqual((source / "marker").read_text(encoding="utf-8"), "new")
+            self.assertEqual((old_output / "marker").read_text(encoding="utf-8"), "old")
+            self.assertFalse(destination.exists())
+
+    def test_rename_does_not_retry_other_errors(self):
+        from unittest.mock import patch
+
+        with tempfile.TemporaryDirectory(dir=REPO) as temporary:
+            root = Path(temporary)
+            source, destination = root / "stage", root / "relocated"
+            source.mkdir()
+            unrelated = PermissionError("synthetic unrelated permission error")
+            unrelated.winerror = 87
+            for error in (unrelated, PermissionError("no Windows error"), OSError("other failure")):
+                with self.subTest(error=error), patch.object(Path, "rename", autospec=True, side_effect=error) as rename, patch.object(time, "sleep") as sleep:
+                    with self.assertRaises(type(error)):
+                        rename_with_transient_retry(source, destination)
+                    rename.assert_called_once()
+                    sleep.assert_not_called()
+            self.assertTrue(source.is_dir())
+            self.assertFalse(destination.exists())
+
+    def test_rename_refuses_destination_created_during_retry(self):
+        from unittest.mock import patch
+
+        with tempfile.TemporaryDirectory(dir=REPO) as temporary:
+            root = Path(temporary)
+            source, destination = root / "stage", root / "final"
+            source.mkdir()
+            (source / "marker").write_text("new", encoding="utf-8")
+            error = PermissionError("synthetic access denied")
+            error.winerror = 5
+
+            def create_destination(_path, _target):
+                destination.mkdir()
+                (destination / "marker").write_text("old", encoding="utf-8")
+                raise error
+
+            with patch.object(Path, "rename", autospec=True, side_effect=create_destination) as rename, patch.object(time, "sleep"):
+                with self.assertRaises(FileExistsError):
+                    rename_with_transient_retry(source, destination)
+            rename.assert_called_once()
+            self.assertEqual((source / "marker").read_text(encoding="utf-8"), "new")
+            self.assertEqual((destination / "marker").read_text(encoding="utf-8"), "old")
 
     def test_stable_build_inputs_default_to_offline_with_explicit_online_override(self):
         args = parse_args(["--plan", "--output", str(REPO / "dist" / "synthetic-plan")])
