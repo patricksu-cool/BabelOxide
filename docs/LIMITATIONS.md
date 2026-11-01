@@ -37,6 +37,8 @@ Tencent 仍要求已設定靜態 ID／Key；完整 `TENCENTCLOUD_SECRET_ID`／`T
 
 Windows 超長 EXE 路徑受 COM／OLE 與原生套件限制；GUI 使用既有磁碟短檔名重啟，無短檔名時提示縮短路徑。Worker 的 Python 路徑達 260 字元時，只將 OpenCV 設為單執行緒；不修改系統路徑政策、ONNX 或 API 併行設定。
 
+本次 ZIP 搬移測試中，Python 一般解壓因深層 ONNX 測試資料遇到 WinError 206；使用既有 7-Zip 完成解壓，再以長路徑 API 驗證全部 13,127 項雜湊。請使用支援長路徑的解壓工具及較短目的地，不修改系統政策或刪去未確認的引擎檔案。
+
 已改動的 BabelDOC 模型／字型會保留並停止初始化；先備份，或使用新的空白 `--worker-home`。不要刪除不明 cache／模型。API Key 保存在本機設定，cache 含原文／譯文，均應當作私人資料。
 
 預覽只載入包內 PDFium；缺檔、獨占鎖或 native 呼叫長時間阻塞可能影響操作。使用重新載入；原始 PDF 與舊成果不會因另存或重試被刻意刪除。固定 identity 回歸能檢查排版與串接，不能衡量中文翻譯正確率。

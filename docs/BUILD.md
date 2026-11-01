@@ -27,6 +27,8 @@ cargo build --release --workspace --locked
 
 `script/ci.py --platform windows-x64 --check` 與 `--build` 是 Actions 的相同入口；Mac 改用 `macos-arm64`。本機已有名稱不同但版本相符的 Rust toolchain 時，可指定 `--rust-toolchain <existing-name>`；不會替換或安裝本機工具鏈。CI 的 Rust 固定版本、Python runtime、PDFium 與 bootstrap uv 的公開來源／SHA256／大小在 [build-inputs.lock.json](../resources/build-inputs.lock.json)。
 
+CI 建包從 Git checkout 記錄實際 HEAD；未提交修改會標記 `-dirty`。來源審查 ZIP 不含 `.git`，從該 ZIP 重建時可先執行 Cargo build，再使用下列 `build_portable.py` 直接入口，明確提供已知的 `--source-commit` 識別；不為此重新初始化原專案。
+
 完整包 builder（先編譯 Rust，輸出目錄須不存在）：
 
 ```text

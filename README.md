@@ -2,11 +2,11 @@
 
 原生 PDF 翻譯工具，保留公式、圖表與版面，支援單語及雙語輸出。Rust 負責 egui GUI、CLI、服務、設定、快取、重試與任務；最小 Python Worker 僅橋接 **BabelDOC 0.6.4**，沒有 Gradio。
 
-v1.0.0 正在整合驗收。Windows 完整建置管線已在本機實跑；macOS arm64 原生驗證尚未完成，不宣稱兩平台正式發行合格。實際結果見 [STATUS](docs/STATUS.md)。
+Windows x64 完整包已通過本機建置、中文空格路徑搬移、CLI／GUI 與 PDF 回歸驗證。macOS arm64 原生驗證尚未完成，1.0.0 保留為工作分支版本，尚未建立正式版本標籤。實際結果與待審項目見 [STATUS](docs/STATUS.md)。
 
 ## 使用
 
-完整包建置後，Windows 開啟 `dist/BabelOxide-v1.0.0-windows-x64/BabelOxide-gui.exe`；Mac 開啟完整 `BabelOxide.app`。
+Windows 開啟 `dist/BabelOxide-v1.0.0-windows-x64/BabelOxide-gui.exe`；完整 ZIP 為 `dist/BabelOxide-v1.0.0-windows-x64.zip`。原始碼審查包為 `dist/BabelOxide-v1.0.0-source.zip`。Mac 原生驗收完成後使用完整 `BabelOxide.app`，目前沒有已驗證的 Mac 成品。
 
 1. 加入或拖放 PDF。
 2. 選語言、服務與模型，在「設定 → 服務」保存網址與 Key。
@@ -16,6 +16,8 @@ v1.0.0 正在整合驗收。Windows 完整建置管線已在本機實跑；macOS
 PDF 依序處理；失敗／取消後可用原任務設定重試未完成文件，保留已完成成果。快捷鍵：Ctrl／⌘+O 加入、Ctrl／⌘+S 保存、Ctrl／⌘+Enter 開始。
 
 請搬移完整資料夾，保留 runtime、babeldoc、native、resources 與 licenses，不能只搬 EXE。Windows 需要官方 VC++ x64 Runtime；Mac 需要 Apple Silicon、macOS 14+，未簽章／未公證，可能受 Gatekeeper 阻擋。沒有 Intel 包或保證 GPU 加速。
+
+Windows ZIP 建議用已支援長路徑的 7-Zip 解壓到較短位置；完整引擎有深層 ONNX 檔案，一般 Python 解壓在較長目錄可能遇到 WinError 206。不要改系統政策或只解壓部分檔案。
 
 ```powershell
 .\BabelOxide.exe --version
