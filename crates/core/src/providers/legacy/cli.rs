@@ -77,9 +77,8 @@ fn is_executable_file(path: &Path) -> bool {
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        return path
-            .metadata()
-            .is_ok_and(|meta| meta.permissions().mode() & 0o111 != 0);
+        path.metadata()
+            .is_ok_and(|meta| meta.permissions().mode() & 0o111 != 0)
     }
     #[cfg(not(unix))]
     true

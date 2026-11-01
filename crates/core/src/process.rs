@@ -1,11 +1,12 @@
 //! Windows workers join a kill-on-close job before their first thread runs.
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use tokio::process::{Child, Command};
 
 #[cfg(windows)]
 mod windows {
     use super::*;
+    use anyhow::Context;
     use std::{
         mem::{size_of, zeroed},
         ptr::null,

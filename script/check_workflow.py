@@ -17,14 +17,15 @@ def main():
             for row in entries} == {("windows-latest", "windows-x64"), ("macos-latest", "macos-arm64")}
     assert "continue-on-error" not in job
     actions = [step["uses"] for step in job["steps"] if "uses" in step]
-    assert set(actions) == {"actions/checkout@v6", "actions/setup-python@v6", "actions/cache@v5", "actions/upload-artifact@v6", "actions/upload-artifact@v4"}
-    upload = next(step for step in job["steps"] if step.get("uses") == "actions/upload-artifact@v6")
+    assert set(actions) == {"actions/checkout@v7", "actions/setup-python@v7", "actions/cache@v6", "actions/upload-artifact@v7"}
+    upload = next(step for step in job["steps"] if step.get("name") == "Upload complete bundle")
+    assert upload["uses"] == "actions/upload-artifact@v7"
     assert upload["with"]["retention-days"] == "7"
     assert upload["with"]["if-no-files-found"] == "error"
     assert upload["with"]["path"].endswith("-${{ matrix.platform }}.zip")
     assert upload["with"]["name"].startswith("BabelOxide-v")
     logs = next(step for step in job["steps"] if step.get("name") == "Upload CI logs")
-    assert logs["uses"] == "actions/upload-artifact@v4"
+    assert logs["uses"] == "actions/upload-artifact@v7"
     assert logs["if"] == "${{ always() }}"
     assert logs["with"]["path"] == ".test-output/ci/"
     assert logs["with"]["include-hidden-files"] == "true"
