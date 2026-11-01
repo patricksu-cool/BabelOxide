@@ -66,6 +66,16 @@ GUI harness 只提供本機固定回應與合成 Key，仍須實際操作。`con
 
 `pdf-preview` 的 native smoke 刻意預設 ignored，避免自動找系統 DLL／私人文件。CI 以 `BABELOXIDE_PREVIEW_NATIVE_APP_ROOT`、`BABELOXIDE_PREVIEW_NATIVE_PDF` 明確指定完整包及合成 PDF，另行執行 `--test native_smoke -- --ignored`。
 
+## 測試資料與本機目錄
+
+Rust 測試使用 `tempfile`，Worker 使用 pytest 的 `tmp_path`；CI 會以包內 PyMuPDF 生成合成 PDF。它們不依賴根目錄 `test/`、`.baseline-home/` 或過去 `.test-output/` 的 PDF。真實文件的手動回歸需明確提供輸入與比較目錄，不會自動下載外部論文。`tests/baseline/` 與 core fixtures 是保留的凍結基準，不能當作執行產物刪除。
+
+手動驗證的產物集中放在已忽略版控的 `.test-output/`；腳本會自行建立輸出路徑，驗證後可以清除。`target/`、工具快取與過時包亦可重建。只刪除已知測試狀態；實際使用的 config、API Key、翻譯 cache 與自訂模型必須保留。
+
+本機保留一份 `dist/BabelOxide-v1.0.0-windows-x64/`、開發 `.venv/` 與 `build-inputs/windows-x64/`。建置輸入含目前 85 個固定套件的 uv 快取、pristine CPython、PDFium、完整資產 ZIP 及雜湊清單，已確認可離線安裝；舊 BabelDOC 0.6.3 實體快取已移除。資產 ZIP 分別供建置與執行包使用，兩者不可因檔名相同就任意刪除。macOS 的鎖檔、下載 pins、圖示與 builder 保留；Windows 的離線快取不能作為 Mac 原生驗證。
+
+`pdf_regression_metrics.py` 可擷取單份文件的 Poppler 指標；`compare_rust_pdf.py` 比較兩組 mono／dual 的結構與像素。`audit_hybrid_dependencies.py` 是明確提供 Cargo metadata 與 Worker WHEELS 清單的 Windows OSV 查詢工具，需網路；它們是維護入口，並非應用程式執行期。
+
 ## 原始碼審查 ZIP
 
 Windows 雙擊根目錄 `打包原始碼.cmd`，或加 `--no-pause` 自動執行。只使用內建 PowerShell／.NET，不執行被打包的程式；輸出專案上一層的 `BabelOxide-source-review.zip`，逐檔 SHA256／解壓複查後原子取代舊 ZIP。若來源位於不可寫的 parent，請先在可寫位置建立來源複本。工具不修改工作樹。
