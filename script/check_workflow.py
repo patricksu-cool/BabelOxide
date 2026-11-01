@@ -6,7 +6,10 @@ import yaml
 def main():
     root = Path(__file__).resolve().parents[1]
     workflow = yaml.load((root / ".github/workflows/build.yml").read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
-    assert set(workflow["on"]) == {"push", "pull_request", "workflow_dispatch"}
+    for path in sorted((root / ".github/workflows").iterdir()):
+        if path.suffix in {".yml", ".yaml"}:
+            candidate = yaml.load(path.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
+            assert isinstance(candidate["on"], dict) and set(candidate["on"]) == {"workflow_dispatch"}, path.name
     assert workflow["permissions"] == {"contents": "read"}
     job = workflow["jobs"]["build"]
     entries = job["strategy"]["matrix"]["include"]
@@ -21,7 +24,7 @@ def main():
     assert upload["with"]["path"].endswith("-${{ matrix.platform }}.zip")
     assert upload["with"]["name"].startswith("BabelOxide-v")
     assert not any("release" in action.lower() or "push" in action.lower() for action in actions)
-    print("build.yml parsed; matrix, permissions, maintained Node24 Actions, artifacts and retention contracts passed")
+    print("Workflows are manual-only; build matrix, read-only permissions, Node24 Actions, complete ZIP and 7-day retention contracts passed")
 
 
 if __name__ == "__main__":

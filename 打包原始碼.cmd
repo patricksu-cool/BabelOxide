@@ -41,7 +41,7 @@ function Get-Sha256([byte[]]$Bytes) {
 $sourceRoots = @('crates', 'python-worker', 'script', 'tests', 'docs', '.cargo', '.github', 'resources')
 $rootFiles = @(
     'Cargo.toml', 'Cargo.lock', 'pyproject.toml', 'uv.lock', 'README.md', '.gitignore',
-    'LICENSE', 'THIRD_PARTY_NOTICES.md', '打包原始碼.cmd', 'AGENTS.md', 'CHANGELOG.md', 'CONTRIBUTING.md', 'SECURITY.md',
+    'LICENSE', 'THIRD_PARTY_NOTICES.md', '打包原始碼.cmd', '打包原始碼.command', 'AGENTS.md', 'CHANGELOG.md', 'CONTRIBUTING.md', 'SECURITY.md',
     '.gitattributes', '.gitmodules', '.editorconfig', '.env.example', 'rust-toolchain.toml',
     'rust-toolchain', 'rustfmt.toml', '.rustfmt.toml', 'clippy.toml', '.clippy.toml',
     'deny.toml', 'Makefile', 'justfile'
@@ -51,7 +51,7 @@ $required = @('Cargo.toml', 'Cargo.lock', 'pyproject.toml', 'uv.lock', 'README.m
     'resources/engine-assets.lock.json', 'resources/build-inputs.lock.json', 'THIRD_PARTY_NOTICES.md',
     'resources/babeloxide.svg', 'resources/babeloxide.png', 'resources/babeloxide.ico', 'resources/babeloxide.icns')
 $textExtensions = @('.rs', '.py', '.pyi', '.ps1', '.psm1', '.psd1', '.cmd', '.bat', '.sh',
-    '.bash', '.toml', '.lock', '.json', '.md', '.rst', '.txt', '.yaml', '.yml', '.ini', '.cfg',
+    '.bash', '.command', '.toml', '.lock', '.json', '.md', '.rst', '.txt', '.yaml', '.yml', '.ini', '.cfg',
     '.xml', '.manifest', '.csv', '.tsv', '.html', '.css', '.js', '.ts', '.tsx', '.jsx',
     '.sql', '.proto', '.c', '.h', '.cc', '.cpp', '.hpp', '.cmake', '.in', '.plain', '.feature', '.svg')
 $binaryExtensions = @('.exe', '.dll', '.pyd', '.so', '.dylib', '.a', '.lib', '.o', '.obj',
@@ -159,7 +159,7 @@ function Assert-SafeContent([string]$Path, [byte[]]$Bytes) {
         if (-not (Test-Placeholder $match.Value $Path)) { $suspect = $true }
     }
     $matchesToCheck = @([regex]::Matches($scan, $assignment))
-    if ([IO.Path]::GetExtension($Path) -in @('.yaml', '.yml', '.ini', '.cfg', '.toml', '.cmd', '.bat', '.sh') -or
+    if ([IO.Path]::GetExtension($Path) -in @('.yaml', '.yml', '.ini', '.cfg', '.toml', '.cmd', '.bat', '.sh', '.bash', '.command') -or
         [IO.Path]::GetFileName($Path) -match '^\.env\.(?:example|sample|template)$') {
         $matchesToCheck += @([regex]::Matches($scan, $bareAssignment))
     }

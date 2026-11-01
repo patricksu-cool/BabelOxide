@@ -4,7 +4,9 @@
 
 ## GitHub Actions
 
-[build.yml](../.github/workflows/build.yml) 接受手動、來源 push 與 PR 觸發。`windows-latest` 建 Windows x64，`macos-latest` 先確認為原生 arm64 才建 Mac。僅需 `contents: read`；不使用 Secrets、不 Push、不簽章、不建立 Release。官方 checkout v6、setup-python v6、cache v5、upload-artifact v6 的 `action.yml` 已核對 `using: node24`。
+[build.yml](../.github/workflows/build.yml) **僅接受 `workflow_dispatch` 手動觸發**；push、PR、排程、Release 或其他 Workflow 都不觸發建置。`windows-latest` 建 Windows x64，`macos-latest` 先確認為原生 arm64 才建 Mac。僅需 `contents: read`；不使用 Secrets、不 Push、不簽章、不建立 Release。官方 checkout v6、setup-python v6、cache v5、upload-artifact v6 的 `action.yml` 已核對 `using: node24`。
+
+[GitHub 要求手動 Workflow 存在於預設分支](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)。目前本機 main 沒有此 Workflow，也沒有 remote 可核對 GitHub 預設分支；若只 Push feature branch，Actions 可能尚不顯示 Run workflow。請使用者自行經審查將手動版 Workflow 放入實際預設分支，再到 Actions → BabelOxide build and test → Run workflow，選擇 `feature/babeloxide-v1`。不必為測試由工具擅自合併 main；本次沒有 Push 或觸發遠端工作。
 
 兩平台執行 fmt、嚴格 Clippy、Rust／Worker／Builder 測試、Release build、原生 import 與 PDFium、CLI／IPC 本機 Mock、套件閉包與 manifest 檢查；Windows 另執行 CMD 原始碼封裝測試。GUI `--version` 僅是版本 smoke，Actions 沒有宣稱通過桌面互動。
 
@@ -70,7 +72,7 @@ GUI harness 只提供本機固定回應與合成 Key，仍須實際操作。`con
 
 Rust 測試使用 `tempfile`，Worker 使用 pytest 的 `tmp_path`；CI 會以包內 PyMuPDF 生成合成 PDF。它們不依賴根目錄 `test/`、`.baseline-home/` 或過去 `.test-output/` 的 PDF。真實文件的手動回歸需明確提供輸入與比較目錄，不會自動下載外部論文。`tests/baseline/` 與 core fixtures 是保留的凍結基準，不能當作執行產物刪除。
 
-手動驗證的產物集中放在已忽略版控的 `.test-output/`；腳本會自行建立輸出路徑，驗證後可以清除。`target/`、工具快取與過時包亦可重建。只刪除已知測試狀態；實際使用的 config、API Key、翻譯 cache 與自訂模型必須保留。
+手動驗證的產物集中放在已忽略版控的 `.test-output/`；腳本會自行建立輸出路徑，驗證後可以清除合成 PDF、Log、截圖及大型中間資料。`target/`、`.venv/`、Cargo／uv 套件快取允許保留，以加速後續測試；不需要每輪清理。實際使用的 config、API Key、翻譯 cache 與自訂模型必須保留。
 
 本機保留一份 `dist/BabelOxide-v1.0.0-windows-x64/`、開發 `.venv/` 與 `build-inputs/windows-x64/`。建置輸入含目前 85 個固定套件的 uv 快取、pristine CPython、PDFium、完整資產 ZIP 及雜湊清單，已確認可離線安裝；舊 BabelDOC 0.6.3 實體快取已移除。資產 ZIP 分別供建置與執行包使用，兩者不可因檔名相同就任意刪除。macOS 的鎖檔、下載 pins、圖示與 builder 保留；Windows 的離線快取不能作為 Mac 原生驗證。
 
@@ -78,10 +80,14 @@ Rust 測試使用 `tempfile`，Worker 使用 pytest 的 `tmp_path`；CI 會以�
 
 ## 原始碼審查 ZIP
 
-Windows 雙擊根目錄 `打包原始碼.cmd`，或加 `--no-pause` 自動執行。只使用內建 PowerShell／.NET，不執行被打包的程式；輸出專案上一層的 `BabelOxide-source-review.zip`，逐檔 SHA256／解壓複查後原子取代舊 ZIP。若來源位於不可寫的 parent，請先在可寫位置建立來源複本。工具不修改工作樹。
+Windows 雙擊根目錄 `打包原始碼.cmd`；macOS 從 Git checkout 雙擊 `打包原始碼.command`。兩者支援 `--no-pause` 自動執行，互動終端預設保留完成／失敗結果並等待 Return。Mac 版以 Bash 3.2、系統 Perl（Encode／Digest::SHA）、zip／unzip 等原生工具實作，不需要 Python、Node 或 Homebrew；CMD 使用內建 PowerShell／.NET。工具不執行被打包的專案程式、不修改工作樹，均由腳本位置找根目錄，不依賴目前 Terminal 的目錄。
+
+輸出專案上一層的 `BabelOxide-source-review.zip`：建立專案外快照與暫存 ZIP，檢查項目、解壓與逐檔 SHA256／敏感資訊後，才在同一檔案系統原子取代舊 ZIP。失敗保留既有 ZIP；完成顯示路徑、大小、檔案數及驗證結果。若 parent 不可寫，請先在可寫位置建立來源複本。Mac 腳本使用 LF 並在 Git 記錄為 executable；若其他 Windows 解壓工具遺失執行位元，Mac 可在該來源目錄執行 `chmod u+x ./打包原始碼.command`，不需改系統安全政策。
 
 允許清單包括正式 Rust／Worker／scripts／tests／docs、鎖檔、圖示、LICENSE／來源告知與 CI。個人 config、cache、PDF、模型、編譯結果、環境憑證、索引狀態與未知根目錄不進 ZIP。九份微型壓縮 fixture 與三份二進位原創圖示必須符合固定雜湊；SVG 仍按文字掃描。新增必要檔案或更新圖示時須審查允許清單與 hash。
 
-疑似憑證只顯示檔案路徑，不印出匹配值；既有測試假值由受限標記／逐檔 hash 辨識，沒有整檔免掃描。啟發式檢查不能辨識所有混淆憑證，私人資料仍應放在排除目錄。未知類型、大小超限、連結／junction、竄改或原子替換失敗都停止且保留舊 ZIP。退出碼 0 成功、1 I/O／初始化、2 allowlist／安全檢查、3 疑似憑證、4 ZIP 完整性。
+疑似憑證只顯示檔案路徑，不印出匹配值；既有測試假值由受限標記／逐檔 hash 辨識，沒有整檔免掃描。啟發式檢查不能辨識所有混淆憑證，私人資料仍應放在排除目錄。未知類型、大小超限、連結／junction、竄改或原子替換失敗都停止且保留舊 ZIP。退出碼 0 成功、2 allowlist／安全檢查、3 疑似憑證、4 ZIP 驗證／發布；CMD 以 1 表示 I/O／初始化，Mac 原生工具失敗可保留工具的非零退出碼。
 
 `powershell -NoProfile -NonInteractive -File tests/source-review/test_packaging.ps1` 在唯一合成暫存目錄驗證上述契約，不拿私人檔案做 fixtures。CMD 保持 UTF-8 無 BOM／CRLF；PowerShell 測試保留 UTF-8 BOM，供 Windows PowerShell 5.1 正確讀取中文。
+
+Mac 對應測試為 `/bin/bash tests/source-review/test_packaging_macos.sh`；手動 Actions 的 Mac job 會執行。它使用中文／空格路徑、合成秘密與可控損壞 ZIP，檢查重跑、大小上限、二進位 pins、連結拒絕與失敗保舊包。Windows Git Bash 的通過結果不等於原生 Bash 3.2／Finder 通過，尚缺的平台驗證見 [STATUS](STATUS.md)。

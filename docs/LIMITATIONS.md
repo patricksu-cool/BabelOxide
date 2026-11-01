@@ -51,4 +51,6 @@ GUI 支援公開 HTTP(S) PDF 下載：標準連接埠、每次 DNS／redirect �
 
 完整 AGPL、來源、修改告知與依賴 notices 位於 [LICENSE](../LICENSE)、[THIRD_PARTY_NOTICES](../THIRD_PARTY_NOTICES.md)、GUI「關於 BabelOxide」及執行包 `licenses/`／`provenance/`。這些不是正式法務認證；公開散布或網路提供修改版功能前仍須符合對應原始碼及各元件授權要求。沒有自動 Push、簽章、公證或 Release。
 
-Cargo 全目標清單保留 `dispatch 0.2.0` 授權原文缺項（manifest 宣告 MIT）；objc2 目標版本的 Apple SDK 授權說明也保留。Mac standalone CPython 自帶 LICENSE 已收錄，內含原生程式庫的散布條件仍需在 Mac 成品審查。不得把 notices 已收集解讀為所有平台的正式再散布認證。
+`dispatch 0.2.0` 已按發布 crate 的 MIT 宣告補入 OSI 標準條款、原始 manifest 及可追溯告知，沒有虛構年份／著作權或冒充上游 LICENSE。Windows 套件及 Cargo.lock 全目標清單的缺文項目已歸零；objc2 的 Apple SDK 說明及 Mac standalone CPython／原生 wheel 內含程式庫的實際散布條件，仍需在 Mac 成品審查。原有已驗證 Windows 包保持不變；下一份完整包須由更新後的 builder 產生，才能帶入本輪新增的集中 notices。不得把文件已收集解讀為所有平台的正式再散布認證。
+
+macOS 原始碼 `.command` 的 Windows Shell 驗證不代表 Finder 雙擊或原生工具鏈已通過；實際平台驗證結果見 [STATUS](STATUS.md)。來源審查 ZIP 不含第三方大型資源或私人資料，公開散布前仍須提供實際發行提交的相應來源及必要依賴來源。

@@ -6,7 +6,7 @@ Windows x64 完整包已通過本機建置、中文空格路徑搬移、CLI／GU
 
 ## 使用
 
-Windows 開啟 `dist/BabelOxide-v1.0.0-windows-x64/BabelOxide-gui.exe`。本機只保留已驗證的完整資料夾；需要搬移時可用 7-Zip 壓縮整個資料夾。原始碼由 Git 維護，需要審查包時執行 `打包原始碼.cmd`。Mac 原生驗收完成後使用完整 `BabelOxide.app`，目前沒有已驗證的 Mac 成品。
+Windows 開啟 `dist/BabelOxide-v1.0.0-windows-x64/BabelOxide-gui.exe`。本機保留已驗證的完整資料夾；需要搬移時可用 7-Zip 壓縮整個資料夾。原始碼由 Git 維護，需要審查包時在 Windows 執行 `打包原始碼.cmd`，macOS 執行 `打包原始碼.command`，輸出上一層的 `BabelOxide-source-review.zip`。Mac 原生驗收完成後使用完整 `BabelOxide.app`，目前沒有已驗證的 Mac 成品。
 
 1. 加入或拖放 PDF。
 2. 選語言、服務與模型，在「設定 → 服務」保存網址與 Key。
@@ -45,7 +45,7 @@ tests/baseline/  上游行為與 PDF 基準資料
 docs/           建置、架構、設計、限制與驗證狀態
 ```
 
-參閱 [BUILD](docs/BUILD.md)、[ARCHITECTURE](docs/ARCHITECTURE.md)、[DESIGN](docs/DESIGN.md)、[LIMITATIONS](docs/LIMITATIONS.md) 與 [STATUS](docs/STATUS.md)。Actions 只 Build／Test／上傳完整 Artifacts，保留 7 天，不自動發布 Release。
+參閱 [BUILD](docs/BUILD.md)、[ARCHITECTURE](docs/ARCHITECTURE.md)、[DESIGN](docs/DESIGN.md)、[LIMITATIONS](docs/LIMITATIONS.md) 與 [STATUS](docs/STATUS.md)。Actions **僅允許使用者手動觸發** Build／Test／上傳完整 Artifacts，保留 7 天，不自動發布 Release。首次使用須讓 Workflow 存在於 GitHub 預設分支，詳見建置說明。
 
 ## 授權
 

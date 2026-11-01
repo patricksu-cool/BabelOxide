@@ -20,8 +20,14 @@ Rust crates、Python wheels、PDFium、ONNX Runtime、CPython、模型及字型�
 
 `resources/babeloxide.svg` 及從它產生的 PNG／ICO／ICNS 為本專案新增幾何圖示，以相同專案授權提供，沒有使用上游 logo 或第三方字型。
 
-Rust workspace 內缺少獨立授權檔的元件，另保存固定 commit／SHA256 的補充原文。objc2 類元件同時保留目標版本的 LICENSE.md 及已驗證的共用 MIT 文字／署名；其 Apple SDK 條件不因收集 notices 而消失。`dispatch 0.2.0` 的 manifest 宣告 MIT，但其發布來源沒有找到授權原文，仍列為 release review item，未拿其他專案文字冒充該版本來源。
+Rust workspace 內缺少獨立授權檔的元件，另保存固定 commit／SHA256 的補充原文。objc2 類元件同時保留目標版本的 LICENSE.md 及已驗證的共用 MIT 文字／署名；其 Apple SDK 條件不因收集 notices 而消失。
+
+`dispatch 0.2.0` 由 Mac 的 objc2-foundation／winit／eframe 路徑引入。已按 Cargo.lock SHA256 核對發布 crate：其 Cargo.toml 宣告作者 Steven Sheldon、MIT，未附獨立 LICENSE 或著作權年份。`resources/licenses/rust/dispatch-0.2.0/` 保留發布 manifest、[OSI 標準 MIT 條款](https://opensource.org/license/mit)與來源告知，並記錄上游 commit。標準條款的 `<YEAR>`／`<COPYRIGHT HOLDER>` 是原範本欄位，沒有代填或宣稱為上游 LICENSE；生成包以 `supplemental-` 區分這些補充文件。缺少授權文字的盤點項目據此處理，不表示取得額外權利或法務認證。
+
+完整 BabelDOC 0.6.4 授權另存 `resources/licenses/python/BabelDOC-LICENSE.txt`，與固定 wheel 內的原文逐位元組相同，保留 funstory.ai 的專案告知。Builder 同時集中收集 ONNX Runtime 的 `ThirdPartyNotices.txt` 及其他 wheel notices；字型附完整 OFL 1.1 與 NAVER 官方 MaruBuri 條款，逐檔著作權／保留名稱仍保留在資產 notices。
 
 ## 散布與網路使用
 
 公開原始碼、提供執行檔或以網路提供修改版功能前，應依 AGPL §5、§6、§13 的適用條件提供修改告知、適當法律告知及對應原始碼／取得方式。對應原始碼包括實際使用的 Rust、Worker、打包腳本、lock／manifest 與必要建置資料；套件 hash 與本清單本身不是原始碼提供義務的替代品。未宣稱已發布公開來源網址、正式法務認證、簽章或公證。
+
+散布執行檔時，應同時提供與 BUILD_INFO 來源提交相符的對應原始碼及建置說明／必要依賴來源。`BabelOxide-source-review.zip` 排除私人資料與大型執行資源，供原始碼審查；它不自動取代 AGPL 第三方相應來源或原生元件的散布義務。GUI 已保留容易找到的「關於」入口、無擔保／再散布告知、完整授權與來源／修改頁；本輪僅做來源與非互動式檢查，實際 GUI 驗收由使用者完成。

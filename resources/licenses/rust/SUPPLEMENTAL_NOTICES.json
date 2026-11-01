@@ -552,5 +552,41 @@
     "name": "rustls-platform-verifier-android",
     "version": "0.2.0",
     "file": "ndk-49bbbba1/LICENSE-APACHE"
+  },
+  {
+    "name": "dispatch",
+    "version": "0.2.0",
+    "file": "dispatch-0.2.0/Cargo.toml",
+    "source": "https://static.crates.io/crates/dispatch/dispatch-0.2.0.crate",
+    "source_revision": "82d6c7a5b75dc0c71c3f46f87bb6c16a476f7748",
+    "sha256": "bd6cecbea33be54304d73d48e29182b4baff69695a25e68d7ac67ff3e69263a9",
+    "document_origin": "published-manifest",
+    "declared_license": "MIT",
+    "crate_archive_sha256": "bd0c93bb4b0c6d9b77f4435b0ae98c24d17f1c45b2ff844c6151a07256ca923b",
+    "verification": "Checksum-verified published manifest declares MIT and Steven Sheldon as author. Standard OSI template and project provenance notice supplement the absent upstream LICENSE; template placeholders are not copyright claims."
+  },
+  {
+    "name": "dispatch",
+    "version": "0.2.0",
+    "file": "dispatch-0.2.0/MIT-standard.txt",
+    "source": "https://opensource.org/license/mit",
+    "source_revision": "82d6c7a5b75dc0c71c3f46f87bb6c16a476f7748",
+    "sha256": "4790c01c0726db5d666ede1ad9b0875ed4789b89c9a38a37c7b214b707b69249",
+    "document_origin": "standard-license-template",
+    "declared_license": "MIT",
+    "crate_archive_sha256": "bd0c93bb4b0c6d9b77f4435b0ae98c24d17f1c45b2ff844c6151a07256ca923b",
+    "verification": "Checksum-verified published manifest declares MIT and Steven Sheldon as author. Standard OSI template and project provenance notice supplement the absent upstream LICENSE; template placeholders are not copyright claims."
+  },
+  {
+    "name": "dispatch",
+    "version": "0.2.0",
+    "file": "dispatch-0.2.0/NOTICE.md",
+    "source": "https://github.com/SSheldon/rust-dispatch/blob/82d6c7a5b75dc0c71c3f46f87bb6c16a476f7748/Cargo.toml",
+    "source_revision": "82d6c7a5b75dc0c71c3f46f87bb6c16a476f7748",
+    "sha256": "7d4231ddc454a5333c476ece93070baa59dfbf9f941b27c2a7d216544b9ab983",
+    "document_origin": "project-provenance-notice",
+    "declared_license": "MIT",
+    "crate_archive_sha256": "bd0c93bb4b0c6d9b77f4435b0ae98c24d17f1c45b2ff844c6151a07256ca923b",
+    "verification": "Checksum-verified published manifest declares MIT and Steven Sheldon as author. Standard OSI template and project provenance notice supplement the absent upstream LICENSE; template placeholders are not copyright claims."
   }
 ]

@@ -521,7 +521,11 @@ def run_step(label: str, command: list[str], work: Path, environment: dict[str, 
 
 
 def is_notice(path: PurePosixPath) -> bool:
-    return any(part.lower().startswith(("license", "licence", "copying", "notice", "copyright", "authors")) for part in path.parts)
+    return any(
+        part.lower().startswith(("license", "licence", "copying", "notice", "copyright", "authors"))
+        or re.sub(r"[-_ ]", "", part.lower()).startswith(("thirdpartynotice", "3rdpartynotice"))
+        for part in path.parts
+    )
 
 
 def verified_notice_bytes(source: Path, expected_sha256: str) -> bytes:
@@ -701,7 +705,7 @@ def rust_inventory(stage: Path, registry: Path | None) -> tuple[list[dict], list
 
 
 def supplement_rust_notices(stage: Path, records: list[dict]) -> None:
-    """Retain reviewed upstream workspace licenses missing from crate archives."""
+    """Retain reviewed notices and distinguish templates from upstream files."""
     root = REPO / "resources/licenses/rust"
     manifest = root / "SUPPLEMENTAL_NOTICES.json"
     if not manifest.exists():
@@ -716,7 +720,8 @@ def supplement_rust_notices(stage: Path, records: list[dict]) -> None:
         component = by_identity[identity]
         source = root / relative_member(notice["file"])
         data = verified_notice_bytes(source, notice["sha256"])
-        destination = stage / "licenses/rust" / f"{component['name']}-{component['version']}" / ("upstream-" + source.name)
+        prefix = "supplemental-" if notice.get("document_origin") in {"standard-license-template", "project-provenance-notice"} else "upstream-"
+        destination = stage / "licenses/rust" / f"{component['name']}-{component['version']}" / (prefix + source.name)
         plain_path(destination)
         destination.parent.mkdir(parents=True, exist_ok=True)
         with destination.open("xb") as stream:
@@ -1333,6 +1338,13 @@ class BuilderTests(unittest.TestCase):
             with self.assertRaises(BuildError):
                 rust_archive_notices(stage, archive, {**package, "checksum": "0" * 64}, {"license_files": []})
 
+    def test_third_party_notices_are_collected_without_vendor_sources(self):
+        for name in ("onnxruntime/ThirdPartyNotices.txt", "THIRD-PARTY-NOTICES.md", "3rd_party_notices.txt"):
+            self.assertTrue(is_notice(PurePosixPath(name)), name)
+        self.assertTrue(is_notice(PurePosixPath("component/licenses/terms.txt")))
+        self.assertFalse(is_notice(PurePosixPath("third_party/src/library.c")))
+        self.assertFalse(is_notice(PurePosixPath("onnxruntime/capi/onnxruntime.dll")))
+
     def test_verified_notice_accepts_only_digest_proven_lf_or_crlf_text(self):
         expected = hashlib.sha256(b"Copyright holder\nLicense text\n").hexdigest()
         with tempfile.TemporaryDirectory(dir=REPO) as temporary:
@@ -1538,7 +1550,7 @@ class BuilderTests(unittest.TestCase):
             extra = b"Synthetic upstream attribution and platform conditions"
             (notices / "NOTICE").write_bytes(extra)
             write_json(notices / "SUPPLEMENTAL_NOTICES.json", [
-                {"name": "fixture", "version": "1.0", "file": "LICENSE", "sha256": hashlib.sha256(body).hexdigest(), "source": "https://example.invalid/revision/LICENSE"},
+                {"name": "fixture", "version": "1.0", "file": "LICENSE", "sha256": hashlib.sha256(body).hexdigest(), "source": "https://example.invalid/template", "document_origin": "standard-license-template"},
                 {"name": "fixture", "version": "1.0", "file": "NOTICE", "sha256": hashlib.sha256(extra).hexdigest(), "source": "https://example.invalid/revision/NOTICE"},
             ])
             stage = root / "stage"
@@ -1549,6 +1561,9 @@ class BuilderTests(unittest.TestCase):
                 supplement_rust_notices(stage, [matching, different])
                 self.assertEqual(len(matching["license_files"]), 2)
                 self.assertEqual(len(matching["supplemental_notice_sources"]), 2)
+                self.assertTrue(matching["license_files"][0].endswith("/supplemental-LICENSE"))
+                self.assertTrue(matching["license_files"][1].endswith("/upstream-NOTICE"))
+                self.assertEqual(matching["supplemental_notice_sources"][0]["document_origin"], "standard-license-template")
                 self.assertEqual((stage / matching["license_files"][1]).read_bytes(), extra)
                 self.assertEqual(different["license_files"], [])
                 (notices / "LICENSE").write_bytes(b"tampered")

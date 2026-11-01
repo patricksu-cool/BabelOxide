@@ -55,6 +55,8 @@ def check(uv: Path, work: Path, env: dict[str, str]) -> None:
         # Let Windows PowerShell discover its own system modules for this child.
         ps_env = {key: value for key, value in env.items() if key.upper() != "PSMODULEPATH"}
         run([powershell, "-NoLogo", "-NoProfile", "-NonInteractive", "-File", ROOT / "tests/source-review/test_packaging.ps1"], work, ps_env, label="source-packaging-tests")
+    elif sys.platform == "darwin":
+        run(["/bin/bash", ROOT / "tests/source-review/test_packaging_macos.sh"], work, env, label="macos-source-packaging-tests")
 
 
 def build(name: str, uv: Path, work: Path, env: dict[str, str]) -> None:

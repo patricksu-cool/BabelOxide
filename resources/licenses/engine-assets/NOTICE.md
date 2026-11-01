@@ -3,6 +3,8 @@
 資產內容固定於 `resources/engine-assets.lock.json`：34 字型、146 CMap、1 ONNX 版面模型、1 tokenizer cache。這些是引擎必要資源，不是可任意刪除的測試 cache。
 
 - 字型取自 [BabelDOC-Assets](https://github.com/funstory-ai/BabelDOC-Assets)；`font-notices.json` 從逐檔 SHA3 已驗證的字型 name table 保留 copyright、trademark、manufacturer、designer、license 與 license URL 原文，包含 Noto／Source Han／Go Noto／Klee／WenKai／MaruBuri 的個別聲明。
+- `OFL-1.1.txt` 保存 [SIL 官方完整 OFL 1.1 條款](https://openfontlicense.org/documents/OFL.txt)（不含官方範例 copyright header；實際著作權與保留名稱在逐檔 `font-notices.json`／NAVER 文件）。2026-11-01 核對，SHA256 `67b68bca726748f3bfefa48770519d63a532a1f254cbf01714130b1121066653`。其餘 33 個字型的嵌入授權均明示 OFL 1.1；來源連結不再是完整條款的替代品。
+- MaruBuri 的 name table 沒有授權條款；另附 NAVER 官方雙語 OFL 1.1 原文 `MaruBuri-LICENSE.txt` 與可追溯的 `MaruBuri-NOTICE.md`，保留官方列出的著作權／保留字型名稱。
 - CMap 由 BabelDOC-Assets 提供，保留 [Adobe CMap resources](https://github.com/adobe-type-tools/cmap-resources) 的 upstream license 原文。未以本文件重新授權個別資產。
 - `doclayout_yolo_docstructbench_imgsz1024.onnx` 取自 [DocLayout-YOLO ONNX 模型庫](https://huggingface.co/wybxc/DocLayout-YOLO-DocStructBench-onnx)，轉換版與 [基礎模型](https://huggingface.co/juliozhao/DocLayout-YOLO-DocStructBench) 的模型卡均宣告 Apache-2.0；附兩份模型卡與 Apache 授權原文。這與 [DocLayout-YOLO 程式碼](https://github.com/opendatalab/DocLayout-YOLO/blob/main/LICENSE) 的 AGPL 是不同來源告知，不據模型卡重授權程式碼。
 - tokenizer cache 隨 BabelDOC／tiktoken 使用；tiktoken 的 MIT license 亦隨 Python distribution notices 保存。
