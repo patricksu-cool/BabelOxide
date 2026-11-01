@@ -230,7 +230,24 @@
     ],
     "single_pdf_save_hash": "PASS"
   },
-  "post_merge_verification": "PENDING",
+  "post_merge_verification": {
+    "tested_commit": "eefa0e527dba7901eaf300f8d02cfc441bc9c6e9",
+    "merge": "fast-forward only; main baseline verified unchanged",
+    "baseline_backup_branch": "codex/gui-ux-before-20261101",
+    "rust_passed": 292,
+    "rust_failed": 0,
+    "default_ignored": 1,
+    "explicit_native_preview_passed": 1,
+    "worker_passed": 35,
+    "builder_passed": 35,
+    "fmt": "PASS",
+    "clippy_all_targets_deny_warnings": "PASS",
+    "workspace_release_build": "PASS",
+    "source_diff_from_artifact_code": "documentation only",
+    "rebuilt_gui_sha256": "7ecbbb74ab478ba455654f9295ed0edd9c6d41aa25e9f1cba596aa3aa4499174",
+    "delivery_keeps_the_verified_bundle": true,
+    "binary_reproducibility_claimed": false
+  },
   "not_verified": [
     "all real provider APIs and all 235 fields by hand",
     "official Windows release GUI execution",

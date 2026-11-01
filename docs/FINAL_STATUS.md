@@ -1,6 +1,6 @@
 # 最終狀態
 
-更新：2026-11-01（Asia/Taipei）。本輪 GUI 改善與 Windows 自用版已完成驗證；Git 最終合併檢查列於下方。新版本位於 `dist/gui-ux-20261101/`，原 `dist/final/`、使用者設定、快取及 PDF 均保留。
+更新：2026-11-01（Asia/Taipei）。本輪 GUI 改善、Windows 自用版與 main 合併後驗證已完成。新版本位於 `dist/gui-ux-20261101/`，原 `dist/final/`、使用者設定、快取及 PDF 均保留。
 
 ## 使用方式
 
@@ -32,7 +32,7 @@
 | Worker／Builder | Worker 35 passed；Builder 35 passed，包含暫時目錄鎖重試與不覆寫既有成品 |
 | GUI 操作 | 語言／交換、服務切換與 profile 保留、停用 Google、nullable bool、保存／重載／重開、PDF 加入／移除、頁面快捷與範圍、術語啟用欄位、冷啟動 W3C HTTPS PDF 下載通過 |
 | 批次及匯出 | 1 頁與 4 頁的兩份同名 PDF 均完成；全部 ZIP 4 檔、mono ZIP 2 檔、dual ZIP 2 檔，均可解壓，CRC／唯一名稱／來源 SHA256 一致；單份 PDF 另存雜湊一致 |
-| 錯誤與取消 | HTTP 400 後同批次重新執行成功；延遲 API 在翻譯段落階段取消後成為 Cancelled；設定／日誌沒有合成 Key 洩漏 |
+| 錯誤與取消 | HTTP 400 後同批次重新執行成功；延遲 API 在翻譯段落階段取消後成為 Cancelled；設定保留合成 Key，日誌未洩漏 |
 | 程序與設定 | 完整流程 GUI 兩次 exit 0，重開後模型／Key／繁中保留、輸入清單為空；最終完整包在 Worker 運作中關閉亦 exit 0，GUI 24224／Worker 14520 均退出 |
 | 最終包 CLI | 中文＋空格完整複本、非原始碼 CWD、預設包內 Python／Worker／離線資產；指定 PDF 四頁完整翻譯，exit 0、未逾時，mono 471,435 bytes、dual 771,107 bytes |
 | PDF 回歸 | 對 main `06ac769` 固定 identity 回應：mono／dual 各四頁，文字、逐字元座標、圖片及每頁字型資料／嵌入字型串流 SHA256 相同；八頁 Poppler 96 DPI RGB 渲染像素差 0；公式與圖表無新增差異 |
@@ -54,6 +54,8 @@ PDF 的實際位置為 `Downloads\論文\High_speed_buffer_latch_ISCAS03.pdf`，
 
 ## Git 與重建
 
-程式碼在 `feature/gui-ux-improvements` 分階段提交；原 main 基準為 `06ac769`，最終包程式碼提交為 `a9d6dd1`。原 main 沒有額外未整合修改；最終 fast-forward 及合併後檢查尚待完成。未 Push、未建立 GitHub Release。
+程式碼在 `feature/gui-ux-improvements` 分階段提交；原 main 基準為 `06ac769`，已保留於 `codex/gui-ux-before-20261101`。確認 main 沒有額外未整合修改後使用 `--ff-only` 安全合併。合併後 Rust 292、原生 PDFium 1、Worker 35、Builder 35、fmt、Clippy 與 Release build 再次通過；工作樹乾淨。未 Push、未建立 GitHub Release。
+
+最終包程式碼提交為 `a9d6dd1`；main 其後僅更新文件與驗證資料。交付保留已完整驗證的 `c8831d…4c797` GUI，合併後同一原始碼的重建亦通過，未宣稱 EXE 位元組可重現。
 
 重建方式見 [DEVELOPMENT](DEVELOPMENT.md)；排解見 [TROUBLESHOOTING](TROUBLESHOOTING.md)。
