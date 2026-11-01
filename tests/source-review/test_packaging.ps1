@@ -7,7 +7,7 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 $ProjectRoot = [IO.Path]::GetFullPath($ProjectRoot)
 $sandbox = Join-Path ([IO.Path]::GetTempPath()) ('source-review-test-' + [Guid]::NewGuid().ToString('N'))
 $root = Join-Path $sandbox "中文 空格 O'Brien ! & (專案)"
-$zip = Join-Path $sandbox 'PDFMathTranslate-next-source-review.zip'
+$zip = Join-Path $sandbox 'BabelOxide-source-review.zip'
 $utf8 = New-Object Text.UTF8Encoding($false)
 $passed = 0
 
@@ -57,7 +57,7 @@ function Get-TreeSnapshot {
 }
 
 function Assert-NoTemporary {
-    Assert-True (@(Get-ChildItem -LiteralPath $sandbox -Filter '.PDFMathTranslate-next-source-review.*.tmp' -Force).Count -eq 0) 'A temporary archive was left behind.'
+    Assert-True (@(Get-ChildItem -LiteralPath $sandbox -Filter '.BabelOxide-source-review.*.tmp' -Force).Count -eq 0) 'A temporary archive was left behind.'
 }
 
 function Confirm-Case([string]$Name) {
@@ -89,6 +89,7 @@ try {
         'README.md' = 'fixture source review'
         '.gitignore' = '/target/'
         'LICENSE' = '2. Basic Permissions.'
+        'THIRD_PARTY_NOTICES.md' = 'fixture source and modification notice'
         '.cargo/config.toml' = '[build]'
         'crates/config/src/lib.rs' = 'pub fn config_source() {}'
         'crates/core/src/lib.rs' = 'pub fn core_source() {}'
@@ -98,11 +99,15 @@ try {
         'docs/ARCHITECTURE.md' = '# architecture'
         'resources/config.example.toml' = '[translation]'
         'resources/engine-assets.lock.json' = '{}'
+        'resources/build-inputs.lock.json' = '{}'
+        'resources/babeloxide.svg' = '<svg xmlns="http://www.w3.org/2000/svg"/>'
         'resources/licenses/LICENSE-MIT' = 'fixture license'
         '.github/workflows/check.yml' = 'token: ${{ secrets.GITHUB_TOKEN }}'
         '.env.example' = 'API_KEY=${API_KEY}'
     }
     foreach ($path in $included.Keys) { Write-Fixture $path $included[$path] }
+    $artwork = @('resources/babeloxide.png', 'resources/babeloxide.ico', 'resources/babeloxide.icns')
+    foreach ($path in $artwork) { [IO.File]::Copy((Join-Path $ProjectRoot $path), (Join-Path $root $path)) }
     $opaque = [Guid]::NewGuid().ToString('N') + [Guid]::NewGuid().ToString('N')
     $excluded = @('target/leak.rs', '.venv/pyvenv.cfg', 'dist/app.exe', '.git/HEAD',
         '.test-output/private.pdf', 'config/private.toml', 'cache/private.db',
@@ -114,8 +119,9 @@ try {
     $result = Invoke-Packager
     Assert-True ($result.Code -eq 0) "Initial CMD run failed: $($result.Output)"
     $entries = Read-Entries
-    Assert-True ($entries.Count -eq $included.Count + 1) 'Archive entry count does not match the allowlist.'
+    Assert-True ($entries.Count -eq $included.Count + $artwork.Count + 1) 'Archive entry count does not match the allowlist.'
     foreach ($path in $included.Keys) { Assert-True ($path -in $entries) "Missing source: $path" }
+    foreach ($path in $artwork) { Assert-True ($path -in $entries) "Missing reviewed artwork: $path" }
     foreach ($path in $excluded) { Assert-True ($path -notin $entries) "Excluded file was archived: $path" }
     Assert-True (-not $result.Output.Contains($opaque)) 'Excluded content leaked into output.'
     $after = Get-TreeSnapshot
@@ -142,6 +148,14 @@ try {
     Confirm-Case 'repeat run replaces ZIP and removes stale entries'
 
     Test-Rejection 'opaque assigned credential' 'docs/reject.md' ('api' + '_key = "' + $opaque + '"') 3 $opaque
+    Test-Rejection 'inline test host still rejects opaque credentials' 'crates/config/src/storage.rs' ('api' + '_key = "' + $opaque + '"') 3 $opaque
+    $reviewedUrl = 'https://user:' + 'password@example.com/v1'
+    Write-Fixture 'crates/app/src/settings_ui.rs' $reviewedUrl
+    try {
+        Assert-True ((Invoke-Packager).Code -eq 0) 'Reviewed URL-rejection fixture was rejected.'
+        Confirm-Case 'exact reviewed URL-rejection fixture is preserved'
+    } finally { [IO.File]::Delete((Join-Path $root 'crates/app/src/settings_ui.rs')) }
+    Test-Rejection 'reviewed URL fixture is not a file exemption' 'crates/app/src/settings_ui.rs' ('https://user:' + $opaque + '@example.com/v1') 3 $opaque
     $prefixValue = 'sk-' + $opaque
     Test-Rejection 'token prefix in prose' 'docs/reject.md' ('prose: ' + $prefixValue) 3 $prefixValue
     Test-Rejection 'unquoted YAML credential' 'docs/reject.yml' ('access' + '_token: ' + $opaque) 3 $opaque
@@ -179,6 +193,15 @@ try {
         Assert-True ((Get-FileHash -LiteralPath $zip).Hash -eq $before) 'Fixture rejection changed the ZIP.'
         Confirm-Case 'modified binary fixture requires review'
     } finally { [IO.File]::Delete($fullFixture) }
+
+    $icon = Join-Path $root 'resources/babeloxide.ico'
+    $before = (Get-FileHash -LiteralPath $zip).Hash
+    [IO.File]::WriteAllBytes($icon, [byte[]]@(1, 2, 3))
+    try {
+        Assert-True ((Invoke-Packager).Code -eq 2) 'Modified product artwork was accepted.'
+        Assert-True ((Get-FileHash -LiteralPath $zip).Hash -eq $before) 'Artwork rejection changed the ZIP.'
+        Confirm-Case 'modified product artwork requires review'
+    } finally { [IO.File]::Copy((Join-Path $ProjectRoot 'resources/babeloxide.ico'), $icon, $true) }
 
     $before = (Get-FileHash -LiteralPath $zip).Hash
     $handle = [IO.File]::Open($zip, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)

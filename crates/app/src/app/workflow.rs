@@ -1,5 +1,5 @@
 use super::*;
-use pdf2zh_config::Settings;
+use babeloxide_config::Settings;
 
 /// Per-file state is derived from the task manager's real completion/progress.
 /// A batch stops on failure; its untouched tail is cancelled, never "complete".

@@ -1,8 +1,8 @@
 use anyhow::{Context, Result, bail};
-use babeldoc_bridge::{AssetOperation, WorkerOptions, maintain_assets};
-use pdf2zh_cli::Invocation;
-use pdf2zh_core::{CacheBackend, CacheStore};
-use pdf2zh_tasks::{TaskManager, TaskStatus, task_from_settings};
+use babeloxide_bridge::{AssetOperation, WorkerOptions, maintain_assets};
+use babeloxide_cli::Invocation;
+use babeloxide_core::{CacheBackend, CacheStore};
+use babeloxide_tasks::{TaskManager, TaskStatus, task_from_settings};
 use serde_json::{Value, json};
 use std::{
     collections::BTreeMap,
@@ -13,7 +13,7 @@ use std::{
 };
 
 fn main() -> ExitCode {
-    let invocation = match pdf2zh_cli::parse(std::env::args_os()) {
+    let invocation = match babeloxide_cli::parse(std::env::args_os()) {
         Ok(invocation) => invocation,
         Err(error) => {
             let failed = error.use_stderr();
@@ -82,9 +82,9 @@ fn prepare_and_run(invocation: Invocation) -> Result<TaskStatus> {
             .parent()
             .context("Application directory is unavailable")?
             .join(if cfg!(windows) {
-                "pdf2zh-gui.exe"
+                "BabelOxide-gui.exe"
             } else {
-                "pdf2zh-gui"
+                "BabelOxide-gui"
             });
         let status = std::process::Command::new(gui)
             .args(std::env::args_os().skip(1))
@@ -193,7 +193,7 @@ async fn run_resources(
     }
 }
 
-async fn run(spec: pdf2zh_tasks::TaskSpec, json_output: bool) -> Result<TaskStatus> {
+async fn run(spec: babeloxide_tasks::TaskSpec, json_output: bool) -> Result<TaskStatus> {
     let manager = TaskManager::new(1)?;
     let task = manager.submit(spec)?;
     let interrupt_task = task.clone();
@@ -287,6 +287,6 @@ fn report(json_output: bool, kind: &str, message: &str) {
     if json_output {
         let _ = write_json(&json!({"type":kind,"message":message}));
     } else {
-        eprintln!("pdf2zh: {message}");
+        eprintln!("BabelOxide: {message}");
     }
 }

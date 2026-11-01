@@ -1,6 +1,6 @@
 //! Credential-free workflow presets, persisted by the existing atomic config store.
 use anyhow::{Result, bail, ensure};
-use pdf2zh_config::{Settings, field_specs};
+use babeloxide_config::{Settings, field_specs};
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 
@@ -130,7 +130,7 @@ pub(crate) fn apply(settings: &Settings, preset: &Preset) -> Result<Settings> {
                 .as_str()
                 .ok_or_else(|| anyhow::anyhow!("預設組合的服務無效"))?;
             ensure!(
-                pdf2zh_config::engine_specs()
+                babeloxide_config::engine_specs()
                     .iter()
                     .any(|engine| engine.flag == flag),
                 "預設組合的服務無效"
@@ -191,7 +191,7 @@ mod tests {
         assert!(!serde_json::to_string(&preset.values)?.contains("synthetic-secret"));
         store(&mut settings, &[preset])?;
         let directory = tempfile::tempdir()?;
-        let config = pdf2zh_config::ConfigStore::new(directory.path().to_path_buf())?;
+        let config = babeloxide_config::ConfigStore::new(directory.path().to_path_buf())?;
         config.save_user_defaults(&settings)?;
         let decoded = config.load()?;
         let presets = saved(&decoded)?;

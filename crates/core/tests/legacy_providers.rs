@@ -2,7 +2,7 @@
 //! controlled native subprocesses. These tests never load application settings,
 //! user API keys or a real Claude installation.
 
-use pdf2zh_core::{
+use babeloxide_core::{
     Clock, ErrorKind, HttpBody, HttpExecutor, HttpRequest, HttpResponse, HttpTransport,
     ProviderContext, ProviderError, ProviderOutput, ProviderResult, RandomSource, RetryRuntime,
     TranslationRequest, TranslatorConfig, providers::legacy,
@@ -268,10 +268,13 @@ impl Harness {
         legacy::dispatch(&self.context()).await
     }
     async fn run_service(&self) -> ProviderResult<ProviderOutput> {
-        pdf2zh_core::TranslationService::new_with_runtime(self.config.clone(), self.runtime.clone())
-            .unwrap()
-            .translate_typed(&self.request, &self.cancel)
-            .await
+        babeloxide_core::TranslationService::new_with_runtime(
+            self.config.clone(),
+            self.runtime.clone(),
+        )
+        .unwrap()
+        .translate_typed(&self.request, &self.cancel)
+        .await
     }
     fn requests(&self) -> Vec<HttpRequest> {
         self.script.as_ref().unwrap().requests()
@@ -718,7 +721,7 @@ async fn app_provider_cookies_stay_within_one_redirect_chain() {
         ])
         .await;
         let harness = Harness::loopback(provider, &format!("{}/start", server.endpoint));
-        let service = pdf2zh_core::TranslationService::new_with_runtime(
+        let service = babeloxide_core::TranslationService::new_with_runtime(
             harness.config.clone(),
             harness.runtime.clone(),
         )
@@ -755,7 +758,7 @@ async fn deepl_prepared_requests_omit_session_cookies_until_redirect() {
     ])
     .await;
     let harness = Harness::loopback("deepl", &server.endpoint);
-    let service = pdf2zh_core::TranslationService::new_with_runtime(
+    let service = babeloxide_core::TranslationService::new_with_runtime(
         harness.config.clone(),
         harness.runtime.clone(),
     )
@@ -1741,7 +1744,7 @@ async fn cli_real_process_timeout_retries_three_times_and_reaps() {
 async fn claude_real_process_stream_json_contract_and_startup_is_cached() {
     let fixture = NativeFixture::new();
     let harness = fixture.claude("claude-success");
-    let service = pdf2zh_core::TranslationService::new_with_runtime(
+    let service = babeloxide_core::TranslationService::new_with_runtime(
         harness.config.clone(),
         harness.runtime.clone(),
     )

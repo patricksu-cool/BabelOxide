@@ -2,9 +2,9 @@
 
 use crate::TaskSpec;
 use anyhow::{Result, ensure};
-use babeldoc_bridge::{FactoryInitialization, WorkerOptions};
-use pdf2zh_config::Settings;
-use pdf2zh_core::{CacheBackend, TranslationService};
+use babeloxide_bridge::{FactoryInitialization, WorkerOptions};
+use babeloxide_config::Settings;
+use babeloxide_core::{CacheBackend, TranslationService};
 use std::sync::Arc;
 
 pub fn task_from_settings(

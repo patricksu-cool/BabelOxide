@@ -39,7 +39,7 @@ def bootstrap(name: str, work: Path) -> Path:
 def check(uv: Path, work: Path, env: dict[str, str]) -> None:
     run([uv, "--no-config", "sync", "--project", ROOT, "--locked", "--python", sys.executable], work, env, label="dev-sync")
     python = ROOT / (".venv/Scripts/python.exe" if os.name == "nt" else ".venv/bin/python")
-    env["PDF2ZH_TEST_PYTHON"] = str(python)
+    env["BABELOXIDE_TEST_PYTHON"] = str(python)
     cargo = ["cargo"]
     manifest = ROOT / "Cargo.toml"
     run(cargo + ["fmt", "--manifest-path", manifest, "--all", "--", "--check"], work, env, label="rustfmt")
@@ -58,7 +58,10 @@ def build(name: str, uv: Path, work: Path, env: dict[str, str]) -> None:
     run(["cargo", "build", "--manifest-path", ROOT / "Cargo.toml", "--release", "--workspace", "--locked"], work, env, label="release-build")
     output = ROOT / "dist" / f"BabelOxide-v{product_version()}-{name}"
     registry = Path(env.get("CARGO_HOME", str(Path.home() / ".cargo"))) / "registry/src"
-    command = [sys.executable, ROOT / "script/build_portable.py", "--platform", name, "--output", output, "--uv", uv, "--source-commit", env.get("GITHUB_SHA", "local-uncommitted"), "--cargo-registry-src", registry]
+    revision = subprocess.check_output(["git", "-C", ROOT, "rev-parse", "--verify", "HEAD"], text=True).strip()
+    if subprocess.check_output(["git", "-C", ROOT, "status", "--porcelain", "--untracked-files=normal"], text=True).strip():
+        revision += "-dirty"
+    command = [sys.executable, ROOT / "script/build_portable.py", "--platform", name, "--output", output, "--uv", uv, "--source-commit", revision, "--cargo-registry-src", registry]
     if name == "windows-x64":
         command += ["--allow-unresolved-native"]
     run(command, work, env, timeout=3600, label="portable-bundle")
@@ -80,8 +83,8 @@ def build(name: str, uv: Path, work: Path, env: dict[str, str]) -> None:
     run([python, "-I", "-B", "-c", code, fixture], work, isolated, label="make-public-fixture")
     dev_python = ROOT / (".venv/Scripts/python.exe" if os.name == "nt" else ".venv/bin/python")
     run([dev_python, ROOT / "script/rust_migration_smoke.py", fixture, "--label", "ci-" + name + "-" + run_id, "--exe", executable, "--packaged", "--isolated-cwd", "--timeout-seconds", "600"], work, env, timeout=700, label="cli-ipc-mock-smoke")
-    native_env = dict(env, PDF2ZH_PREVIEW_NATIVE_APP_ROOT=str(bundle), PDF2ZH_PREVIEW_NATIVE_PDF=str(fixture))
-    run(["cargo", "test", "--manifest-path", ROOT / "Cargo.toml", "-p", "pdf2zh-pdf-preview", "--test", "native_smoke", "--locked", "--", "--ignored"], work, native_env, label="pdfium-native-smoke")
+    native_env = dict(env, BABELOXIDE_PREVIEW_NATIVE_APP_ROOT=str(bundle), BABELOXIDE_PREVIEW_NATIVE_PDF=str(fixture))
+    run(["cargo", "test", "--manifest-path", ROOT / "Cargo.toml", "-p", "babeloxide-pdf-preview", "--test", "native_smoke", "--locked", "--", "--ignored"], work, native_env, label="pdfium-native-smoke")
     run([python, "-I", "-B", ROOT / "script/check_workflow.py"], work, isolated, label="workflow-static-check")
     manifest_root = output if name == "windows-x64" else output / "BabelOxide.app"
     verify_manifest(manifest_root, bundle / "RELEASE_FILES.json")

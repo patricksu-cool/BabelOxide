@@ -58,6 +58,10 @@ RUNTIME_PINS = {
     "python313._pth": (80, "35ddf94682ff9aa713a8d63557242ad00f3f28fdd39337f02c3bda4c0f791577"),
     "LICENSE.txt": (33861, "62bec384df47b0328307db41455ff6ea2559e5546b394ac69148561b21703120"),
 }
+
+
+def product_version() -> str:
+    return tomllib.loads((REPO / "Cargo.toml").read_text(encoding="utf-8"))["workspace"]["package"]["version"]
 # OS components only. VC redistributables are deliberately NOT in this list.
 OS_DLLS = frozenset(
     ("advapi32 avrt bcrypt bcryptprimitives cabinet cfgmgr32 comctl32 comdlg32 "
@@ -499,7 +503,7 @@ def sanitized_environment(work: Path, *, stage: Path | None = None) -> dict[str,
         "UV_NO_PROGRESS": "1", "NO_COLOR": "1",
     }
     if stage is not None:
-        result["PDF2ZH_APP_DIR"] = str(stage)
+        result["BABELOXIDE_APP_DIR"] = str(stage)
     return result
 
 
@@ -744,7 +748,7 @@ def preflight(args: argparse.Namespace, wheels: list[dict], expected_lock: str) 
     inputs = input_paths(args)
     output = validate_output(args.output, inputs)
     records = runtime_files(runtime, runtime_manifest)
-    for name in ("pdf2zh.exe", "pdf2zh-gui.exe"):
+    for name in ("BabelOxide.exe", "BabelOxide-gui.exe"):
         require((bins / name).is_file(), f"Build the Rust release executable first: {name}")
         pe_imports(plain_path(bins / name))
     verify_file(pdfium / "bin/pdfium.dll", PDFIUM_BYTES, PDFIUM_SHA256)
@@ -918,7 +922,7 @@ def build(args: argparse.Namespace, plan: dict) -> Path:
             checked_copy(args.runtime_source / record["name"], runtime / record["name"], (record["bytes"], record["sha256"]))
         # Only this verified copy is changed. The original runtime is never written.
         (runtime / "python313._pth").write_text(PTH_CONTENT, encoding="ascii", newline="\n")
-        for name in ("pdf2zh.exe", "pdf2zh-gui.exe"):
+        for name in ("BabelOxide.exe", "BabelOxide-gui.exe"):
             origin = args.bin_dir / name
             checked_copy(origin, stage / name, (origin.stat().st_size, digest(origin)))
         checked_copy(REPO / "python-worker/worker.py", stage / "babeldoc/worker.py")
@@ -928,9 +932,10 @@ def build(args: argparse.Namespace, plan: dict) -> Path:
         for origin in [args.pdfium_source / "LICENSE", args.pdfium_source / "VERSION", args.pdfium_source / "args.gn", *files_below(args.pdfium_source / "licenses")]:
             checked_copy(origin, stage / "licenses/pdfium" / origin.relative_to(args.pdfium_source))
         checked_copy(REPO / "LICENSE", stage / "licenses/project/LICENSE")
+        checked_copy(REPO / "THIRD_PARTY_NOTICES.md", stage / "licenses/project/THIRD_PARTY_NOTICES.md")
         checked_copy(args.runtime_source / "LICENSE.txt", stage / "licenses/python-runtime/LICENSE.txt", RUNTIME_PINS["LICENSE.txt"])
         provenance = stage / "provenance"
-        for origin in (REQUIREMENTS, WHEEL_OVERRIDES, BASELINE_WHEELS, INVENTORY, ASSET_INVENTORY, REPO / "Cargo.lock", REPO / "Cargo.toml", Path(__file__), REPO / "docs/DEVELOPMENT.md"):
+        for origin in (REQUIREMENTS, WHEEL_OVERRIDES, BASELINE_WHEELS, INVENTORY, ASSET_INVENTORY, REPO / "Cargo.lock", REPO / "Cargo.toml", Path(__file__), REPO / "script/build_portable.py", REPO / "script/build_support.py", REPO / "resources/build-inputs.lock.json", REPO / "docs/BUILD.md"):
             checked_copy(origin, provenance / origin.name, (origin.stat().st_size, digest(origin)))
         captured_inventory = staged_inputs(stage, plan["wheels"])
         write_json(provenance / "RUNTIME_SOURCE_FILES.json", plan["runtime"])
@@ -963,7 +968,7 @@ def build(args: argparse.Namespace, plan: dict) -> Path:
         python = runtime / "python.exe"
         provenance = stage / "provenance"
         archive = stage / "engine-assets" / f"offline_assets_{ASSET_TAG}.zip"
-        environment["PDF2ZH_APP_DIR"] = str(stage)
+        environment["BABELOXIDE_APP_DIR"] = str(stage)
         natives, missing = native_inventory(stage)
         write_json(stage / "NATIVE_DEPENDENCIES.json", {"scope": "PE normal/delay imports; bundled-candidate does not prove loader resolution; dynamic LoadLibrary is not covered", "files": natives, "unresolved": missing})
         require(not missing or args.allow_unresolved_native, f"Unresolved native imports; see {stage / 'NATIVE_DEPENDENCIES.json'}. Do not copy System32 DLLs; obtain a licensed redistributable source or explicitly build a diagnostic candidate with --allow-unresolved-native")
@@ -971,12 +976,14 @@ def build(args: argparse.Namespace, plan: dict) -> Path:
         home.mkdir(parents=True)
         # Exercise the shipped bridge/worker boundary and its default layout;
         # no provider service, API credentials or network warmup is requested.
-        run_step("restore-assets", [str(stage / "pdf2zh.exe"), "--restore-offline-assets", str(archive), "--worker-home", str(home), "--json"], work, environment, args.smoke_timeout)
+        run_step("restore-assets", [str(stage / "BabelOxide.exe"), "--restore-offline-assets", str(archive), "--worker-home", str(home), "--json"], work, environment, args.smoke_timeout)
         verify_restored(home, plan["assets"])
         probe_environment = {**environment, "HOME": str(home), "USERPROFILE": str(home)}
         run_step("embedded-import-smoke", [str(python), "-I", "-B", "-c", PROBE], work, probe_environment, args.smoke_timeout)
-        run_step("cli-version", [str(stage / "pdf2zh.exe"), "--version"], work, environment, 30)
-        run_step("gui-version", [str(stage / "pdf2zh-gui.exe"), "--version"], work, environment, 30)
+        run_step("cli-version", [str(stage / "BabelOxide.exe"), "--version"], work, environment, 30)
+        run_step("gui-version", [str(stage / "BabelOxide-gui.exe"), "--version"], work, environment, 30)
+        for label in ("cli-version", "gui-version"):
+            require((work / f"{label}.log").read_text(encoding="utf-8").strip() == f"BabelOxide {product_version()}", "Supplied executable product/version differs from the workspace")
         removed_bytecode = remove_generated_bytecode(stage)
         empty_engine_cache = remove_empty_engine_cache(stage)
         verify_restored(home, plan["assets"])
@@ -985,7 +992,7 @@ def build(args: argparse.Namespace, plan: dict) -> Path:
         write_json(stage / "ARTIFACT_EXCLUSIONS.json", {"entrypoints": entrypoints, "empty_generated_engine_cache": empty_engine_cache, "removed_generated_bytecode_files": removed_bytecode, "scope": "Application entrypoints are the two Rust EXEs. Only verified generated wrappers, bytecode and the smoke's empty known cache are excluded; original wheel RECORD metadata is retained."})
         write_json(stage / "THIRD_PARTY_COMPONENTS.json", {"python": python_components, "rust_lock_all_targets": rust_components, "pdfium": {"version": PDFIUM_VERSION, "publisher_archive_url": PDFIUM_URL, "publisher_archive_sha256": PDFIUM_ARCHIVE_SHA256, "dll_sha256": PDFIUM_SHA256, "verification": "DLL digest, version/build flags, notices copied; archive/signature/ABI validation is external", "licenses": "licenses/pdfium"}, "python_runtime": {"version": PYTHON_VERSION, "source": "verified embedded-runtime build input; see provenance/RUNTIME_SOURCE_FILES.json", "license": "licenses/python-runtime/LICENSE.txt"}, "engine_assets": {"inventory": "provenance/engine-assets.lock.json", "license_texts_supplied": bool(args.asset_notices)}, "license_review_items": license_issues})
         build_info = {
-            "schema_version": 1, "artifact_kind": "hybrid-windows-x64-candidate", "release_ready": False,
+            "schema_version": 1, "product": "BabelOxide", "version": product_version(), "artifact_kind": "babeloxide-windows-x64", "release_ready": False,
             "rust_built_by_builder": False, "source_commit": args.source_commit,
             "runtime_python": PYTHON_VERSION, "babeldoc": "0.6.4", "python_distribution_count": ENGINE_COUNT,
             "pdfium": PDFIUM_VERSION, "pdfium_dll_sha256": PDFIUM_SHA256,
@@ -1482,9 +1489,9 @@ class BuilderTests(unittest.TestCase):
     def test_final_manifest_has_every_file_and_no_self_hash(self):
         with tempfile.TemporaryDirectory(dir=REPO) as temporary:
             root = Path(temporary)
-            (root / "pdf2zh.exe").write_bytes(b"synthetic executable")
+            (root / "BabelOxide.exe").write_bytes(b"synthetic executable")
             records = final_manifest(root)
-            self.assertEqual(records, [{"path": "pdf2zh.exe", "bytes": 20, "sha256": hashlib.sha256(b"synthetic executable").hexdigest()}])
+            self.assertEqual(records, [{"path": "BabelOxide.exe", "bytes": 20, "sha256": hashlib.sha256(b"synthetic executable").hexdigest()}])
             self.assertEqual(read_json(root / "RELEASE_FILES.json"), records)
             nested = root / "metadata/RELEASE_FILES.json"
             nested.parent.mkdir()

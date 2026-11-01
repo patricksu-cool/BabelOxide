@@ -3,7 +3,7 @@
     {
       "path": "basic.input_files",
       "flag": "input-files",
-      "env": "PDF2ZH_INPUT_FILES",
+      "env": "BABELOXIDE_INPUT_FILES",
       "kind": "StringSet",
       "default": [],
       "nullable": false,
@@ -13,7 +13,7 @@
     {
       "path": "basic.debug",
       "flag": "debug",
-      "env": "PDF2ZH_DEBUG",
+      "env": "BABELOXIDE_DEBUG",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -23,7 +23,7 @@
     {
       "path": "basic.gui",
       "flag": "gui",
-      "env": "PDF2ZH_GUI",
+      "env": "BABELOXIDE_GUI",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -33,7 +33,7 @@
     {
       "path": "basic.warmup",
       "flag": "warmup",
-      "env": "PDF2ZH_WARMUP",
+      "env": "BABELOXIDE_WARMUP",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -43,7 +43,7 @@
     {
       "path": "basic.generate_offline_assets",
       "flag": "generate-offline-assets",
-      "env": "PDF2ZH_GENERATE_OFFLINE_ASSETS",
+      "env": "BABELOXIDE_GENERATE_OFFLINE_ASSETS",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -53,7 +53,7 @@
     {
       "path": "basic.restore_offline_assets",
       "flag": "restore-offline-assets",
-      "env": "PDF2ZH_RESTORE_OFFLINE_ASSETS",
+      "env": "BABELOXIDE_RESTORE_OFFLINE_ASSETS",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -63,7 +63,7 @@
     {
       "path": "basic.version",
       "flag": "version",
-      "env": "PDF2ZH_VERSION",
+      "env": "BABELOXIDE_VERSION",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -73,7 +73,7 @@
     {
       "path": "gui_settings.share",
       "flag": "share",
-      "env": "PDF2ZH_SHARE",
+      "env": "BABELOXIDE_SHARE",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -83,7 +83,7 @@
     {
       "path": "gui_settings.auth_file",
       "flag": "auth-file",
-      "env": "PDF2ZH_AUTH_FILE",
+      "env": "BABELOXIDE_AUTH_FILE",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -93,7 +93,7 @@
     {
       "path": "gui_settings.welcome_page",
       "flag": "welcome-page",
-      "env": "PDF2ZH_WELCOME_PAGE",
+      "env": "BABELOXIDE_WELCOME_PAGE",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -103,7 +103,7 @@
     {
       "path": "gui_settings.enabled_services",
       "flag": "enabled-services",
-      "env": "PDF2ZH_ENABLED_SERVICES",
+      "env": "BABELOXIDE_ENABLED_SERVICES",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -113,7 +113,7 @@
     {
       "path": "gui_settings.disable_gui_sensitive_input",
       "flag": "disable-gui-sensitive-input",
-      "env": "PDF2ZH_DISABLE_GUI_SENSITIVE_INPUT",
+      "env": "BABELOXIDE_DISABLE_GUI_SENSITIVE_INPUT",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -123,7 +123,7 @@
     {
       "path": "gui_settings.disable_config_auto_save",
       "flag": "disable-config-auto-save",
-      "env": "PDF2ZH_DISABLE_CONFIG_AUTO_SAVE",
+      "env": "BABELOXIDE_DISABLE_CONFIG_AUTO_SAVE",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -133,7 +133,7 @@
     {
       "path": "gui_settings.server_port",
       "flag": "server-port",
-      "env": "PDF2ZH_SERVER_PORT",
+      "env": "BABELOXIDE_SERVER_PORT",
       "kind": "Integer",
       "default": 7860,
       "nullable": false,
@@ -143,7 +143,7 @@
     {
       "path": "gui_settings.server_name",
       "flag": "server-name",
-      "env": "PDF2ZH_SERVER_NAME",
+      "env": "BABELOXIDE_SERVER_NAME",
       "kind": "String",
       "default": "127.0.0.1",
       "nullable": false,
@@ -153,7 +153,7 @@
     {
       "path": "gui_settings.ui_lang",
       "flag": "ui-lang",
-      "env": "PDF2ZH_UI_LANG",
+      "env": "BABELOXIDE_UI_LANG",
       "kind": "String",
       "default": "zh-TW",
       "nullable": true,
@@ -163,7 +163,7 @@
     {
       "path": "translation.min_text_length",
       "flag": "min-text-length",
-      "env": "PDF2ZH_MIN_TEXT_LENGTH",
+      "env": "BABELOXIDE_MIN_TEXT_LENGTH",
       "kind": "Integer",
       "default": 5,
       "nullable": false,
@@ -173,7 +173,7 @@
     {
       "path": "translation.rpc_doclayout",
       "flag": "rpc-doclayout",
-      "env": "PDF2ZH_RPC_DOCLAYOUT",
+      "env": "BABELOXIDE_RPC_DOCLAYOUT",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -183,7 +183,7 @@
     {
       "path": "translation.lang_in",
       "flag": "lang-in",
-      "env": "PDF2ZH_LANG_IN",
+      "env": "BABELOXIDE_LANG_IN",
       "kind": "String",
       "default": "en",
       "nullable": false,
@@ -193,7 +193,7 @@
     {
       "path": "translation.lang_out",
       "flag": "lang-out",
-      "env": "PDF2ZH_LANG_OUT",
+      "env": "BABELOXIDE_LANG_OUT",
       "kind": "String",
       "default": "zh",
       "nullable": false,
@@ -203,7 +203,7 @@
     {
       "path": "translation.output",
       "flag": "output",
-      "env": "PDF2ZH_OUTPUT",
+      "env": "BABELOXIDE_OUTPUT",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -213,7 +213,7 @@
     {
       "path": "translation.qps",
       "flag": "qps",
-      "env": "PDF2ZH_QPS",
+      "env": "BABELOXIDE_QPS",
       "kind": "Integer",
       "default": 4,
       "nullable": false,
@@ -223,7 +223,7 @@
     {
       "path": "translation.ignore_cache",
       "flag": "ignore-cache",
-      "env": "PDF2ZH_IGNORE_CACHE",
+      "env": "BABELOXIDE_IGNORE_CACHE",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -233,7 +233,7 @@
     {
       "path": "translation.custom_system_prompt",
       "flag": "custom-system-prompt",
-      "env": "PDF2ZH_CUSTOM_SYSTEM_PROMPT",
+      "env": "BABELOXIDE_CUSTOM_SYSTEM_PROMPT",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -243,7 +243,7 @@
     {
       "path": "translation.glossaries",
       "flag": "glossaries",
-      "env": "PDF2ZH_GLOSSARIES",
+      "env": "BABELOXIDE_GLOSSARIES",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -253,7 +253,7 @@
     {
       "path": "translation.save_auto_extracted_glossary",
       "flag": "save-auto-extracted-glossary",
-      "env": "PDF2ZH_SAVE_AUTO_EXTRACTED_GLOSSARY",
+      "env": "BABELOXIDE_SAVE_AUTO_EXTRACTED_GLOSSARY",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -263,7 +263,7 @@
     {
       "path": "translation.pool_max_workers",
       "flag": "pool-max-workers",
-      "env": "PDF2ZH_POOL_MAX_WORKERS",
+      "env": "BABELOXIDE_POOL_MAX_WORKERS",
       "kind": "Integer",
       "default": null,
       "nullable": true,
@@ -273,7 +273,7 @@
     {
       "path": "translation.term_qps",
       "flag": "term-qps",
-      "env": "PDF2ZH_TERM_QPS",
+      "env": "BABELOXIDE_TERM_QPS",
       "kind": "Integer",
       "default": null,
       "nullable": true,
@@ -283,7 +283,7 @@
     {
       "path": "translation.term_pool_max_workers",
       "flag": "term-pool-max-workers",
-      "env": "PDF2ZH_TERM_POOL_MAX_WORKERS",
+      "env": "BABELOXIDE_TERM_POOL_MAX_WORKERS",
       "kind": "Integer",
       "default": null,
       "nullable": true,
@@ -293,7 +293,7 @@
     {
       "path": "translation.no_auto_extract_glossary",
       "flag": "no-auto-extract-glossary",
-      "env": "PDF2ZH_NO_AUTO_EXTRACT_GLOSSARY",
+      "env": "BABELOXIDE_NO_AUTO_EXTRACT_GLOSSARY",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -303,7 +303,7 @@
     {
       "path": "translation.primary_font_family",
       "flag": "primary-font-family",
-      "env": "PDF2ZH_PRIMARY_FONT_FAMILY",
+      "env": "BABELOXIDE_PRIMARY_FONT_FAMILY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -313,7 +313,7 @@
     {
       "path": "pdf.pages",
       "flag": "pages",
-      "env": "PDF2ZH_PAGES",
+      "env": "BABELOXIDE_PAGES",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -323,7 +323,7 @@
     {
       "path": "pdf.no_dual",
       "flag": "no-dual",
-      "env": "PDF2ZH_NO_DUAL",
+      "env": "BABELOXIDE_NO_DUAL",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -333,7 +333,7 @@
     {
       "path": "pdf.no_mono",
       "flag": "no-mono",
-      "env": "PDF2ZH_NO_MONO",
+      "env": "BABELOXIDE_NO_MONO",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -343,7 +343,7 @@
     {
       "path": "pdf.formular_font_pattern",
       "flag": "formular-font-pattern",
-      "env": "PDF2ZH_FORMULAR_FONT_PATTERN",
+      "env": "BABELOXIDE_FORMULAR_FONT_PATTERN",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -353,7 +353,7 @@
     {
       "path": "pdf.formular_char_pattern",
       "flag": "formular-char-pattern",
-      "env": "PDF2ZH_FORMULAR_CHAR_PATTERN",
+      "env": "BABELOXIDE_FORMULAR_CHAR_PATTERN",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -363,7 +363,7 @@
     {
       "path": "pdf.split_short_lines",
       "flag": "split-short-lines",
-      "env": "PDF2ZH_SPLIT_SHORT_LINES",
+      "env": "BABELOXIDE_SPLIT_SHORT_LINES",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -373,7 +373,7 @@
     {
       "path": "pdf.short_line_split_factor",
       "flag": "short-line-split-factor",
-      "env": "PDF2ZH_SHORT_LINE_SPLIT_FACTOR",
+      "env": "BABELOXIDE_SHORT_LINE_SPLIT_FACTOR",
       "kind": "Float",
       "default": 0.8,
       "nullable": false,
@@ -383,7 +383,7 @@
     {
       "path": "pdf.skip_clean",
       "flag": "skip-clean",
-      "env": "PDF2ZH_SKIP_CLEAN",
+      "env": "BABELOXIDE_SKIP_CLEAN",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -393,7 +393,7 @@
     {
       "path": "pdf.dual_translate_first",
       "flag": "dual-translate-first",
-      "env": "PDF2ZH_DUAL_TRANSLATE_FIRST",
+      "env": "BABELOXIDE_DUAL_TRANSLATE_FIRST",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -403,7 +403,7 @@
     {
       "path": "pdf.disable_rich_text_translate",
       "flag": "disable-rich-text-translate",
-      "env": "PDF2ZH_DISABLE_RICH_TEXT_TRANSLATE",
+      "env": "BABELOXIDE_DISABLE_RICH_TEXT_TRANSLATE",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -413,7 +413,7 @@
     {
       "path": "pdf.enhance_compatibility",
       "flag": "enhance-compatibility",
-      "env": "PDF2ZH_ENHANCE_COMPATIBILITY",
+      "env": "BABELOXIDE_ENHANCE_COMPATIBILITY",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -423,7 +423,7 @@
     {
       "path": "pdf.use_alternating_pages_dual",
       "flag": "use-alternating-pages-dual",
-      "env": "PDF2ZH_USE_ALTERNATING_PAGES_DUAL",
+      "env": "BABELOXIDE_USE_ALTERNATING_PAGES_DUAL",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -433,7 +433,7 @@
     {
       "path": "pdf.watermark_output_mode",
       "flag": "watermark-output-mode",
-      "env": "PDF2ZH_WATERMARK_OUTPUT_MODE",
+      "env": "BABELOXIDE_WATERMARK_OUTPUT_MODE",
       "kind": "String",
       "default": "watermarked",
       "nullable": false,
@@ -443,7 +443,7 @@
     {
       "path": "pdf.max_pages_per_part",
       "flag": "max-pages-per-part",
-      "env": "PDF2ZH_MAX_PAGES_PER_PART",
+      "env": "BABELOXIDE_MAX_PAGES_PER_PART",
       "kind": "Integer",
       "default": null,
       "nullable": true,
@@ -453,7 +453,7 @@
     {
       "path": "pdf.translate_table_text",
       "flag": "translate-table-text",
-      "env": "PDF2ZH_TRANSLATE_TABLE_TEXT",
+      "env": "BABELOXIDE_TRANSLATE_TABLE_TEXT",
       "kind": "Bool",
       "default": true,
       "nullable": false,
@@ -463,7 +463,7 @@
     {
       "path": "pdf.skip_scanned_detection",
       "flag": "skip-scanned-detection",
-      "env": "PDF2ZH_SKIP_SCANNED_DETECTION",
+      "env": "BABELOXIDE_SKIP_SCANNED_DETECTION",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -473,7 +473,7 @@
     {
       "path": "pdf.ocr_workaround",
       "flag": "ocr-workaround",
-      "env": "PDF2ZH_OCR_WORKAROUND",
+      "env": "BABELOXIDE_OCR_WORKAROUND",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -483,7 +483,7 @@
     {
       "path": "pdf.auto_enable_ocr_workaround",
       "flag": "auto-enable-ocr-workaround",
-      "env": "PDF2ZH_AUTO_ENABLE_OCR_WORKAROUND",
+      "env": "BABELOXIDE_AUTO_ENABLE_OCR_WORKAROUND",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -493,7 +493,7 @@
     {
       "path": "pdf.only_include_translated_page",
       "flag": "only-include-translated-page",
-      "env": "PDF2ZH_ONLY_INCLUDE_TRANSLATED_PAGE",
+      "env": "BABELOXIDE_ONLY_INCLUDE_TRANSLATED_PAGE",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -503,7 +503,7 @@
     {
       "path": "pdf.no_merge_alternating_line_numbers",
       "flag": "no-merge-alternating-line-numbers",
-      "env": "PDF2ZH_NO_MERGE_ALTERNATING_LINE_NUMBERS",
+      "env": "BABELOXIDE_NO_MERGE_ALTERNATING_LINE_NUMBERS",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -513,7 +513,7 @@
     {
       "path": "pdf.no_remove_non_formula_lines",
       "flag": "no-remove-non-formula-lines",
-      "env": "PDF2ZH_NO_REMOVE_NON_FORMULA_LINES",
+      "env": "BABELOXIDE_NO_REMOVE_NON_FORMULA_LINES",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -523,7 +523,7 @@
     {
       "path": "pdf.non_formula_line_iou_threshold",
       "flag": "non-formula-line-iou-threshold",
-      "env": "PDF2ZH_NON_FORMULA_LINE_IOU_THRESHOLD",
+      "env": "BABELOXIDE_NON_FORMULA_LINE_IOU_THRESHOLD",
       "kind": "Float",
       "default": 0.9,
       "nullable": false,
@@ -533,7 +533,7 @@
     {
       "path": "pdf.figure_table_protection_threshold",
       "flag": "figure-table-protection-threshold",
-      "env": "PDF2ZH_FIGURE_TABLE_PROTECTION_THRESHOLD",
+      "env": "BABELOXIDE_FIGURE_TABLE_PROTECTION_THRESHOLD",
       "kind": "Float",
       "default": 0.9,
       "nullable": false,
@@ -543,7 +543,7 @@
     {
       "path": "pdf.skip_formula_offset_calculation",
       "flag": "skip-formula-offset-calculation",
-      "env": "PDF2ZH_SKIP_FORMULA_OFFSET_CALCULATION",
+      "env": "BABELOXIDE_SKIP_FORMULA_OFFSET_CALCULATION",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -553,7 +553,7 @@
     {
       "path": "config_file",
       "flag": "config-file",
-      "env": "PDF2ZH_CONFIG_FILE",
+      "env": "BABELOXIDE_CONFIG_FILE",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -563,7 +563,7 @@
     {
       "path": "report_interval",
       "flag": "report-interval",
-      "env": "PDF2ZH_REPORT_INTERVAL",
+      "env": "BABELOXIDE_REPORT_INTERVAL",
       "kind": "Float",
       "default": 0.1,
       "nullable": false,
@@ -573,7 +573,7 @@
     {
       "path": "siliconflowfree",
       "flag": "siliconflowfree",
-      "env": "PDF2ZH_SILICONFLOWFREE",
+      "env": "BABELOXIDE_SILICONFLOWFREE",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -583,7 +583,7 @@
     {
       "path": "siliconflowfree_detail.siliconflow_free_enable_json_mode",
       "flag": "siliconflow-free-enable-json-mode",
-      "env": "PDF2ZH_SILICONFLOW_FREE_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_SILICONFLOW_FREE_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": false,
       "nullable": true,
@@ -593,7 +593,7 @@
     {
       "path": "term_siliconflowfree",
       "flag": "term-siliconflowfree",
-      "env": "PDF2ZH_TERM_SILICONFLOWFREE",
+      "env": "BABELOXIDE_TERM_SILICONFLOWFREE",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -603,7 +603,7 @@
     {
       "path": "term_siliconflowfree_detail.term_siliconflow_free_enable_json_mode",
       "flag": "term-siliconflow-free-enable-json-mode",
-      "env": "PDF2ZH_TERM_SILICONFLOW_FREE_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_TERM_SILICONFLOW_FREE_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": false,
       "nullable": true,
@@ -613,7 +613,7 @@
     {
       "path": "openai",
       "flag": "openai",
-      "env": "PDF2ZH_OPENAI",
+      "env": "BABELOXIDE_OPENAI",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -623,7 +623,7 @@
     {
       "path": "openai_detail.openai_model",
       "flag": "openai-model",
-      "env": "PDF2ZH_OPENAI_MODEL",
+      "env": "BABELOXIDE_OPENAI_MODEL",
       "kind": "String",
       "default": "gpt-4o-mini",
       "nullable": false,
@@ -633,7 +633,7 @@
     {
       "path": "openai_detail.openai_base_url",
       "flag": "openai-base-url",
-      "env": "PDF2ZH_OPENAI_BASE_URL",
+      "env": "BABELOXIDE_OPENAI_BASE_URL",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -643,7 +643,7 @@
     {
       "path": "openai_detail.openai_api_key",
       "flag": "openai-api-key",
-      "env": "PDF2ZH_OPENAI_API_KEY",
+      "env": "BABELOXIDE_OPENAI_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -653,7 +653,7 @@
     {
       "path": "openai_detail.openai_timeout",
       "flag": "openai-timeout",
-      "env": "PDF2ZH_OPENAI_TIMEOUT",
+      "env": "BABELOXIDE_OPENAI_TIMEOUT",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -663,7 +663,7 @@
     {
       "path": "openai_detail.openai_temperature",
       "flag": "openai-temperature",
-      "env": "PDF2ZH_OPENAI_TEMPERATURE",
+      "env": "BABELOXIDE_OPENAI_TEMPERATURE",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -673,7 +673,7 @@
     {
       "path": "openai_detail.openai_reasoning_effort",
       "flag": "openai-reasoning-effort",
-      "env": "PDF2ZH_OPENAI_REASONING_EFFORT",
+      "env": "BABELOXIDE_OPENAI_REASONING_EFFORT",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -683,7 +683,7 @@
     {
       "path": "openai_detail.openai_enable_json_mode",
       "flag": "openai-enable-json-mode",
-      "env": "PDF2ZH_OPENAI_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_OPENAI_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -693,7 +693,7 @@
     {
       "path": "openai_detail.openai_send_temprature",
       "flag": "openai-send-temprature",
-      "env": "PDF2ZH_OPENAI_SEND_TEMPRATURE",
+      "env": "BABELOXIDE_OPENAI_SEND_TEMPRATURE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -703,7 +703,7 @@
     {
       "path": "openai_detail.openai_send_reasoning_effort",
       "flag": "openai-send-reasoning-effort",
-      "env": "PDF2ZH_OPENAI_SEND_REASONING_EFFORT",
+      "env": "BABELOXIDE_OPENAI_SEND_REASONING_EFFORT",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -713,7 +713,7 @@
     {
       "path": "term_openai",
       "flag": "term-openai",
-      "env": "PDF2ZH_TERM_OPENAI",
+      "env": "BABELOXIDE_TERM_OPENAI",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -723,7 +723,7 @@
     {
       "path": "term_openai_detail.term_openai_model",
       "flag": "term-openai-model",
-      "env": "PDF2ZH_TERM_OPENAI_MODEL",
+      "env": "BABELOXIDE_TERM_OPENAI_MODEL",
       "kind": "String",
       "default": "gpt-4o-mini",
       "nullable": false,
@@ -733,7 +733,7 @@
     {
       "path": "term_openai_detail.term_openai_base_url",
       "flag": "term-openai-base-url",
-      "env": "PDF2ZH_TERM_OPENAI_BASE_URL",
+      "env": "BABELOXIDE_TERM_OPENAI_BASE_URL",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -743,7 +743,7 @@
     {
       "path": "term_openai_detail.term_openai_api_key",
       "flag": "term-openai-api-key",
-      "env": "PDF2ZH_TERM_OPENAI_API_KEY",
+      "env": "BABELOXIDE_TERM_OPENAI_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -753,7 +753,7 @@
     {
       "path": "term_openai_detail.term_openai_timeout",
       "flag": "term-openai-timeout",
-      "env": "PDF2ZH_TERM_OPENAI_TIMEOUT",
+      "env": "BABELOXIDE_TERM_OPENAI_TIMEOUT",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -763,7 +763,7 @@
     {
       "path": "term_openai_detail.term_openai_temperature",
       "flag": "term-openai-temperature",
-      "env": "PDF2ZH_TERM_OPENAI_TEMPERATURE",
+      "env": "BABELOXIDE_TERM_OPENAI_TEMPERATURE",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -773,7 +773,7 @@
     {
       "path": "term_openai_detail.term_openai_reasoning_effort",
       "flag": "term-openai-reasoning-effort",
-      "env": "PDF2ZH_TERM_OPENAI_REASONING_EFFORT",
+      "env": "BABELOXIDE_TERM_OPENAI_REASONING_EFFORT",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -783,7 +783,7 @@
     {
       "path": "term_openai_detail.term_openai_enable_json_mode",
       "flag": "term-openai-enable-json-mode",
-      "env": "PDF2ZH_TERM_OPENAI_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_TERM_OPENAI_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -793,7 +793,7 @@
     {
       "path": "term_openai_detail.term_openai_send_temprature",
       "flag": "term-openai-send-temprature",
-      "env": "PDF2ZH_TERM_OPENAI_SEND_TEMPRATURE",
+      "env": "BABELOXIDE_TERM_OPENAI_SEND_TEMPRATURE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -803,7 +803,7 @@
     {
       "path": "term_openai_detail.term_openai_send_reasoning_effort",
       "flag": "term-openai-send-reasoning-effort",
-      "env": "PDF2ZH_TERM_OPENAI_SEND_REASONING_EFFORT",
+      "env": "BABELOXIDE_TERM_OPENAI_SEND_REASONING_EFFORT",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -813,7 +813,7 @@
     {
       "path": "aliyundashscope",
       "flag": "aliyundashscope",
-      "env": "PDF2ZH_ALIYUNDASHSCOPE",
+      "env": "BABELOXIDE_ALIYUNDASHSCOPE",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -823,7 +823,7 @@
     {
       "path": "aliyundashscope_detail.aliyun_dashscope_model",
       "flag": "aliyun-dashscope-model",
-      "env": "PDF2ZH_ALIYUN_DASHSCOPE_MODEL",
+      "env": "BABELOXIDE_ALIYUN_DASHSCOPE_MODEL",
       "kind": "String",
       "default": "qwen-plus-latest",
       "nullable": false,
@@ -833,7 +833,7 @@
     {
       "path": "aliyundashscope_detail.aliyun_dashscope_base_url",
       "flag": "aliyun-dashscope-base-url",
-      "env": "PDF2ZH_ALIYUN_DASHSCOPE_BASE_URL",
+      "env": "BABELOXIDE_ALIYUN_DASHSCOPE_BASE_URL",
       "kind": "String",
       "default": "https://dashscope.aliyuncs.com/compatible-mode/v1",
       "nullable": true,
@@ -843,7 +843,7 @@
     {
       "path": "aliyundashscope_detail.aliyun_dashscope_api_key",
       "flag": "aliyun-dashscope-api-key",
-      "env": "PDF2ZH_ALIYUN_DASHSCOPE_API_KEY",
+      "env": "BABELOXIDE_ALIYUN_DASHSCOPE_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -853,7 +853,7 @@
     {
       "path": "aliyundashscope_detail.aliyun_dashscope_timeout",
       "flag": "aliyun-dashscope-timeout",
-      "env": "PDF2ZH_ALIYUN_DASHSCOPE_TIMEOUT",
+      "env": "BABELOXIDE_ALIYUN_DASHSCOPE_TIMEOUT",
       "kind": "String",
       "default": "500",
       "nullable": true,
@@ -863,7 +863,7 @@
     {
       "path": "aliyundashscope_detail.aliyun_dashscope_temperature",
       "flag": "aliyun-dashscope-temperature",
-      "env": "PDF2ZH_ALIYUN_DASHSCOPE_TEMPERATURE",
+      "env": "BABELOXIDE_ALIYUN_DASHSCOPE_TEMPERATURE",
       "kind": "String",
       "default": "0.0",
       "nullable": true,
@@ -873,7 +873,7 @@
     {
       "path": "aliyundashscope_detail.aliyun_dashscope_send_temperature",
       "flag": "aliyun-dashscope-send-temperature",
-      "env": "PDF2ZH_ALIYUN_DASHSCOPE_SEND_TEMPERATURE",
+      "env": "BABELOXIDE_ALIYUN_DASHSCOPE_SEND_TEMPERATURE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -883,7 +883,7 @@
     {
       "path": "aliyundashscope_detail.aliyun_dashscope_enable_json_mode",
       "flag": "aliyun-dashscope-enable-json-mode",
-      "env": "PDF2ZH_ALIYUN_DASHSCOPE_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_ALIYUN_DASHSCOPE_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -893,7 +893,7 @@
     {
       "path": "term_aliyundashscope",
       "flag": "term-aliyundashscope",
-      "env": "PDF2ZH_TERM_ALIYUNDASHSCOPE",
+      "env": "BABELOXIDE_TERM_ALIYUNDASHSCOPE",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -903,7 +903,7 @@
     {
       "path": "term_aliyundashscope_detail.term_aliyun_dashscope_model",
       "flag": "term-aliyun-dashscope-model",
-      "env": "PDF2ZH_TERM_ALIYUN_DASHSCOPE_MODEL",
+      "env": "BABELOXIDE_TERM_ALIYUN_DASHSCOPE_MODEL",
       "kind": "String",
       "default": "qwen-plus-latest",
       "nullable": false,
@@ -913,7 +913,7 @@
     {
       "path": "term_aliyundashscope_detail.term_aliyun_dashscope_base_url",
       "flag": "term-aliyun-dashscope-base-url",
-      "env": "PDF2ZH_TERM_ALIYUN_DASHSCOPE_BASE_URL",
+      "env": "BABELOXIDE_TERM_ALIYUN_DASHSCOPE_BASE_URL",
       "kind": "String",
       "default": "https://dashscope.aliyuncs.com/compatible-mode/v1",
       "nullable": true,
@@ -923,7 +923,7 @@
     {
       "path": "term_aliyundashscope_detail.term_aliyun_dashscope_api_key",
       "flag": "term-aliyun-dashscope-api-key",
-      "env": "PDF2ZH_TERM_ALIYUN_DASHSCOPE_API_KEY",
+      "env": "BABELOXIDE_TERM_ALIYUN_DASHSCOPE_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -933,7 +933,7 @@
     {
       "path": "term_aliyundashscope_detail.term_aliyun_dashscope_timeout",
       "flag": "term-aliyun-dashscope-timeout",
-      "env": "PDF2ZH_TERM_ALIYUN_DASHSCOPE_TIMEOUT",
+      "env": "BABELOXIDE_TERM_ALIYUN_DASHSCOPE_TIMEOUT",
       "kind": "String",
       "default": "500",
       "nullable": true,
@@ -943,7 +943,7 @@
     {
       "path": "term_aliyundashscope_detail.term_aliyun_dashscope_temperature",
       "flag": "term-aliyun-dashscope-temperature",
-      "env": "PDF2ZH_TERM_ALIYUN_DASHSCOPE_TEMPERATURE",
+      "env": "BABELOXIDE_TERM_ALIYUN_DASHSCOPE_TEMPERATURE",
       "kind": "String",
       "default": "0.0",
       "nullable": true,
@@ -953,7 +953,7 @@
     {
       "path": "term_aliyundashscope_detail.term_aliyun_dashscope_send_temperature",
       "flag": "term-aliyun-dashscope-send-temperature",
-      "env": "PDF2ZH_TERM_ALIYUN_DASHSCOPE_SEND_TEMPERATURE",
+      "env": "BABELOXIDE_TERM_ALIYUN_DASHSCOPE_SEND_TEMPERATURE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -963,7 +963,7 @@
     {
       "path": "term_aliyundashscope_detail.term_aliyun_dashscope_enable_json_mode",
       "flag": "term-aliyun-dashscope-enable-json-mode",
-      "env": "PDF2ZH_TERM_ALIYUN_DASHSCOPE_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_TERM_ALIYUN_DASHSCOPE_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -973,7 +973,7 @@
     {
       "path": "google",
       "flag": "google",
-      "env": "PDF2ZH_GOOGLE",
+      "env": "BABELOXIDE_GOOGLE",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -983,7 +983,7 @@
     {
       "path": "bing",
       "flag": "bing",
-      "env": "PDF2ZH_BING",
+      "env": "BABELOXIDE_BING",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -993,7 +993,7 @@
     {
       "path": "deepl",
       "flag": "deepl",
-      "env": "PDF2ZH_DEEPL",
+      "env": "BABELOXIDE_DEEPL",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1003,7 +1003,7 @@
     {
       "path": "deepl_detail.deepl_auth_key",
       "flag": "deepl-auth-key",
-      "env": "PDF2ZH_DEEPL_AUTH_KEY",
+      "env": "BABELOXIDE_DEEPL_AUTH_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1013,7 +1013,7 @@
     {
       "path": "deepseek",
       "flag": "deepseek",
-      "env": "PDF2ZH_DEEPSEEK",
+      "env": "BABELOXIDE_DEEPSEEK",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1023,7 +1023,7 @@
     {
       "path": "deepseek_detail.deepseek_model",
       "flag": "deepseek-model",
-      "env": "PDF2ZH_DEEPSEEK_MODEL",
+      "env": "BABELOXIDE_DEEPSEEK_MODEL",
       "kind": "String",
       "default": "deepseek-chat",
       "nullable": false,
@@ -1033,7 +1033,7 @@
     {
       "path": "deepseek_detail.deepseek_api_key",
       "flag": "deepseek-api-key",
-      "env": "PDF2ZH_DEEPSEEK_API_KEY",
+      "env": "BABELOXIDE_DEEPSEEK_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1043,7 +1043,7 @@
     {
       "path": "deepseek_detail.deepseek_enable_json_mode",
       "flag": "deepseek-enable-json-mode",
-      "env": "PDF2ZH_DEEPSEEK_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_DEEPSEEK_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -1053,7 +1053,7 @@
     {
       "path": "deepseek_detail.deepseek_thinking_mode",
       "flag": "deepseek-thinking-mode",
-      "env": "PDF2ZH_DEEPSEEK_THINKING_MODE",
+      "env": "BABELOXIDE_DEEPSEEK_THINKING_MODE",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1063,7 +1063,7 @@
     {
       "path": "deepseek_detail.deepseek_reasoning_effort",
       "flag": "deepseek-reasoning-effort",
-      "env": "PDF2ZH_DEEPSEEK_REASONING_EFFORT",
+      "env": "BABELOXIDE_DEEPSEEK_REASONING_EFFORT",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1073,7 +1073,7 @@
     {
       "path": "term_deepseek",
       "flag": "term-deepseek",
-      "env": "PDF2ZH_TERM_DEEPSEEK",
+      "env": "BABELOXIDE_TERM_DEEPSEEK",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1083,7 +1083,7 @@
     {
       "path": "term_deepseek_detail.term_deepseek_model",
       "flag": "term-deepseek-model",
-      "env": "PDF2ZH_TERM_DEEPSEEK_MODEL",
+      "env": "BABELOXIDE_TERM_DEEPSEEK_MODEL",
       "kind": "String",
       "default": "deepseek-chat",
       "nullable": false,
@@ -1093,7 +1093,7 @@
     {
       "path": "term_deepseek_detail.term_deepseek_api_key",
       "flag": "term-deepseek-api-key",
-      "env": "PDF2ZH_TERM_DEEPSEEK_API_KEY",
+      "env": "BABELOXIDE_TERM_DEEPSEEK_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1103,7 +1103,7 @@
     {
       "path": "term_deepseek_detail.term_deepseek_enable_json_mode",
       "flag": "term-deepseek-enable-json-mode",
-      "env": "PDF2ZH_TERM_DEEPSEEK_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_TERM_DEEPSEEK_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -1113,7 +1113,7 @@
     {
       "path": "term_deepseek_detail.term_deepseek_thinking_mode",
       "flag": "term-deepseek-thinking-mode",
-      "env": "PDF2ZH_TERM_DEEPSEEK_THINKING_MODE",
+      "env": "BABELOXIDE_TERM_DEEPSEEK_THINKING_MODE",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1123,7 +1123,7 @@
     {
       "path": "term_deepseek_detail.term_deepseek_reasoning_effort",
       "flag": "term-deepseek-reasoning-effort",
-      "env": "PDF2ZH_TERM_DEEPSEEK_REASONING_EFFORT",
+      "env": "BABELOXIDE_TERM_DEEPSEEK_REASONING_EFFORT",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1133,7 +1133,7 @@
     {
       "path": "ollama",
       "flag": "ollama",
-      "env": "PDF2ZH_OLLAMA",
+      "env": "BABELOXIDE_OLLAMA",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1143,7 +1143,7 @@
     {
       "path": "ollama_detail.ollama_model",
       "flag": "ollama-model",
-      "env": "PDF2ZH_OLLAMA_MODEL",
+      "env": "BABELOXIDE_OLLAMA_MODEL",
       "kind": "String",
       "default": "gemma2",
       "nullable": false,
@@ -1153,7 +1153,7 @@
     {
       "path": "ollama_detail.ollama_host",
       "flag": "ollama-host",
-      "env": "PDF2ZH_OLLAMA_HOST",
+      "env": "BABELOXIDE_OLLAMA_HOST",
       "kind": "String",
       "default": "http://localhost:11434",
       "nullable": true,
@@ -1163,7 +1163,7 @@
     {
       "path": "ollama_detail.num_predict",
       "flag": "num-predict",
-      "env": "PDF2ZH_NUM_PREDICT",
+      "env": "BABELOXIDE_NUM_PREDICT",
       "kind": "Integer",
       "default": 2000,
       "nullable": true,
@@ -1173,7 +1173,7 @@
     {
       "path": "term_ollama",
       "flag": "term-ollama",
-      "env": "PDF2ZH_TERM_OLLAMA",
+      "env": "BABELOXIDE_TERM_OLLAMA",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1183,7 +1183,7 @@
     {
       "path": "term_ollama_detail.term_ollama_model",
       "flag": "term-ollama-model",
-      "env": "PDF2ZH_TERM_OLLAMA_MODEL",
+      "env": "BABELOXIDE_TERM_OLLAMA_MODEL",
       "kind": "String",
       "default": "gemma2",
       "nullable": false,
@@ -1193,7 +1193,7 @@
     {
       "path": "term_ollama_detail.term_ollama_host",
       "flag": "term-ollama-host",
-      "env": "PDF2ZH_TERM_OLLAMA_HOST",
+      "env": "BABELOXIDE_TERM_OLLAMA_HOST",
       "kind": "String",
       "default": "http://localhost:11434",
       "nullable": true,
@@ -1203,7 +1203,7 @@
     {
       "path": "term_ollama_detail.term_num_predict",
       "flag": "term-num-predict",
-      "env": "PDF2ZH_TERM_NUM_PREDICT",
+      "env": "BABELOXIDE_TERM_NUM_PREDICT",
       "kind": "Integer",
       "default": 2000,
       "nullable": true,
@@ -1213,7 +1213,7 @@
     {
       "path": "xinference",
       "flag": "xinference",
-      "env": "PDF2ZH_XINFERENCE",
+      "env": "BABELOXIDE_XINFERENCE",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1223,7 +1223,7 @@
     {
       "path": "xinference_detail.xinference_model",
       "flag": "xinference-model",
-      "env": "PDF2ZH_XINFERENCE_MODEL",
+      "env": "BABELOXIDE_XINFERENCE_MODEL",
       "kind": "String",
       "default": "gemma-2-it",
       "nullable": false,
@@ -1233,7 +1233,7 @@
     {
       "path": "xinference_detail.xinference_host",
       "flag": "xinference-host",
-      "env": "PDF2ZH_XINFERENCE_HOST",
+      "env": "BABELOXIDE_XINFERENCE_HOST",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1243,7 +1243,7 @@
     {
       "path": "term_xinference",
       "flag": "term-xinference",
-      "env": "PDF2ZH_TERM_XINFERENCE",
+      "env": "BABELOXIDE_TERM_XINFERENCE",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1253,7 +1253,7 @@
     {
       "path": "term_xinference_detail.term_xinference_model",
       "flag": "term-xinference-model",
-      "env": "PDF2ZH_TERM_XINFERENCE_MODEL",
+      "env": "BABELOXIDE_TERM_XINFERENCE_MODEL",
       "kind": "String",
       "default": "gemma-2-it",
       "nullable": false,
@@ -1263,7 +1263,7 @@
     {
       "path": "term_xinference_detail.term_xinference_host",
       "flag": "term-xinference-host",
-      "env": "PDF2ZH_TERM_XINFERENCE_HOST",
+      "env": "BABELOXIDE_TERM_XINFERENCE_HOST",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1273,7 +1273,7 @@
     {
       "path": "azureopenai",
       "flag": "azureopenai",
-      "env": "PDF2ZH_AZUREOPENAI",
+      "env": "BABELOXIDE_AZUREOPENAI",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1283,7 +1283,7 @@
     {
       "path": "azureopenai_detail.azure_openai_model",
       "flag": "azure-openai-model",
-      "env": "PDF2ZH_AZURE_OPENAI_MODEL",
+      "env": "BABELOXIDE_AZURE_OPENAI_MODEL",
       "kind": "String",
       "default": "gpt-4o-mini",
       "nullable": false,
@@ -1293,7 +1293,7 @@
     {
       "path": "azureopenai_detail.azure_openai_base_url",
       "flag": "azure-openai-base-url",
-      "env": "PDF2ZH_AZURE_OPENAI_BASE_URL",
+      "env": "BABELOXIDE_AZURE_OPENAI_BASE_URL",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1303,7 +1303,7 @@
     {
       "path": "azureopenai_detail.azure_openai_api_key",
       "flag": "azure-openai-api-key",
-      "env": "PDF2ZH_AZURE_OPENAI_API_KEY",
+      "env": "BABELOXIDE_AZURE_OPENAI_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1313,7 +1313,7 @@
     {
       "path": "azureopenai_detail.azure_openai_api_version",
       "flag": "azure-openai-api-version",
-      "env": "PDF2ZH_AZURE_OPENAI_API_VERSION",
+      "env": "BABELOXIDE_AZURE_OPENAI_API_VERSION",
       "kind": "String",
       "default": "2024-06-01",
       "nullable": false,
@@ -1323,7 +1323,7 @@
     {
       "path": "term_azureopenai",
       "flag": "term-azureopenai",
-      "env": "PDF2ZH_TERM_AZUREOPENAI",
+      "env": "BABELOXIDE_TERM_AZUREOPENAI",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1333,7 +1333,7 @@
     {
       "path": "term_azureopenai_detail.term_azure_openai_model",
       "flag": "term-azure-openai-model",
-      "env": "PDF2ZH_TERM_AZURE_OPENAI_MODEL",
+      "env": "BABELOXIDE_TERM_AZURE_OPENAI_MODEL",
       "kind": "String",
       "default": "gpt-4o-mini",
       "nullable": false,
@@ -1343,7 +1343,7 @@
     {
       "path": "term_azureopenai_detail.term_azure_openai_base_url",
       "flag": "term-azure-openai-base-url",
-      "env": "PDF2ZH_TERM_AZURE_OPENAI_BASE_URL",
+      "env": "BABELOXIDE_TERM_AZURE_OPENAI_BASE_URL",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1353,7 +1353,7 @@
     {
       "path": "term_azureopenai_detail.term_azure_openai_api_key",
       "flag": "term-azure-openai-api-key",
-      "env": "PDF2ZH_TERM_AZURE_OPENAI_API_KEY",
+      "env": "BABELOXIDE_TERM_AZURE_OPENAI_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1363,7 +1363,7 @@
     {
       "path": "term_azureopenai_detail.term_azure_openai_api_version",
       "flag": "term-azure-openai-api-version",
-      "env": "PDF2ZH_TERM_AZURE_OPENAI_API_VERSION",
+      "env": "BABELOXIDE_TERM_AZURE_OPENAI_API_VERSION",
       "kind": "String",
       "default": "2024-06-01",
       "nullable": false,
@@ -1373,7 +1373,7 @@
     {
       "path": "modelscope",
       "flag": "modelscope",
-      "env": "PDF2ZH_MODELSCOPE",
+      "env": "BABELOXIDE_MODELSCOPE",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1383,7 +1383,7 @@
     {
       "path": "modelscope_detail.modelscope_model",
       "flag": "modelscope-model",
-      "env": "PDF2ZH_MODELSCOPE_MODEL",
+      "env": "BABELOXIDE_MODELSCOPE_MODEL",
       "kind": "String",
       "default": "Qwen/Qwen2.5-32B-Instruct",
       "nullable": false,
@@ -1393,7 +1393,7 @@
     {
       "path": "modelscope_detail.modelscope_api_key",
       "flag": "modelscope-api-key",
-      "env": "PDF2ZH_MODELSCOPE_API_KEY",
+      "env": "BABELOXIDE_MODELSCOPE_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1403,7 +1403,7 @@
     {
       "path": "modelscope_detail.modelscope_enable_json_mode",
       "flag": "modelscope-enable-json-mode",
-      "env": "PDF2ZH_MODELSCOPE_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_MODELSCOPE_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -1413,7 +1413,7 @@
     {
       "path": "term_modelscope",
       "flag": "term-modelscope",
-      "env": "PDF2ZH_TERM_MODELSCOPE",
+      "env": "BABELOXIDE_TERM_MODELSCOPE",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1423,7 +1423,7 @@
     {
       "path": "term_modelscope_detail.term_modelscope_model",
       "flag": "term-modelscope-model",
-      "env": "PDF2ZH_TERM_MODELSCOPE_MODEL",
+      "env": "BABELOXIDE_TERM_MODELSCOPE_MODEL",
       "kind": "String",
       "default": "Qwen/Qwen2.5-32B-Instruct",
       "nullable": false,
@@ -1433,7 +1433,7 @@
     {
       "path": "term_modelscope_detail.term_modelscope_api_key",
       "flag": "term-modelscope-api-key",
-      "env": "PDF2ZH_TERM_MODELSCOPE_API_KEY",
+      "env": "BABELOXIDE_TERM_MODELSCOPE_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1443,7 +1443,7 @@
     {
       "path": "term_modelscope_detail.term_modelscope_enable_json_mode",
       "flag": "term-modelscope-enable-json-mode",
-      "env": "PDF2ZH_TERM_MODELSCOPE_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_TERM_MODELSCOPE_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -1453,7 +1453,7 @@
     {
       "path": "zhipu",
       "flag": "zhipu",
-      "env": "PDF2ZH_ZHIPU",
+      "env": "BABELOXIDE_ZHIPU",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1463,7 +1463,7 @@
     {
       "path": "zhipu_detail.zhipu_model",
       "flag": "zhipu-model",
-      "env": "PDF2ZH_ZHIPU_MODEL",
+      "env": "BABELOXIDE_ZHIPU_MODEL",
       "kind": "String",
       "default": "glm-4-flash",
       "nullable": false,
@@ -1473,7 +1473,7 @@
     {
       "path": "zhipu_detail.zhipu_api_key",
       "flag": "zhipu-api-key",
-      "env": "PDF2ZH_ZHIPU_API_KEY",
+      "env": "BABELOXIDE_ZHIPU_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1483,7 +1483,7 @@
     {
       "path": "zhipu_detail.zhipu_enable_json_mode",
       "flag": "zhipu-enable-json-mode",
-      "env": "PDF2ZH_ZHIPU_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_ZHIPU_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -1493,7 +1493,7 @@
     {
       "path": "term_zhipu",
       "flag": "term-zhipu",
-      "env": "PDF2ZH_TERM_ZHIPU",
+      "env": "BABELOXIDE_TERM_ZHIPU",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1503,7 +1503,7 @@
     {
       "path": "term_zhipu_detail.term_zhipu_model",
       "flag": "term-zhipu-model",
-      "env": "PDF2ZH_TERM_ZHIPU_MODEL",
+      "env": "BABELOXIDE_TERM_ZHIPU_MODEL",
       "kind": "String",
       "default": "glm-4-flash",
       "nullable": false,
@@ -1513,7 +1513,7 @@
     {
       "path": "term_zhipu_detail.term_zhipu_api_key",
       "flag": "term-zhipu-api-key",
-      "env": "PDF2ZH_TERM_ZHIPU_API_KEY",
+      "env": "BABELOXIDE_TERM_ZHIPU_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1523,7 +1523,7 @@
     {
       "path": "term_zhipu_detail.term_zhipu_enable_json_mode",
       "flag": "term-zhipu-enable-json-mode",
-      "env": "PDF2ZH_TERM_ZHIPU_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_TERM_ZHIPU_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -1533,7 +1533,7 @@
     {
       "path": "siliconflow",
       "flag": "siliconflow",
-      "env": "PDF2ZH_SILICONFLOW",
+      "env": "BABELOXIDE_SILICONFLOW",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1543,7 +1543,7 @@
     {
       "path": "siliconflow_detail.siliconflow_base_url",
       "flag": "siliconflow-base-url",
-      "env": "PDF2ZH_SILICONFLOW_BASE_URL",
+      "env": "BABELOXIDE_SILICONFLOW_BASE_URL",
       "kind": "String",
       "default": "https://api.siliconflow.cn/v1",
       "nullable": true,
@@ -1553,7 +1553,7 @@
     {
       "path": "siliconflow_detail.siliconflow_model",
       "flag": "siliconflow-model",
-      "env": "PDF2ZH_SILICONFLOW_MODEL",
+      "env": "BABELOXIDE_SILICONFLOW_MODEL",
       "kind": "String",
       "default": "Qwen/Qwen2.5-7B-Instruct",
       "nullable": false,
@@ -1563,7 +1563,7 @@
     {
       "path": "siliconflow_detail.siliconflow_api_key",
       "flag": "siliconflow-api-key",
-      "env": "PDF2ZH_SILICONFLOW_API_KEY",
+      "env": "BABELOXIDE_SILICONFLOW_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1573,7 +1573,7 @@
     {
       "path": "siliconflow_detail.siliconflow_enable_thinking",
       "flag": "siliconflow-enable-thinking",
-      "env": "PDF2ZH_SILICONFLOW_ENABLE_THINKING",
+      "env": "BABELOXIDE_SILICONFLOW_ENABLE_THINKING",
       "kind": "Bool",
       "default": false,
       "nullable": true,
@@ -1583,7 +1583,7 @@
     {
       "path": "siliconflow_detail.siliconflow_send_enable_thinking_param",
       "flag": "siliconflow-send-enable-thinking-param",
-      "env": "PDF2ZH_SILICONFLOW_SEND_ENABLE_THINKING_PARAM",
+      "env": "BABELOXIDE_SILICONFLOW_SEND_ENABLE_THINKING_PARAM",
       "kind": "Bool",
       "default": false,
       "nullable": true,
@@ -1593,7 +1593,7 @@
     {
       "path": "siliconflow_detail.siliconflow_enable_json_mode",
       "flag": "siliconflow-enable-json-mode",
-      "env": "PDF2ZH_SILICONFLOW_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_SILICONFLOW_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": false,
       "nullable": true,
@@ -1603,7 +1603,7 @@
     {
       "path": "term_siliconflow",
       "flag": "term-siliconflow",
-      "env": "PDF2ZH_TERM_SILICONFLOW",
+      "env": "BABELOXIDE_TERM_SILICONFLOW",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1613,7 +1613,7 @@
     {
       "path": "term_siliconflow_detail.term_siliconflow_base_url",
       "flag": "term-siliconflow-base-url",
-      "env": "PDF2ZH_TERM_SILICONFLOW_BASE_URL",
+      "env": "BABELOXIDE_TERM_SILICONFLOW_BASE_URL",
       "kind": "String",
       "default": "https://api.siliconflow.cn/v1",
       "nullable": true,
@@ -1623,7 +1623,7 @@
     {
       "path": "term_siliconflow_detail.term_siliconflow_model",
       "flag": "term-siliconflow-model",
-      "env": "PDF2ZH_TERM_SILICONFLOW_MODEL",
+      "env": "BABELOXIDE_TERM_SILICONFLOW_MODEL",
       "kind": "String",
       "default": "Qwen/Qwen2.5-7B-Instruct",
       "nullable": false,
@@ -1633,7 +1633,7 @@
     {
       "path": "term_siliconflow_detail.term_siliconflow_api_key",
       "flag": "term-siliconflow-api-key",
-      "env": "PDF2ZH_TERM_SILICONFLOW_API_KEY",
+      "env": "BABELOXIDE_TERM_SILICONFLOW_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1643,7 +1643,7 @@
     {
       "path": "term_siliconflow_detail.term_siliconflow_enable_thinking",
       "flag": "term-siliconflow-enable-thinking",
-      "env": "PDF2ZH_TERM_SILICONFLOW_ENABLE_THINKING",
+      "env": "BABELOXIDE_TERM_SILICONFLOW_ENABLE_THINKING",
       "kind": "Bool",
       "default": false,
       "nullable": true,
@@ -1653,7 +1653,7 @@
     {
       "path": "term_siliconflow_detail.term_siliconflow_send_enable_thinking_param",
       "flag": "term-siliconflow-send-enable-thinking-param",
-      "env": "PDF2ZH_TERM_SILICONFLOW_SEND_ENABLE_THINKING_PARAM",
+      "env": "BABELOXIDE_TERM_SILICONFLOW_SEND_ENABLE_THINKING_PARAM",
       "kind": "Bool",
       "default": false,
       "nullable": true,
@@ -1663,7 +1663,7 @@
     {
       "path": "term_siliconflow_detail.term_siliconflow_enable_json_mode",
       "flag": "term-siliconflow-enable-json-mode",
-      "env": "PDF2ZH_TERM_SILICONFLOW_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_TERM_SILICONFLOW_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": false,
       "nullable": true,
@@ -1673,7 +1673,7 @@
     {
       "path": "tencentmechinetranslation",
       "flag": "tencentmechinetranslation",
-      "env": "PDF2ZH_TENCENTMECHINETRANSLATION",
+      "env": "BABELOXIDE_TENCENTMECHINETRANSLATION",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1683,7 +1683,7 @@
     {
       "path": "tencentmechinetranslation_detail.tencentcloud_secret_id",
       "flag": "tencentcloud-secret-id",
-      "env": "PDF2ZH_TENCENTCLOUD_SECRET_ID",
+      "env": "BABELOXIDE_TENCENTCLOUD_SECRET_ID",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1693,7 +1693,7 @@
     {
       "path": "tencentmechinetranslation_detail.tencentcloud_secret_key",
       "flag": "tencentcloud-secret-key",
-      "env": "PDF2ZH_TENCENTCLOUD_SECRET_KEY",
+      "env": "BABELOXIDE_TENCENTCLOUD_SECRET_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1703,7 +1703,7 @@
     {
       "path": "gemini",
       "flag": "gemini",
-      "env": "PDF2ZH_GEMINI",
+      "env": "BABELOXIDE_GEMINI",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1713,7 +1713,7 @@
     {
       "path": "gemini_detail.gemini_model",
       "flag": "gemini-model",
-      "env": "PDF2ZH_GEMINI_MODEL",
+      "env": "BABELOXIDE_GEMINI_MODEL",
       "kind": "String",
       "default": "gemini-1.5-flash",
       "nullable": false,
@@ -1723,7 +1723,7 @@
     {
       "path": "gemini_detail.gemini_api_key",
       "flag": "gemini-api-key",
-      "env": "PDF2ZH_GEMINI_API_KEY",
+      "env": "BABELOXIDE_GEMINI_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1733,7 +1733,7 @@
     {
       "path": "gemini_detail.gemini_enable_json_mode",
       "flag": "gemini-enable-json-mode",
-      "env": "PDF2ZH_GEMINI_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_GEMINI_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -1743,7 +1743,7 @@
     {
       "path": "term_gemini",
       "flag": "term-gemini",
-      "env": "PDF2ZH_TERM_GEMINI",
+      "env": "BABELOXIDE_TERM_GEMINI",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1753,7 +1753,7 @@
     {
       "path": "term_gemini_detail.term_gemini_model",
       "flag": "term-gemini-model",
-      "env": "PDF2ZH_TERM_GEMINI_MODEL",
+      "env": "BABELOXIDE_TERM_GEMINI_MODEL",
       "kind": "String",
       "default": "gemini-1.5-flash",
       "nullable": false,
@@ -1763,7 +1763,7 @@
     {
       "path": "term_gemini_detail.term_gemini_api_key",
       "flag": "term-gemini-api-key",
-      "env": "PDF2ZH_TERM_GEMINI_API_KEY",
+      "env": "BABELOXIDE_TERM_GEMINI_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1773,7 +1773,7 @@
     {
       "path": "term_gemini_detail.term_gemini_enable_json_mode",
       "flag": "term-gemini-enable-json-mode",
-      "env": "PDF2ZH_TERM_GEMINI_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_TERM_GEMINI_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -1783,7 +1783,7 @@
     {
       "path": "azure",
       "flag": "azure",
-      "env": "PDF2ZH_AZURE",
+      "env": "BABELOXIDE_AZURE",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1793,7 +1793,7 @@
     {
       "path": "azure_detail.azure_endpoint",
       "flag": "azure-endpoint",
-      "env": "PDF2ZH_AZURE_ENDPOINT",
+      "env": "BABELOXIDE_AZURE_ENDPOINT",
       "kind": "String",
       "default": "https://api.translator.azure.cn",
       "nullable": true,
@@ -1803,7 +1803,7 @@
     {
       "path": "azure_detail.azure_api_key",
       "flag": "azure-api-key",
-      "env": "PDF2ZH_AZURE_API_KEY",
+      "env": "BABELOXIDE_AZURE_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1813,7 +1813,7 @@
     {
       "path": "anythingllm",
       "flag": "anythingllm",
-      "env": "PDF2ZH_ANYTHINGLLM",
+      "env": "BABELOXIDE_ANYTHINGLLM",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1823,7 +1823,7 @@
     {
       "path": "anythingllm_detail.anythingllm_url",
       "flag": "anythingllm-url",
-      "env": "PDF2ZH_ANYTHINGLLM_URL",
+      "env": "BABELOXIDE_ANYTHINGLLM_URL",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1833,7 +1833,7 @@
     {
       "path": "anythingllm_detail.anythingllm_apikey",
       "flag": "anythingllm-apikey",
-      "env": "PDF2ZH_ANYTHINGLLM_APIKEY",
+      "env": "BABELOXIDE_ANYTHINGLLM_APIKEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1843,7 +1843,7 @@
     {
       "path": "dify",
       "flag": "dify",
-      "env": "PDF2ZH_DIFY",
+      "env": "BABELOXIDE_DIFY",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1853,7 +1853,7 @@
     {
       "path": "dify_detail.dify_url",
       "flag": "dify-url",
-      "env": "PDF2ZH_DIFY_URL",
+      "env": "BABELOXIDE_DIFY_URL",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1863,7 +1863,7 @@
     {
       "path": "dify_detail.dify_apikey",
       "flag": "dify-apikey",
-      "env": "PDF2ZH_DIFY_APIKEY",
+      "env": "BABELOXIDE_DIFY_APIKEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1873,7 +1873,7 @@
     {
       "path": "grok",
       "flag": "grok",
-      "env": "PDF2ZH_GROK",
+      "env": "BABELOXIDE_GROK",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1883,7 +1883,7 @@
     {
       "path": "grok_detail.grok_model",
       "flag": "grok-model",
-      "env": "PDF2ZH_GROK_MODEL",
+      "env": "BABELOXIDE_GROK_MODEL",
       "kind": "String",
       "default": "grok-2-1212",
       "nullable": false,
@@ -1893,7 +1893,7 @@
     {
       "path": "grok_detail.grok_api_key",
       "flag": "grok-api-key",
-      "env": "PDF2ZH_GROK_API_KEY",
+      "env": "BABELOXIDE_GROK_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1903,7 +1903,7 @@
     {
       "path": "grok_detail.grok_enable_json_mode",
       "flag": "grok-enable-json-mode",
-      "env": "PDF2ZH_GROK_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_GROK_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -1913,7 +1913,7 @@
     {
       "path": "term_grok",
       "flag": "term-grok",
-      "env": "PDF2ZH_TERM_GROK",
+      "env": "BABELOXIDE_TERM_GROK",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1923,7 +1923,7 @@
     {
       "path": "term_grok_detail.term_grok_model",
       "flag": "term-grok-model",
-      "env": "PDF2ZH_TERM_GROK_MODEL",
+      "env": "BABELOXIDE_TERM_GROK_MODEL",
       "kind": "String",
       "default": "grok-2-1212",
       "nullable": false,
@@ -1933,7 +1933,7 @@
     {
       "path": "term_grok_detail.term_grok_api_key",
       "flag": "term-grok-api-key",
-      "env": "PDF2ZH_TERM_GROK_API_KEY",
+      "env": "BABELOXIDE_TERM_GROK_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1943,7 +1943,7 @@
     {
       "path": "term_grok_detail.term_grok_enable_json_mode",
       "flag": "term-grok-enable-json-mode",
-      "env": "PDF2ZH_TERM_GROK_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_TERM_GROK_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -1953,7 +1953,7 @@
     {
       "path": "groq",
       "flag": "groq",
-      "env": "PDF2ZH_GROQ",
+      "env": "BABELOXIDE_GROQ",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -1963,7 +1963,7 @@
     {
       "path": "groq_detail.groq_model",
       "flag": "groq-model",
-      "env": "PDF2ZH_GROQ_MODEL",
+      "env": "BABELOXIDE_GROQ_MODEL",
       "kind": "String",
       "default": "llama-3-3-70b-versatile",
       "nullable": false,
@@ -1973,7 +1973,7 @@
     {
       "path": "groq_detail.groq_api_key",
       "flag": "groq-api-key",
-      "env": "PDF2ZH_GROQ_API_KEY",
+      "env": "BABELOXIDE_GROQ_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -1983,7 +1983,7 @@
     {
       "path": "groq_detail.groq_enable_json_mode",
       "flag": "groq-enable-json-mode",
-      "env": "PDF2ZH_GROQ_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_GROQ_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -1993,7 +1993,7 @@
     {
       "path": "term_groq",
       "flag": "term-groq",
-      "env": "PDF2ZH_TERM_GROQ",
+      "env": "BABELOXIDE_TERM_GROQ",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -2003,7 +2003,7 @@
     {
       "path": "term_groq_detail.term_groq_model",
       "flag": "term-groq-model",
-      "env": "PDF2ZH_TERM_GROQ_MODEL",
+      "env": "BABELOXIDE_TERM_GROQ_MODEL",
       "kind": "String",
       "default": "llama-3-3-70b-versatile",
       "nullable": false,
@@ -2013,7 +2013,7 @@
     {
       "path": "term_groq_detail.term_groq_api_key",
       "flag": "term-groq-api-key",
-      "env": "PDF2ZH_TERM_GROQ_API_KEY",
+      "env": "BABELOXIDE_TERM_GROQ_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -2023,7 +2023,7 @@
     {
       "path": "term_groq_detail.term_groq_enable_json_mode",
       "flag": "term-groq-enable-json-mode",
-      "env": "PDF2ZH_TERM_GROQ_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_TERM_GROQ_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -2033,7 +2033,7 @@
     {
       "path": "qwenmt",
       "flag": "qwenmt",
-      "env": "PDF2ZH_QWENMT",
+      "env": "BABELOXIDE_QWENMT",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -2043,7 +2043,7 @@
     {
       "path": "qwenmt_detail.qwenmt_model",
       "flag": "qwenmt-model",
-      "env": "PDF2ZH_QWENMT_MODEL",
+      "env": "BABELOXIDE_QWENMT_MODEL",
       "kind": "String",
       "default": "qwen-mt-plus",
       "nullable": false,
@@ -2053,7 +2053,7 @@
     {
       "path": "qwenmt_detail.qwenmt_base_url",
       "flag": "qwenmt-base-url",
-      "env": "PDF2ZH_QWENMT_BASE_URL",
+      "env": "BABELOXIDE_QWENMT_BASE_URL",
       "kind": "String",
       "default": "https://dashscope.aliyuncs.com/compatible-mode/v1",
       "nullable": true,
@@ -2063,7 +2063,7 @@
     {
       "path": "qwenmt_detail.qwenmt_api_key",
       "flag": "qwenmt-api-key",
-      "env": "PDF2ZH_QWENMT_API_KEY",
+      "env": "BABELOXIDE_QWENMT_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -2073,7 +2073,7 @@
     {
       "path": "qwenmt_detail.ali_domains",
       "flag": "ali-domains",
-      "env": "PDF2ZH_ALI_DOMAINS",
+      "env": "BABELOXIDE_ALI_DOMAINS",
       "kind": "String",
       "default": "This sentence is extracted from a scientific paper. When translating, please pay close attention to the use of specialized troubleshooting terminologies and adhere to scientific sentence structures to maintain the technical rigor and precision of the original text.",
       "nullable": true,
@@ -2083,7 +2083,7 @@
     {
       "path": "openaicompatible",
       "flag": "openaicompatible",
-      "env": "PDF2ZH_OPENAICOMPATIBLE",
+      "env": "BABELOXIDE_OPENAICOMPATIBLE",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -2093,7 +2093,7 @@
     {
       "path": "openaicompatible_detail.openai_compatible_model",
       "flag": "openai-compatible-model",
-      "env": "PDF2ZH_OPENAI_COMPATIBLE_MODEL",
+      "env": "BABELOXIDE_OPENAI_COMPATIBLE_MODEL",
       "kind": "String",
       "default": "gpt-4o-mini",
       "nullable": false,
@@ -2103,7 +2103,7 @@
     {
       "path": "openaicompatible_detail.openai_compatible_base_url",
       "flag": "openai-compatible-base-url",
-      "env": "PDF2ZH_OPENAI_COMPATIBLE_BASE_URL",
+      "env": "BABELOXIDE_OPENAI_COMPATIBLE_BASE_URL",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -2113,7 +2113,7 @@
     {
       "path": "openaicompatible_detail.openai_compatible_api_key",
       "flag": "openai-compatible-api-key",
-      "env": "PDF2ZH_OPENAI_COMPATIBLE_API_KEY",
+      "env": "BABELOXIDE_OPENAI_COMPATIBLE_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -2123,7 +2123,7 @@
     {
       "path": "openaicompatible_detail.openai_compatible_timeout",
       "flag": "openai-compatible-timeout",
-      "env": "PDF2ZH_OPENAI_COMPATIBLE_TIMEOUT",
+      "env": "BABELOXIDE_OPENAI_COMPATIBLE_TIMEOUT",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -2133,7 +2133,7 @@
     {
       "path": "openaicompatible_detail.openai_compatible_temperature",
       "flag": "openai-compatible-temperature",
-      "env": "PDF2ZH_OPENAI_COMPATIBLE_TEMPERATURE",
+      "env": "BABELOXIDE_OPENAI_COMPATIBLE_TEMPERATURE",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -2143,7 +2143,7 @@
     {
       "path": "openaicompatible_detail.openai_compatible_reasoning_effort",
       "flag": "openai-compatible-reasoning-effort",
-      "env": "PDF2ZH_OPENAI_COMPATIBLE_REASONING_EFFORT",
+      "env": "BABELOXIDE_OPENAI_COMPATIBLE_REASONING_EFFORT",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -2153,7 +2153,7 @@
     {
       "path": "openaicompatible_detail.openai_compatible_send_temperature",
       "flag": "openai-compatible-send-temperature",
-      "env": "PDF2ZH_OPENAI_COMPATIBLE_SEND_TEMPERATURE",
+      "env": "BABELOXIDE_OPENAI_COMPATIBLE_SEND_TEMPERATURE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -2163,7 +2163,7 @@
     {
       "path": "openaicompatible_detail.openai_compatible_send_reasoning_effort",
       "flag": "openai-compatible-send-reasoning-effort",
-      "env": "PDF2ZH_OPENAI_COMPATIBLE_SEND_REASONING_EFFORT",
+      "env": "BABELOXIDE_OPENAI_COMPATIBLE_SEND_REASONING_EFFORT",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -2173,7 +2173,7 @@
     {
       "path": "openaicompatible_detail.openai_compatible_enable_json_mode",
       "flag": "openai-compatible-enable-json-mode",
-      "env": "PDF2ZH_OPENAI_COMPATIBLE_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_OPENAI_COMPATIBLE_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -2183,7 +2183,7 @@
     {
       "path": "term_openaicompatible",
       "flag": "term-openaicompatible",
-      "env": "PDF2ZH_TERM_OPENAICOMPATIBLE",
+      "env": "BABELOXIDE_TERM_OPENAICOMPATIBLE",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -2193,7 +2193,7 @@
     {
       "path": "term_openaicompatible_detail.term_openai_compatible_model",
       "flag": "term-openai-compatible-model",
-      "env": "PDF2ZH_TERM_OPENAI_COMPATIBLE_MODEL",
+      "env": "BABELOXIDE_TERM_OPENAI_COMPATIBLE_MODEL",
       "kind": "String",
       "default": "gpt-4o-mini",
       "nullable": false,
@@ -2203,7 +2203,7 @@
     {
       "path": "term_openaicompatible_detail.term_openai_compatible_base_url",
       "flag": "term-openai-compatible-base-url",
-      "env": "PDF2ZH_TERM_OPENAI_COMPATIBLE_BASE_URL",
+      "env": "BABELOXIDE_TERM_OPENAI_COMPATIBLE_BASE_URL",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -2213,7 +2213,7 @@
     {
       "path": "term_openaicompatible_detail.term_openai_compatible_api_key",
       "flag": "term-openai-compatible-api-key",
-      "env": "PDF2ZH_TERM_OPENAI_COMPATIBLE_API_KEY",
+      "env": "BABELOXIDE_TERM_OPENAI_COMPATIBLE_API_KEY",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -2223,7 +2223,7 @@
     {
       "path": "term_openaicompatible_detail.term_openai_compatible_timeout",
       "flag": "term-openai-compatible-timeout",
-      "env": "PDF2ZH_TERM_OPENAI_COMPATIBLE_TIMEOUT",
+      "env": "BABELOXIDE_TERM_OPENAI_COMPATIBLE_TIMEOUT",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -2233,7 +2233,7 @@
     {
       "path": "term_openaicompatible_detail.term_openai_compatible_temperature",
       "flag": "term-openai-compatible-temperature",
-      "env": "PDF2ZH_TERM_OPENAI_COMPATIBLE_TEMPERATURE",
+      "env": "BABELOXIDE_TERM_OPENAI_COMPATIBLE_TEMPERATURE",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -2243,7 +2243,7 @@
     {
       "path": "term_openaicompatible_detail.term_openai_compatible_reasoning_effort",
       "flag": "term-openai-compatible-reasoning-effort",
-      "env": "PDF2ZH_TERM_OPENAI_COMPATIBLE_REASONING_EFFORT",
+      "env": "BABELOXIDE_TERM_OPENAI_COMPATIBLE_REASONING_EFFORT",
       "kind": "String",
       "default": null,
       "nullable": true,
@@ -2253,7 +2253,7 @@
     {
       "path": "term_openaicompatible_detail.term_openai_compatible_send_temperature",
       "flag": "term-openai-compatible-send-temperature",
-      "env": "PDF2ZH_TERM_OPENAI_COMPATIBLE_SEND_TEMPERATURE",
+      "env": "BABELOXIDE_TERM_OPENAI_COMPATIBLE_SEND_TEMPERATURE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -2263,7 +2263,7 @@
     {
       "path": "term_openaicompatible_detail.term_openai_compatible_send_reasoning_effort",
       "flag": "term-openai-compatible-send-reasoning-effort",
-      "env": "PDF2ZH_TERM_OPENAI_COMPATIBLE_SEND_REASONING_EFFORT",
+      "env": "BABELOXIDE_TERM_OPENAI_COMPATIBLE_SEND_REASONING_EFFORT",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -2273,7 +2273,7 @@
     {
       "path": "term_openaicompatible_detail.term_openai_compatible_enable_json_mode",
       "flag": "term-openai-compatible-enable-json-mode",
-      "env": "PDF2ZH_TERM_OPENAI_COMPATIBLE_ENABLE_JSON_MODE",
+      "env": "BABELOXIDE_TERM_OPENAI_COMPATIBLE_ENABLE_JSON_MODE",
       "kind": "Bool",
       "default": null,
       "nullable": true,
@@ -2283,7 +2283,7 @@
     {
       "path": "claudecode",
       "flag": "claudecode",
-      "env": "PDF2ZH_CLAUDECODE",
+      "env": "BABELOXIDE_CLAUDECODE",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -2293,7 +2293,7 @@
     {
       "path": "claudecode_detail.claude_code_path",
       "flag": "claude-code-path",
-      "env": "PDF2ZH_CLAUDE_CODE_PATH",
+      "env": "BABELOXIDE_CLAUDE_CODE_PATH",
       "kind": "String",
       "default": "claude",
       "nullable": false,
@@ -2303,7 +2303,7 @@
     {
       "path": "claudecode_detail.claude_code_model",
       "flag": "claude-code-model",
-      "env": "PDF2ZH_CLAUDE_CODE_MODEL",
+      "env": "BABELOXIDE_CLAUDE_CODE_MODEL",
       "kind": "String",
       "default": "sonnet",
       "nullable": false,
@@ -2313,7 +2313,7 @@
     {
       "path": "clitranslator",
       "flag": "clitranslator",
-      "env": "PDF2ZH_CLITRANSLATOR",
+      "env": "BABELOXIDE_CLITRANSLATOR",
       "kind": "Bool",
       "default": false,
       "nullable": false,
@@ -2323,7 +2323,7 @@
     {
       "path": "clitranslator_detail.clitranslator_command",
       "flag": "clitranslator-command",
-      "env": "PDF2ZH_CLITRANSLATOR_COMMAND",
+      "env": "BABELOXIDE_CLITRANSLATOR_COMMAND",
       "kind": "String",
       "default": "",
       "nullable": false,
@@ -2333,7 +2333,7 @@
     {
       "path": "clitranslator_detail.clitranslator_timeout",
       "flag": "clitranslator-timeout",
-      "env": "PDF2ZH_CLITRANSLATOR_TIMEOUT",
+      "env": "BABELOXIDE_CLITRANSLATOR_TIMEOUT",
       "kind": "Integer",
       "default": 60,
       "nullable": false,
@@ -2343,7 +2343,7 @@
     {
       "path": "clitranslator_detail.clitranslator_postprocess_command",
       "flag": "clitranslator-postprocess-command",
-      "env": "PDF2ZH_CLITRANSLATOR_POSTPROCESS_COMMAND",
+      "env": "BABELOXIDE_CLITRANSLATOR_POSTPROCESS_COMMAND",
       "kind": "String",
       "default": null,
       "nullable": true,

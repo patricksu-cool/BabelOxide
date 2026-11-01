@@ -86,7 +86,7 @@ impl PreviewRenderer {
         });
         let worker = shared.clone();
         let handle = thread::Builder::new()
-            .name("pdf2zh-pdf-preview".into())
+            .name("babeloxide-pdf-preview".into())
             .spawn(move || {
                 // This only handles Rust panics. It does not isolate native crashes
                 // or interrupt an in-progress synchronous PDFium call.

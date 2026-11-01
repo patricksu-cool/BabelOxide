@@ -5,7 +5,7 @@ mod seed;
 pub use assets::maintain_assets;
 
 use anyhow::{Context, Result, bail, ensure};
-use pdf2zh_core::{PdfJob, TranslationRequest, TranslationService, process};
+use babeloxide_core::{PdfJob, TranslationRequest, TranslationService, process};
 use serde_json::{Value, json};
 use std::{
     collections::HashSet,
@@ -427,7 +427,7 @@ async fn run_session(
     // paths use Windows extended-length syntax. No engine input depends on CWD.
     // Keep this directory alive until the contained worker has been reaped.
     let launch_directory = tempfile::Builder::new()
-        .prefix("pdf2zh-worker-")
+        .prefix("babeloxide-worker-")
         .tempdir()
         .context("Create worker launch directory")?;
     let mut command = Command::new(python);

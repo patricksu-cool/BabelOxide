@@ -3,7 +3,7 @@ members = ["crates/core", "crates/babeldoc-bridge", "crates/cli", "crates/config
 resolver = "2"
 
 [workspace.package]
-version = "2.9.0"
+version = "1.0.0"
 edition = "2024"
 rust-version = "1.88"
 license = "AGPL-3.0-only"

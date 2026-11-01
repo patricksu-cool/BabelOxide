@@ -1,11 +1,11 @@
 use std::{path::PathBuf, sync::Arc, time::Duration};
 
-use eframe::egui::{self, Align, Color32, Layout, RichText, Vec2};
-use pdf2zh_config::{EngineSpec, FieldSpec, engine_specs, field_specs};
-use pdf2zh_pdf_preview::{
+use babeloxide_config::{EngineSpec, FieldSpec, engine_specs, field_specs};
+use babeloxide_pdf_preview::{
     PreviewErrorKind, PreviewRenderer, PreviewRequest, PreviewResult, PreviewTicket,
 };
-use pdf2zh_tasks::{TaskHandle, TaskSnapshot, TaskStatus};
+use babeloxide_tasks::{TaskHandle, TaskSnapshot, TaskStatus};
+use eframe::egui::{self, Align, Color32, Layout, RichText, Vec2};
 use serde_json::{Value, json};
 
 use crate::{
@@ -15,13 +15,14 @@ use crate::{
     model::{DocumentKind, Editor, progress_fraction, result_path},
 };
 
+mod about;
 mod workflow;
 
 struct Batch {
     handle: TaskHandle,
     inputs: Vec<PathBuf>,
     snapshot: TaskSnapshot,
-    settings: pdf2zh_config::Settings,
+    settings: babeloxide_config::Settings,
 }
 
 pub(crate) struct NativeApp {
@@ -59,7 +60,9 @@ pub(crate) struct NativeApp {
     compact_preview: bool,
     preset_name: String,
     selected_preset: String,
-    pending_settings: Option<pdf2zh_config::Settings>,
+    pending_settings: Option<babeloxide_config::Settings>,
+    show_about: bool,
+    about_section: usize,
 }
 
 impl NativeApp {
@@ -97,6 +100,9 @@ impl NativeApp {
             style
                 .text_styles
                 .insert(egui::TextStyle::Heading, egui::FontId::proportional(24.0));
+            style
+                .text_styles
+                .insert(egui::TextStyle::Small, egui::FontId::proportional(12.0));
             context.egui_ctx.set_style_of(theme, style);
         }
         let data_notice = options.store.fallback_from().map(|_| {
@@ -116,7 +122,7 @@ impl NativeApp {
         app
     }
     fn with_renderer(
-        settings: pdf2zh_config::Settings,
+        settings: babeloxide_config::Settings,
         background: Background,
         chinese: bool,
         preview: Option<PreviewRenderer>,
@@ -131,6 +137,8 @@ impl NativeApp {
             preset_name: String::new(),
             selected_preset: "自訂".into(),
             pending_settings: None,
+            show_about: false,
+            about_section: 0,
             background,
             batches: Vec::new(),
             selected_batch: None,
@@ -400,7 +408,7 @@ impl NativeApp {
     fn heading(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
-                ui.heading("PDFMathTranslate");
+                ui.heading("BabelOxide");
                 ui.label(
                     RichText::new(self.text("Translate PDFs, keep the layout"))
                         .color(ui.visuals().weak_text_color()),
@@ -434,11 +442,8 @@ impl NativeApp {
                 {
                     self.reload();
                 }
-                if ui
-                    .selectable_label(self.show_settings, self.text("Settings"))
-                    .clicked()
-                {
-                    self.show_settings = !self.show_settings;
+                if ui.small_button(self.text("About BabelOxide")).clicked() {
+                    self.show_about = true;
                 }
                 if self.editor.dirty {
                     ui.label(
@@ -1492,6 +1497,7 @@ impl eframe::App for NativeApp {
                     );
                 });
             });
+        self.about_window(ui.ctx());
     }
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
         self.begin_close();
@@ -1507,8 +1513,8 @@ impl Drop for NativeApp {
 mod tests {
     use super::*;
     use crate::background::BackgroundThread;
+    use babeloxide_config::{ConfigStore, Settings};
     use eframe::App;
-    use pdf2zh_config::{ConfigStore, Settings};
     struct Harness {
         app: NativeApp,
         _thread: BackgroundThread,
@@ -1518,7 +1524,7 @@ mod tests {
         fn new(settings: Settings) -> Self {
             let directory = tempfile::tempdir().unwrap();
             let store = ConfigStore::new(directory.path().into()).unwrap();
-            let worker = babeldoc_bridge::WorkerOptions {
+            let worker = babeloxide_bridge::WorkerOptions {
                 python: directory.path().join("not-a-worker.exe"),
                 script: directory.path().join("not-a-script.py"),
                 ..Default::default()

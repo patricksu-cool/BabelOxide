@@ -12,8 +12,8 @@ use std::{
 };
 
 use anyhow::{Context, Result, ensure};
-use babeldoc_bridge::{FactoryInitialization, WorkerOptions, translate_pdf_with_initialization};
-use pdf2zh_core::{PdfJob, ProviderError, TranslationService};
+use babeloxide_bridge::{FactoryInitialization, WorkerOptions, translate_pdf_with_initialization};
+use babeloxide_core::{PdfJob, ProviderError, TranslationService};
 use serde::Serialize;
 use serde_json::Value;
 use tokio::sync::{Semaphore, mpsc, watch};

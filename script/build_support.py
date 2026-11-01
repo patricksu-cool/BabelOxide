@@ -149,7 +149,7 @@ def isolated_environment(work: Path) -> dict[str, str]:
         path.mkdir(parents=True, exist_ok=True)
     env.update(HOME=str(home), USERPROFILE=str(home), TEMP=str(temporary), TMP=str(temporary), TMPDIR=str(temporary),
                UV_CACHE_DIR=str(work / "uv-cache"), UV_NO_CONFIG="1", UV_PYTHON_DOWNLOADS="never", PYTHONUTF8="1",
-               PDF2ZH_APP_DIR=str(work / "app"), NO_PROXY="127.0.0.1,localhost", no_proxy="127.0.0.1,localhost")
+               BABELOXIDE_APP_DIR=str(work / "app"), NO_PROXY="127.0.0.1,localhost", no_proxy="127.0.0.1,localhost")
     return env
 
 
@@ -194,7 +194,7 @@ def _macho_commands(data: bytes) -> dict | None:
 
 def audit_macos(root: Path, runtime: Path) -> list[dict]:
     records = []
-    main_paths = [root / "pdf2zh", root / "pdf2zh-gui", runtime / "bin/python3.13"]
+    main_paths = [root / "BabelOxide", root / "BabelOxide-gui", runtime / "bin/python3.13"]
     mains = {path: _macho_commands(path.read_bytes()) for path in main_paths}
     for path in checked_files(root):
         if path.is_symlink():
@@ -205,7 +205,7 @@ def audit_macos(root: Path, runtime: Path) -> list[dict]:
             continue
         commands = _macho_commands(path.read_bytes())
         require(commands is not None, "Invalid native binary")
-        executable = runtime / "bin/python3.13" if path.is_relative_to(runtime) else root / "pdf2zh-gui"
+        executable = runtime / "bin/python3.13" if path.is_relative_to(runtime) else root / "BabelOxide-gui"
         origins = [(path, value) for value in commands["rpaths"]]
         origins += [(executable, value) for value in (mains[executable] or {}).get("rpaths", [])]
 

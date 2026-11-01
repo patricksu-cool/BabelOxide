@@ -43,7 +43,7 @@ pub fn report_startup_error(message: &str) {
     #[cfg(any(windows, target_os = "macos"))]
     {
         let _ = rfd::MessageDialog::new()
-            .set_title("PDFMathTranslate")
+            .set_title("BabelOxide")
             .set_description(message)
             .set_level(rfd::MessageLevel::Error)
             .show();

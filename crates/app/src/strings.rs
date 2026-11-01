@@ -1,11 +1,27 @@
 //! User-facing text; technical identifiers are kept as hover text.
-use pdf2zh_config::FieldSpec;
+use babeloxide_config::FieldSpec;
 
 pub fn ui(key: &'static str, chinese: bool) -> &'static str {
     if !chinese {
         return key;
     }
     match key {
+        "About BabelOxide" => "關於 BabelOxide",
+        "Free software under AGPL-3.0-only; no warranty" => {
+            "自由軟體 · AGPL-3.0-only · 不提供任何擔保"
+        }
+        "Modified derivative; upstream authors and sources are retained" => {
+            "經修改與重新實作的衍生作品；保留原作者權利與來源。"
+        }
+        "Licenses and components" => "授權與第三方元件",
+        "GNU AGPL" => "GNU AGPL 授權",
+        "Source and modifications" => "來源與修改告知",
+        "License files are included in licenses/project and licenses" => {
+            "授權文件位於執行包的 licenses/project/ 與 licenses/。"
+        }
+        "Corresponding source must be provided when required by the license" => {
+            "散布或網路使用時，應依授權適用條件提供對應原始碼；詳見完整條款與修改告知。"
+        }
         "Documents and settings" => "文件與常用設定",
         "Add PDFs, choose a preset, then translate" => "加入 PDF → 選擇常用組合 → 開始翻譯",
         "Configure service and API key…" => "設定服務網址與 API 密鑰…",
@@ -384,7 +400,7 @@ pub fn friendly_error(message: &str, chinese: bool) -> String {
         return message.to_owned();
     }
     if let Some(path) = message.strip_prefix("invalid configuration field: ") {
-        if let Some(spec) = pdf2zh_config::field_specs()
+        if let Some(spec) = babeloxide_config::field_specs()
             .iter()
             .find(|s| s.path == path || s.flag == path)
         {
@@ -393,7 +409,10 @@ pub fn friendly_error(message: &str, chinese: bool) -> String {
         return "設定欄位無效，請檢查輸入。".into();
     }
     if let Some(flag) = message.strip_prefix("Check the value for ") {
-        if let Some(spec) = pdf2zh_config::field_specs().iter().find(|s| s.flag == flag) {
+        if let Some(spec) = babeloxide_config::field_specs()
+            .iter()
+            .find(|s| s.flag == flag)
+        {
             return format!("請檢查：{}", field_label(spec, true));
         }
         return "請檢查輸入值。".into();
@@ -522,7 +541,7 @@ mod tests {
             "deepseek_detail.deepseek_model",
             "term_deepseek_detail.term_deepseek_model",
         ] {
-            let spec = pdf2zh_config::field_specs()
+            let spec = babeloxide_config::field_specs()
                 .iter()
                 .find(|spec| spec.path == path)
                 .unwrap();
@@ -532,7 +551,7 @@ mod tests {
     }
     #[test]
     fn all_schema_fields_have_chinese_labels() {
-        for spec in pdf2zh_config::field_specs() {
+        for spec in babeloxide_config::field_specs() {
             let label = super::field_label(spec, true);
             assert!(
                 label

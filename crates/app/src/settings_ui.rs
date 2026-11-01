@@ -4,8 +4,8 @@ use crate::{
     strings,
 };
 use anyhow::{Result, bail};
+use babeloxide_config::{FieldSpec, FieldType};
 use eframe::egui;
-use pdf2zh_config::{FieldSpec, FieldType};
 use serde_json::{Value, json};
 
 pub fn group(spec: &FieldSpec) -> &'static str {
@@ -470,7 +470,7 @@ pub fn field(
 mod tests {
     use super::*;
     fn spec(path: &str) -> &'static FieldSpec {
-        pdf2zh_config::field_specs()
+        babeloxide_config::field_specs()
             .iter()
             .find(|s| s.path == path)
             .unwrap()
@@ -491,7 +491,7 @@ mod tests {
     }
     #[test]
     fn dependent_fields_and_invalid_drafts_remain_visible() {
-        let mut editor = Editor::new(pdf2zh_config::Settings::default());
+        let mut editor = Editor::new(babeloxide_config::Settings::default());
         let temperature = spec("openai_detail.openai_temperature");
         editor
             .set("openai_detail.openai_send_temprature", json!(false))
@@ -527,7 +527,7 @@ mod tests {
             let model = format!("{section}.{prefix}deepseek_model");
             let mode = format!("{section}.{prefix}deepseek_thinking_mode");
             let effort = format!("{section}.{prefix}deepseek_reasoning_effort");
-            let mut editor = Editor::new(pdf2zh_config::Settings::default());
+            let mut editor = Editor::new(babeloxide_config::Settings::default());
             editor.set(&model, json!("deepseek-chat")).unwrap();
             editor.set(&mode, json!("enabled")).unwrap();
             editor.set(&effort, json!("high")).unwrap();
@@ -553,7 +553,7 @@ mod tests {
     }
     #[test]
     fn painting_unedited_nullable_values_does_not_create_drafts() {
-        let mut settings = pdf2zh_config::Settings::default();
+        let mut settings = babeloxide_config::Settings::default();
         settings
             .set("translation.custom_system_prompt", json!(""))
             .unwrap();

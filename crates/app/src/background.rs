@@ -2,11 +2,11 @@
 //! it never aborts a task future or waits for native shutdown while rendering.
 
 use anyhow::{Context, Result};
-use babeldoc_bridge::WorkerOptions;
-use pdf2zh_config::{ConfigStore, Settings};
-use pdf2zh_core::{CacheBackend, CacheStore};
-use pdf2zh_pdf_preview::PreviewRenderer;
-use pdf2zh_tasks::{TaskHandle, TaskManager, task_from_settings};
+use babeloxide_bridge::WorkerOptions;
+use babeloxide_config::{ConfigStore, Settings};
+use babeloxide_core::{CacheBackend, CacheStore};
+use babeloxide_pdf_preview::PreviewRenderer;
+use babeloxide_tasks::{TaskHandle, TaskManager, task_from_settings};
 use std::{
     path::PathBuf,
     sync::{
@@ -148,7 +148,7 @@ impl Background {
             shutdown: shutdown.clone(),
         };
         let join = std::thread::Builder::new()
-            .name("pdf2zh-application".into())
+            .name("babeloxide-application".into())
             .spawn(move || {
                 let runtime = tokio::runtime::Builder::new_multi_thread()
                     .enable_all()
@@ -683,7 +683,7 @@ mod tests {
                 .join("../..")
                 .canonicalize()
                 .unwrap();
-            let python = std::env::var_os("PDF2ZH_TEST_PYTHON")
+            let python = std::env::var_os("BABELOXIDE_TEST_PYTHON")
                 .map(PathBuf::from)
                 .unwrap_or_else(|| {
                     root.join(if cfg!(windows) {
@@ -694,7 +694,7 @@ mod tests {
                 });
             assert!(
                 python.is_file(),
-                "The transport fixture requires project Python or PDF2ZH_TEST_PYTHON"
+                "The transport fixture requires project Python or BABELOXIDE_TEST_PYTHON"
             );
             let script = directory.path().join("controlled_worker.py");
             std::fs::write(
@@ -787,7 +787,7 @@ mod tests {
         let snapshot = tokio::time::timeout(std::time::Duration::from_secs(10), handle.wait())
             .await
             .unwrap();
-        assert_eq!(snapshot.status, pdf2zh_tasks::TaskStatus::Succeeded);
+        assert_eq!(snapshot.status, babeloxide_tasks::TaskStatus::Succeeded);
         assert_eq!(snapshot.completed_files, 1);
         assert_eq!(fixture.server.requests().len(), 2);
         let result = PathBuf::from(snapshot.results[0]["mono_pdf_path"].as_str().unwrap());
@@ -828,7 +828,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             handle.snapshot().status,
-            pdf2zh_tasks::TaskStatus::Cancelled
+            babeloxide_tasks::TaskStatus::Cancelled
         );
         assert!(
             background

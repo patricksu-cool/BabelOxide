@@ -4,11 +4,11 @@
 use std::{collections::BTreeMap, fs, path::PathBuf, sync::Arc, time::Duration};
 
 use anyhow::{Context, Result, bail, ensure};
-use babeldoc_bridge::{
+use babeloxide_bridge::{
     AssetOperation, FactoryInitialization, WorkerOptions, maintain_assets, translate_pdf,
     translate_pdf_with_initialization, translate_pdf_with_services,
 };
-use pdf2zh_core::{
+use babeloxide_core::{
     CacheBackend, CacheError, CacheFuture, CacheKey, PdfJob, TranslationService, TranslatorConfig,
 };
 use serde_json::{Value, json};
@@ -35,7 +35,7 @@ impl Fixture {
         let repository = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("../..")
             .canonicalize()?;
-        let python = std::env::var_os("PDF2ZH_TEST_PYTHON")
+        let python = std::env::var_os("BABELOXIDE_TEST_PYTHON")
             .map(PathBuf::from)
             .unwrap_or_else(|| {
                 repository.join(if cfg!(windows) {
@@ -46,7 +46,7 @@ impl Fixture {
             });
         ensure!(
             python.is_file(),
-            "Lifecycle tests need the existing local Python or PDF2ZH_TEST_PYTHON"
+            "Lifecycle tests need the existing local Python or BABELOXIDE_TEST_PYTHON"
         );
         let directory = tempfile::tempdir()?;
         let script = directory.path().join("fake_worker.py");

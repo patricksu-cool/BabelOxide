@@ -1,5 +1,5 @@
 use crate::{ConfigError, ConfigErrorKind, EngineSpec, Result, Settings, positive_u32};
-use pdf2zh_core::TranslatorConfig;
+use babeloxide_core::TranslatorConfig;
 use serde_json::{Map, Value, json};
 
 pub(crate) fn build(

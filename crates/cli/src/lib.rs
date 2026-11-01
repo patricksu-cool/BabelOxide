@@ -1,9 +1,9 @@
 //! Command parsing shared with the native application. Help/version do no I/O.
 
 use anyhow::Result;
-use babeldoc_bridge::WorkerOptions;
+use babeloxide_bridge::WorkerOptions;
+use babeloxide_config::{ConfigStore, FieldType, Settings, field_specs};
 use clap::{Arg, ArgAction, Command, ValueHint};
-use pdf2zh_config::{ConfigStore, FieldType, Settings, field_specs};
 use serde_json::{Map, Value, json};
 use std::{collections::BTreeMap, ffi::OsString, path::PathBuf};
 
@@ -17,8 +17,8 @@ pub struct Invocation {
 }
 
 pub fn command() -> Command {
-    let mut command = Command::new("pdf2zh")
-        .version(env!("CARGO_PKG_VERSION"))
+    let mut command = Command::new(babeloxide_core::PRODUCT_NAME)
+        .version(babeloxide_core::PRODUCT_VERSION)
         .about("Translate PDFs with Rust services and the BabelDOC engine")
         .arg(
             Arg::new("input-files")
@@ -157,16 +157,16 @@ mod tests {
     #[test]
     fn command_schema_has_no_conflicts_and_preserves_implicit_timeout() {
         command().debug_assert();
-        let parsed = parse(["pdf2zh", "input.pdf", "--openai"]).unwrap();
+        let parsed = parse(["BabelOxide", "input.pdf", "--openai"]).unwrap();
         assert!(parsed.overrides.get("openai_timeout").is_none());
-        let explicit = parse(["pdf2zh", "input.pdf", "--openai-timeout", "1.5"]).unwrap();
+        let explicit = parse(["BabelOxide", "input.pdf", "--openai-timeout", "1.5"]).unwrap();
         assert_eq!(explicit.overrides["openai_timeout"], "1.5");
     }
 
     #[test]
     fn bool_presence_matches_python_and_does_not_consume_a_positional_pdf() {
         let parsed = parse([
-            "pdf2zh",
+            "BabelOxide",
             "--google",
             "a.pdf",
             "b.pdf",
@@ -181,7 +181,7 @@ mod tests {
             .find(|s| s.kind == FieldType::Bool && s.default == Value::Bool(true))
             .unwrap();
         let flag = format!("--{}", enabled_by_default.flag);
-        let parsed = parse(["pdf2zh", flag.as_str()]).unwrap();
+        let parsed = parse(["BabelOxide", flag.as_str()]).unwrap();
         assert_eq!(
             parsed.overrides[enabled_by_default.flag.replace('-', "_")],
             "false"
@@ -191,7 +191,7 @@ mod tests {
     #[test]
     fn help_and_version_do_not_need_input_files_or_configuration() {
         for flag in ["--help", "--version"] {
-            let error = match parse(["pdf2zh", flag]) {
+            let error = match parse(["BabelOxide", flag]) {
                 Err(error) => error,
                 Ok(_) => panic!("expected display output"),
             };

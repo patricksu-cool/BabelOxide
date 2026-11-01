@@ -1,5 +1,8 @@
 //! Rust-owned provider execution, HTTP transport, retry policies and accounting.
 
+pub const PRODUCT_NAME: &str = "BabelOxide";
+pub const PRODUCT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;

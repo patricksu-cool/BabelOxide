@@ -1,7 +1,7 @@
 //! Fixed wire fixtures were encoded independently by Python gzip/zlib/Brotli/pyzstd.
 use std::{collections::BTreeMap, time::Duration};
 
-use pdf2zh_core::{
+use babeloxide_core::{
     ErrorKind, HttpBody, HttpRequest, HttpTransport, RetryRuntime, TranslationRequest,
     TranslationService, TranslatorConfig,
 };

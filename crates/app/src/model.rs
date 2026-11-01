@@ -2,8 +2,8 @@
 //! credentials, PDFs, environment variables or a Python runtime.
 
 use anyhow::{Result, anyhow, bail, ensure};
-use pdf2zh_config::{EngineSpec, FieldSpec, FieldType, Settings, engine_specs, field_specs};
-use pdf2zh_tasks::{TaskSnapshot, TaskStatus};
+use babeloxide_config::{EngineSpec, FieldSpec, FieldType, Settings, engine_specs, field_specs};
+use babeloxide_tasks::{TaskSnapshot, TaskStatus};
 use serde_json::{Value, json};
 use std::{
     collections::BTreeMap,

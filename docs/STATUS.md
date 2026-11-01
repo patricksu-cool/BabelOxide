@@ -24,7 +24,11 @@ BabelDOC 已鎖定 **0.6.4**，官方 wheel SHA256 `e7dcdd5b8213f657af1df68e329f
 
 Release GUI 已實際操作：組合切換／自訂保存／重開；Key、模型、QPS 保留；Ctrl+O 多選中文空格檔名；HTTP 400 → 原設定重試；Worker 載入中取消 → 再次重試 → 兩份 PDF 完成；保留失敗／取消歷史與逐份狀態；窄至約 790px 視窗的工作區與設定分頁。重新命名、原生 drop、輸出保護另有自動測試。125%／150%／200% 真實 Windows DPI、真實唯讀 ACL 與全部服務未逐項操作，仍待最終驗證。
 
-## 尚待完成
+## 品牌與設定相容
+
+產品／七個 owned crates、CLI／GUI binary、環境變數主名稱與 builder 已統一為 BabelOxide **1.0.0**。舊 `PDF2ZH_*` 環境變數、`config.v3.toml`、home 遷移及既有 fallback 的 config／cache／WAL 保留；無效舊設定在發布新檔前拒絕。Rust **301 passed、0 failed、1 預設 ignored**；fmt、嚴格 Clippy、Release、Worker／Builder 契約檢查通過。Windows EXE ProductName／Version／OriginalFilename、CLI 版號、原創視窗圖示與 About 三個授權頁籤已實際檢查，GUI 關閉 exit 0、未發出 API 請求。
+
+原始碼 CMD 封裝器已更名、納入來源告知／鎖檔／原創圖示，並固定二進位圖示雜湊；22 項隔離整合案例通過，包含中文與特殊路徑、內容排除、憑證拒絕、圖示竄改與原子替換。
 
 ## 建置管線
 
@@ -34,4 +38,4 @@ Release GUI 已實際操作：組合切換／自訂保存／重開；Key、模�
 
 **Mac blocker：此機為 Windows，未執行原生 Mac build／dylib import／GUI；未 Push 或觸發遠端 Actions。** 已驗證官方 Mac PDFium 的 arm64 Mach-O 與系統依賴、Python archive SHA256，以及 macOS 14+ 的整套 wheel 解析；這些不等於 Mac 原生驗收。Mac job 有缺失時明確失敗，沒有 placeholder 或 continue-on-error。
 
-BabelOxide 品牌、清理與法律入口、最終整合驗收仍在後續階段。Windows ONNX Runtime 仍需官方 VC++ x64 Runtime。沒有 Push 或發布 Release。
+文件精簡、完整依賴授權審查與最終整合驗收仍在後續階段。Windows ONNX Runtime 仍需官方 VC++ x64 Runtime。沒有 Push 或發布 Release。

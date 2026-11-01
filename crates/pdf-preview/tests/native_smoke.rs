@@ -1,6 +1,6 @@
 //! Explicit, ignored-by-default ABI test. The parent runner supplies a verified
 //! PDFium bundle and an authorized real PDF; there is no system-library fallback.
-use pdf2zh_pdf_preview::{
+use babeloxide_pdf_preview::{
     PreviewErrorKind, PreviewFrame, PreviewRenderer, PreviewRequest, PreviewResult,
 };
 use std::{
@@ -133,16 +133,16 @@ fn save_ppm(directory: Option<&Path>, name: &str, frame: &PreviewFrame) {
 }
 
 #[test]
-#[ignore = "requires explicit verified PDF2ZH_PREVIEW_NATIVE_APP_ROOT and authorized PDF2ZH_PREVIEW_NATIVE_PDF"]
+#[ignore = "requires explicit verified BABELOXIDE_PREVIEW_NATIVE_APP_ROOT and authorized BABELOXIDE_PREVIEW_NATIVE_PDF"]
 fn verified_bundle_renders_real_pdf_geometry_rgba_errors_and_releases_native_file_handles() {
     let app = PathBuf::from(
-        std::env::var_os("PDF2ZH_PREVIEW_NATIVE_APP_ROOT")
+        std::env::var_os("BABELOXIDE_PREVIEW_NATIVE_APP_ROOT")
             .expect("supply the verified bundle root"),
     );
     let source = PathBuf::from(
-        std::env::var_os("PDF2ZH_PREVIEW_NATIVE_PDF").expect("supply the authorized real PDF"),
+        std::env::var_os("BABELOXIDE_PREVIEW_NATIVE_PDF").expect("supply the authorized real PDF"),
     );
-    let artifacts = std::env::var_os("PDF2ZH_PREVIEW_ARTIFACT_DIR").map(PathBuf::from);
+    let artifacts = std::env::var_os("BABELOXIDE_PREVIEW_ARTIFACT_DIR").map(PathBuf::from);
     assert!(app.is_absolute());
     assert!(source.is_file());
     if let Some(path) = &artifacts {

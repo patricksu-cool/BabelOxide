@@ -22,8 +22,8 @@ from build_support import (ROOT, PINS, audit_macos, checked_files, extract_archi
                            isolated_environment, manifest, run, sha256, verify_manifest, zip_bundle)
 from build_hybrid_windows import BuildError, require, write_json
 
-CLI_NAME = "pdf2zh"
-GUI_NAME = "pdf2zh-gui"
+CLI_NAME = "BabelOxide"
+GUI_NAME = "BabelOxide-gui"
 
 
 def product_version() -> str:
@@ -153,6 +153,9 @@ def build_macos(args, runtime: Path, assets: Path, work: Path) -> Path:
     (stage / "engine-assets").mkdir()
     shutil.copy2(assets, stage / "engine-assets" / assets.name)
     info = {"CFBundleName": "BabelOxide", "CFBundleDisplayName": "BabelOxide", "CFBundleIdentifier": "org.babeloxide.desktop", "CFBundleExecutable": GUI_NAME, "CFBundlePackageType": "APPL", "CFBundleShortVersionString": product_version(), "CFBundleVersion": product_version(), "LSMinimumSystemVersion": "14.0", "NSHighResolutionCapable": True}
+    info["CFBundleIconFile"] = "BabelOxide.icns"
+    (app / "Contents/Resources").mkdir()
+    shutil.copy2(ROOT / "resources/babeloxide.icns", app / "Contents/Resources/BabelOxide.icns")
     (app / "Contents/Info.plist").write_bytes(plistlib.dumps(info))
     # Relocation happens before native loading, asset restore and smoke checks.
     relocated = work / "relocated payload"
@@ -160,7 +163,7 @@ def build_macos(args, runtime: Path, assets: Path, work: Path) -> Path:
     app = relocated / "BabelOxide.app"
     stage = app / "Contents/MacOS"
     python, site = python_layout(stage / "runtime/python", "macos-arm64")
-    env["PDF2ZH_APP_DIR"] = str(work / "smoke-app")
+    env["BABELOXIDE_APP_DIR"] = str(work / "smoke-app")
     home = stage / "resources/worker-home"
     home.mkdir(parents=True)
     run([stage / CLI_NAME, "--restore-offline-assets", stage / "engine-assets" / assets.name, "--worker-home", home, "--json"], work, env, label="restore-macos-assets")
@@ -172,6 +175,7 @@ def build_macos(args, runtime: Path, assets: Path, work: Path) -> Path:
     run([python, "-I", "-B", "-c", probe], work, probe_env, label="relocated-macos-native-probe")
     for name in (CLI_NAME, GUI_NAME):
         run([stage / name, "--version"], work, env, label=name + "-version")
+        require((work / (name + "-version.log")).read_text(encoding="utf-8").strip() == f"BabelOxide {product_version()}", "Native executable version differs from the workspace")
     components, issues = windows.python_inventory(stage, wheels, windows.read_json(windows.INVENTORY)["engine"], site=site)
     rust, rust_issues = windows.rust_inventory(stage, args.cargo_registry_src)
     issues += rust_issues

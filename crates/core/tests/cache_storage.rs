@@ -1,7 +1,7 @@
 //! All databases are synthetic files in test-owned temporary directories.
 //! No application imports, home-directory lookup or user cache access occurs.
 
-use pdf2zh_core::{
+use babeloxide_core::{
     CacheErrorKind, CacheKey, CacheStore, LegacyNamespace, TranslationRequest, TranslatorConfig,
     cache::python_json,
 };

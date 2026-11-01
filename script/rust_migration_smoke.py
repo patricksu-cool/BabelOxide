@@ -21,9 +21,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source", type=Path)
     parser.add_argument("--label", required=True)
-    parser.add_argument("--exe", type=Path, default=ROOT / "target/debug/pdf2zh.exe")
+    parser.add_argument("--exe", type=Path, default=ROOT / ("target/debug/BabelOxide.exe" if os.name == "nt" else "target/debug/BabelOxide"))
     parser.add_argument(
-        "--python", type=Path, default=ROOT / ".venv/Scripts/python.exe"
+        "--python", type=Path, default=ROOT / (".venv/Scripts/python.exe" if os.name == "nt" else ".venv/bin/python")
     )
     parser.add_argument("--worker-home", type=Path)
     parser.add_argument("--packaged", action="store_true")
@@ -143,7 +143,7 @@ def main():
         for key in ("SystemRoot", "WINDIR", "COMSPEC", "PATH")
         if key in os.environ
     }
-    environment["PDF2ZH_OPENAI_API_KEY"] = synthetic
+    environment["BABELOXIDE_OPENAI_API_KEY"] = synthetic
     # The full Rust CLI now loads configuration. Keep the fixture independent
     # of the user's legacy home and application settings.
     isolated = output / "isolation"
@@ -160,7 +160,7 @@ def main():
     environment["HOME"] = environment["USERPROFILE"] = str(isolated_home)
     environment["TEMP"] = environment["TMP"] = str(isolated_temp)
     if not args.portable_config:
-        environment["PDF2ZH_APP_DIR"] = str(isolated_app)
+        environment["BABELOXIDE_APP_DIR"] = str(isolated_app)
     environment["NO_PROXY"] = environment["no_proxy"] = "127.0.0.1,localhost"
     command = [
         executable,

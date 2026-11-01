@@ -1,10 +1,10 @@
 use std::{collections::BTreeMap, fs, path::PathBuf, sync::Arc, time::Duration};
 
 use anyhow::{Context, Result, ensure};
-use babeldoc_bridge::WorkerOptions;
-use pdf2zh_config::Settings;
-use pdf2zh_core::{PdfJob, TranslationService, TranslatorConfig};
-use pdf2zh_tasks::{
+use babeloxide_bridge::WorkerOptions;
+use babeloxide_config::Settings;
+use babeloxide_core::{PdfJob, TranslationService, TranslatorConfig};
+use babeloxide_tasks::{
     TaskHandle, TaskManager, TaskSnapshot, TaskSpec, TaskStatus, task_from_settings,
 };
 use serde_json::json;
@@ -56,7 +56,7 @@ impl Fixture {
         let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("../..")
             .canonicalize()?;
-        let python = std::env::var_os("PDF2ZH_TEST_PYTHON")
+        let python = std::env::var_os("BABELOXIDE_TEST_PYTHON")
             .map(PathBuf::from)
             .unwrap_or_else(|| {
                 root.join(if cfg!(windows) {
@@ -67,7 +67,7 @@ impl Fixture {
             });
         ensure!(
             python.is_file(),
-            "Need the project Python or PDF2ZH_TEST_PYTHON for transport fixtures"
+            "Need the project Python or BABELOXIDE_TEST_PYTHON for transport fixtures"
         );
         let directory = tempfile::tempdir()?;
         let script = directory.path().join("fake_worker.py");
@@ -375,7 +375,7 @@ async fn non_llm_without_term_has_one_ordinary_health_translation() -> Result<()
         lang_out: "zh".into(),
         options: json!({"qps":200}),
     })?);
-    spec.initialization = Some(babeldoc_bridge::FactoryInitialization {
+    spec.initialization = Some(babeloxide_bridge::FactoryInitialization {
         matching_engine_settings: false,
     });
     let manager = TaskManager::new(1)?;

@@ -7,9 +7,9 @@ mod schema;
 mod sections;
 mod storage;
 
+use babeloxide_core::{PdfJob, TranslatorConfig};
 pub use error::{ConfigError, ConfigErrorKind, Result};
 pub use overrides::{parse_cli_overrides, parse_env_vars};
-use pdf2zh_core::{PdfJob, TranslatorConfig};
 pub use schema::{EngineSpec, FieldSpec, FieldType, engine_specs, field_specs};
 pub use sections::{BasicSettings, GuiSettings, PdfSettings, TranslationSettings};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};

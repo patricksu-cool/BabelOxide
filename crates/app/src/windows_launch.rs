@@ -10,7 +10,7 @@ use std::{
 use anyhow::{Context, Result, ensure};
 use windows_sys::Win32::Storage::FileSystem::GetShortPathNameW;
 
-const RELAUNCHED: &str = "PDF2ZH_SHORT_GUI_LAUNCH";
+const RELAUNCHED: &str = "BABELOXIDE_SHORT_GUI_LAUNCH";
 const PATH_ERROR: &str = "Windows GUI needs a shorter executable path. Move the complete application folder to a shorter location; no system policy change is required.";
 
 fn short_path(path: &Path) -> Result<PathBuf> {

@@ -194,11 +194,34 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
-name = "babeldoc-bridge"
-version = "2.9.0"
+name = "babeloxide-app"
+version = "1.0.0"
 dependencies = [
  "anyhow",
- "pdf2zh-core",
+ "babeloxide-bridge",
+ "babeloxide-cli",
+ "babeloxide-config",
+ "babeloxide-core",
+ "babeloxide-pdf-preview",
+ "babeloxide-tasks",
+ "eframe",
+ "reqwest",
+ "rfd",
+ "rustls",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tokio-util",
+ "windows-sys 0.61.2",
+ "zip",
+]
+
+[[package]]
+name = "babeloxide-bridge"
+version = "1.0.0"
+dependencies = [
+ "anyhow",
+ "babeloxide-core",
  "serde_json",
  "sha2",
  "tempfile",
@@ -206,6 +229,80 @@ dependencies = [
  "tokio-util",
  "tracing",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "babeloxide-cli"
+version = "1.0.0"
+dependencies = [
+ "anyhow",
+ "babeloxide-bridge",
+ "babeloxide-config",
+ "babeloxide-core",
+ "babeloxide-tasks",
+ "clap",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
+name = "babeloxide-config"
+version = "1.0.0"
+dependencies = [
+ "babeloxide-core",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "toml",
+]
+
+[[package]]
+name = "babeloxide-core"
+version = "1.0.0"
+dependencies = [
+ "anyhow",
+ "hmac",
+ "html-escape",
+ "httpdate",
+ "regex",
+ "reqwest",
+ "rusqlite",
+ "rustls",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "tokio",
+ "tokio-util",
+ "unicode-general-category",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "babeloxide-pdf-preview"
+version = "1.0.0"
+dependencies = [
+ "pdfium-render",
+ "tempfile",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "babeloxide-tasks"
+version = "1.0.0"
+dependencies = [
+ "anyhow",
+ "babeloxide-bridge",
+ "babeloxide-config",
+ "babeloxide-core",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tokio-util",
 ]
 
 [[package]]
@@ -2276,103 +2373,6 @@ name = "parlance"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73072a9470554c8e794778acece2312661218aaabb635600957d952cf01c716e"
-
-[[package]]
-name = "pdf2zh-app"
-version = "2.9.0"
-dependencies = [
- "anyhow",
- "babeldoc-bridge",
- "eframe",
- "pdf2zh-cli",
- "pdf2zh-config",
- "pdf2zh-core",
- "pdf2zh-pdf-preview",
- "pdf2zh-tasks",
- "reqwest",
- "rfd",
- "rustls",
- "serde_json",
- "tempfile",
- "tokio",
- "tokio-util",
- "windows-sys 0.61.2",
- "zip",
-]
-
-[[package]]
-name = "pdf2zh-cli"
-version = "2.9.0"
-dependencies = [
- "anyhow",
- "babeldoc-bridge",
- "clap",
- "pdf2zh-config",
- "pdf2zh-core",
- "pdf2zh-tasks",
- "serde_json",
- "tempfile",
- "tokio",
- "tokio-util",
-]
-
-[[package]]
-name = "pdf2zh-config"
-version = "2.9.0"
-dependencies = [
- "pdf2zh-core",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
- "toml",
-]
-
-[[package]]
-name = "pdf2zh-core"
-version = "2.9.0"
-dependencies = [
- "anyhow",
- "hmac",
- "html-escape",
- "httpdate",
- "regex",
- "reqwest",
- "rusqlite",
- "rustls",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
- "tokio",
- "tokio-util",
- "unicode-general-category",
- "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "pdf2zh-pdf-preview"
-version = "2.9.0"
-dependencies = [
- "pdfium-render",
- "tempfile",
- "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "pdf2zh-tasks"
-version = "2.9.0"
-dependencies = [
- "anyhow",
- "babeldoc-bridge",
- "pdf2zh-config",
- "pdf2zh-core",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "tokio-util",
-]
 
 [[package]]
 name = "pdfium-render"

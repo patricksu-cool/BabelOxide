@@ -1,4 +1,4 @@
-use pdf2zh_core::{
+use babeloxide_core::{
     CacheBackend, CacheError, CacheErrorKind, CacheFuture, CacheKey, CacheMethod, CacheStore,
     Clock, ErrorKind, HttpExecutor, HttpRequest, HttpResponse, HttpTransport, LegacyBinding,
     LegacyNamespace, ProviderError, ProviderResult, RandomSource, RetryRuntime, TranslationRequest,

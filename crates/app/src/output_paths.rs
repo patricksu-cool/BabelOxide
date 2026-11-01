@@ -2,7 +2,7 @@
 //! the shared task builder, BabelDOC filenames, or normal single-file outputs.
 
 use anyhow::{Context, Result, ensure};
-use pdf2zh_core::PdfJob;
+use babeloxide_core::PdfJob;
 use std::{collections::HashMap, path::PathBuf};
 use tempfile::TempDir;
 
@@ -31,7 +31,7 @@ pub(crate) fn preserve_existing_outputs(jobs: &mut [PdfJob]) -> Result<Vec<TempD
         }
         if exists {
             let guard = tempfile::Builder::new()
-                .prefix("pdf2zh-batch-")
+                .prefix("babeloxide-batch-")
                 .tempdir_in(&job.output_dir)?;
             replacements.push((index, guard.path().to_path_buf()));
             guards.push(guard);
@@ -91,7 +91,7 @@ pub(crate) fn isolate_colliding_outputs(jobs: &mut [PdfJob]) -> Result<Vec<TempD
             *index
         } else {
             let guard = tempfile::Builder::new()
-                .prefix("pdf2zh-batch-")
+                .prefix("babeloxide-batch-")
                 .tempdir_in(&key.0)
                 .context("無法建立批次 PDF 的獨立輸出資料夾")?;
             let index = guards.len();
@@ -117,7 +117,7 @@ pub(crate) fn isolate_colliding_outputs(jobs: &mut [PdfJob]) -> Result<Vec<TempD
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pdf2zh_config::Settings;
+    use babeloxide_config::Settings;
     use std::path::Path;
 
     #[test]
