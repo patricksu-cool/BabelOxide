@@ -58,7 +58,7 @@ class ProtocolError(Exception):
 
 
 class BatchTranslationError(RuntimeError):
-    """A retried batch HTTP failure BabelDOC may recover per paragraph."""
+    """A transient batch service failure BabelDOC may recover per paragraph."""
 
 
 class IncompleteTranslationError(RuntimeError):

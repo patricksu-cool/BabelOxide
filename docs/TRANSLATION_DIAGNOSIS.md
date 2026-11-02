@@ -6,7 +6,7 @@
 
 Windows 的完整錯誤證明 HTTP 500 發生在文件處理期間。收到 HTTP 500 的原因在翻譯服務端；但先前 Rust bridge 會在任何回呼的服務重試耗盡時立即取消整份文件，Worker 也會永久設定失敗並取消 BabelDOC。這攔截了 **BabelDOC 0.6.4 既有的「批次翻譯失敗 → 逐段翻譯」回復流程**，因此只增加錯誤日誌並沒有處理這個相容性缺陷。
 
-修正僅允許引擎批次回呼的 HTTP 5xx 在原有重試耗盡後交回 BabelDOC；不修改任何 Provider 的 Retry／Backoff。逐段請求、術語擷取、驗證／權限／網路及服務預檢錯誤仍維持失敗。Worker 在私有引擎行程內暫時包裝固定版引擎的段落準備、套用與批次呼叫，離開時還原；不修改已安裝的 BabelDOC，不取代其解析、回復或排版。
+修正僅允許引擎批次回呼的 HTTP 5xx 或傳輸／連線錯誤在原有重試耗盡後交回 BabelDOC；不修改任何 Provider 的 Retry／Backoff。逐段請求、術語擷取、驗證／權限及服務預檢錯誤仍維持失敗。Worker 在私有引擎行程內暫時包裝固定版引擎的段落準備、套用與批次呼叫，離開時還原；不修改已安裝的 BabelDOC，不取代其解析、回復或排版。
 
 只有必要段落的 `post_translate_paragraph` **正常返回**才算完成；`tracker.output` 在解析之前就會設定，不能當完成依據。計數以持有參照的 tracker 身分區分，避免不同頁相同 debug ID 或物件 ID 重用。正常略過的短字串／垂直文字遵守 BabelDOC 既有規則。若仍有未完成段落，Worker 與 Rust 都拒絕成功結果；錯誤鏈保留原始 HTTP 500，逐段請求失敗也不會以原文代替成功。
 
@@ -22,11 +22,21 @@ macOS 完整包的 `/.tmp…` 錯誤另有明確來源：未指定輸出的 GUI 
 - 同樣的完整 PDF，每一個批次 API 請求均持續回 HTTP 500（各走完既有三次請求），修正版仍透過正常 BabelDOC 回復完成。兩份分別有 26／36 個耗盡重試的批次交回引擎；最終仍為 83／83、142／142 段落。單語及雙語的文字、字元座標、圖片、字型、幾何與正常 Mock 相同，所有頁的 Poppler 96 DPI RGB 像素差異為 0。
 - 舊 diagnostics 完整包在相同受控批次 500 測試退出 1，沒有成功結果；修正版在逐段請求也持續 500 時仍退出 1，保留 HTTP 500 與處理階段，不接受不完整輸出。
 - 真實 SiliconFlowFree：PDF 1 第一頁以修正版來源 Release CLI 完成，20／20 段落、主翻譯無 cache hit，單語／雙語都可解析、渲染，均包含 1,054 個中文字。未改私人設定。
+- PDF 2 的第一輪真實 API 測試另遇到 `ConnectionReset / OS error 10054`，既有三次重試耗盡，CLI 1、未回報完成。原先只有批次 HTTP 5xx 會交回引擎，現也保留 BabelDOC 對批次傳輸／連線失敗的正常回復；以實際 socket 斷線回歸驗證原有三次請求數不變。逐段傳輸失敗仍須終止。診斷會區分 batch／individual 回呼，避免將下一次錯誤猜成同一種原因。該失敗紀錄保留，不能列成真實 API 通過。
+- 最新來源 Release CLI 的 PDF 1 全六頁斷線注入：26 個批次各斷線三次，共 78 次，仍完成 83／83 段落；單語／雙語均通過解析與每頁渲染。PDF 2 全五頁也重新通過批次 HTTP 500 注入，完成 142／142 段落。
 - 格式、嚴格 Clippy、Release CLI／GUI build 通過；Rust 317 個一般測試、Worker 39、Windows Builder 44、跨平台 Builder 7、CI 9、鎖定引擎 4、Windows 原始碼封裝 22 個檢查通過。原生 PDFium 另由完整包驗證。
 
 本輪證據集中在 `.test-output/translation-recovery/` 與 `rust-migration/recovery-*`；正式包／PDF 2 真實 API 的最終結果以該輪的 `summary.json` 為準。macOS 的唯讀啟動情境已由注入根目錄輸出、實際背景任務及暫存建立回歸涵蓋；本機沒有 Mac，仍須原生 CLI／Finder GUI 驗證。
 
 兩平台 CI 增加完整引擎的批次 500 注入 smoke，檢查段落完成紀錄與有效單語／雙語 PDF，避免只有健康 API／正常 Mock 通過而漏掉回復流程。
+
+### 本輪修改範圍
+
+- `crates/babeldoc-bridge/src/lib.rs`、`python-worker/worker.py`：保留引擎批次回復、驗證必要段落完成、區分批次／逐段錯誤；Retry／Backoff 保持原契約。
+- `crates/app/src/output_paths.rs`、`background.rs`、`app.rs`：GUI 預設輸出不依賴啟動目錄，保留明確設定並顯示目的資料夾。
+- `crates/cli/src/lib.rs`、`crates/app/src/lib.rs`、`crates/pdf-preview/src/types.rs`：共用 `--runtime-dir`、原始碼 GUI 的固定預覽庫路徑及平台錯誤提示。
+- `python-worker/tests/test_boundary.py`、`crates/babeldoc-bridge/tests/lifecycle.rs` 及 `fixtures/fake_worker.py`：段落套用失敗、回復完成、缺少／錯誤計數、HTTP 500、實際 socket 中斷與錯誤遮蔽回歸；GUI／CLI 的相關測試隨所屬檔案更新。
+- `script/rust_migration_smoke.py`、`script/ci.py`：HTTP 500／斷線注入、來源 Runtime 測試、有效 PDF 與 CI 回復流程檢查；`docs/BUILD.md` 與本文件記錄準備方式和實測界線。
 
 使用者已補充：從完整解壓後的舊 Windows GUI 啟動。該路徑就是本機已測試成功的下載包；裸 Cargo Build 缺少 Runtime 的獨立案例，不能用來解釋這個正式包的原始故障。
 

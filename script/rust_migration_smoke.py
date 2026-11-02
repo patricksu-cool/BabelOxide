@@ -59,8 +59,8 @@ def main():
     parser.add_argument("--pages")
     parser.add_argument("--auto-extract-glossary", action="store_true")
     parser.add_argument("--http-status", type=int, choices=(200, 400, 500), default=200)
-    parser.add_argument("--failure-mode", choices=("none", "batches", "document"), default="none",
-                        help="Inject HTTP 500 after healthy preflight; batches exercises BabelDOC paragraph fallback")
+    parser.add_argument("--failure-mode", choices=("none", "batches", "batch-disconnect", "document"), default="none",
+                        help="Inject batch HTTP 500 or connection drops after healthy preflight to exercise BabelDOC fallback")
     parser.add_argument(
         "--fixed-text",
         help="Fixed local response for font/output smoke; default is identity",
@@ -140,7 +140,12 @@ def main():
             if ((args.failure_mode == "batches" and batch)
                     or (args.failure_mode == "document" and not glossary and translated.strip() != "Hello")):
                 status = 500
+            if args.failure_mode == "batch-disconnect" and batch:
+                status = None
             calls.append({"batch": batch, "glossary": glossary, "model": body.get("model"), "status": status})
+            if status is None:
+                self.close_connection = True
+                return  # Close the real socket without any HTTP response.
             reply = {
                 "id": "local-fixture",
                 "object": "chat.completion",
@@ -273,7 +278,8 @@ def main():
         "api_requests": len(calls),
         "batch_requests": sum(call["batch"] for call in calls),
         "glossary_requests": sum(call["glossary"] for call in calls),
-        "http_statuses": sorted({call["status"] for call in calls}),
+        "http_statuses": sorted({call["status"] for call in calls if call["status"] is not None}),
+        "transport_disconnects": sum(call["status"] is None for call in calls),
         "pages": args.pages or "all",
         "failure_mode": args.failure_mode,
         "provider": "loopback fixed-text fixture"
@@ -310,8 +316,8 @@ def main():
             if finishes[0]["result"]["translation_metrics"]["main"]["calls"] <= 1:
                 raise ValueError("Successful smoke requires document translation beyond the API health probe")
             audit = finishes[0]["result"].get("translation_audit", {})
-            if args.failure_mode == "batches" and not (
-                any(call["status"] == 500 and call["batch"] for call in calls)
+            if args.failure_mode in {"batches", "batch-disconnect"} and not (
+                any(call["status"] in {500, None} and call["batch"] for call in calls)
                 and audit.get("batch_errors", 0) > 0
                 and audit.get("required_paragraphs", 0) == audit.get("completed_paragraphs")
             ):

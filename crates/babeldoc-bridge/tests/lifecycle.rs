@@ -525,6 +525,7 @@ async fn batch_http_exhaustion_can_reach_engine_fallback_but_incomplete_output_i
 -> Result<()> {
     for scenario in [
         "batch_fallback_success",
+        "batch_fallback_transport",
         "batch_fallback_missing",
         "batch_fallback_incomplete",
         "batch_fallback_error",
@@ -532,12 +533,20 @@ async fn batch_http_exhaustion_can_reach_engine_fallback_but_incomplete_output_i
         let fixture = Fixture::new(scenario)?;
         let listener = TcpListener::bind("127.0.0.1:0").await?;
         let endpoint = format!("http://{}/v1", listener.local_addr()?);
+        let reset_batch = scenario == "batch_fallback_transport";
         let server = tokio::spawn(async move {
             let mut statuses = Vec::new();
             for _ in 0..4 {
                 let (mut stream, _) = listener.accept().await?;
                 let request = read_http_body(&mut stream).await?;
                 let batch = request["messages"][0]["content"] == "fixture-failed-batch";
+                if batch && reset_batch {
+                    // A peer closing before response headers exercises a real
+                    // reqwest transport error after the normal SDK retries.
+                    statuses.push(0);
+                    drop(stream);
+                    continue;
+                }
                 let status = if batch { 500 } else { 200 };
                 statuses.push(status);
                 let body = serde_json::to_vec(&if batch {
@@ -563,10 +572,15 @@ async fn batch_http_exhaustion_can_reach_engine_fallback_but_incomplete_output_i
         .await
         .context("Fallback IPC hung")?;
         ensure!(
-            server.await?? == [500, 500, 500, 200],
+            server.await??
+                == if reset_batch {
+                    [0, 0, 0, 200]
+                } else {
+                    [500, 500, 500, 200]
+                },
             "Provider retry count changed"
         );
-        if scenario == "batch_fallback_success" {
+        if scenario == "batch_fallback_success" || reset_batch {
             ensure!(result?["translation_audit"]["completed_paragraphs"] == 2);
         } else {
             let error = format!(

@@ -200,17 +200,23 @@ fn worker_failure(message: &Value, services: Option<&SessionServices>) -> anyhow
     )
 }
 
-fn server_failure(error: &anyhow::Error) -> bool {
-    fn is_server_failure(error: &ProviderError) -> bool {
+fn recoverable_batch_failure(error: &anyhow::Error) -> bool {
+    fn is_recoverable(error: &ProviderError) -> bool {
         match &error.kind {
             ErrorKind::HttpStatus(status) => (500..600).contains(status),
-            ErrorKind::RetryExhausted { last, .. } => is_server_failure(last),
+            ErrorKind::Transport
+            | ErrorKind::Connect
+            | ErrorKind::ConnectTimeout
+            | ErrorKind::ReadTransport
+            | ErrorKind::ReadTimeout
+            | ErrorKind::Timeout => true,
+            ErrorKind::RetryExhausted { last, .. } => is_recoverable(last),
             _ => false,
         }
     }
     error
         .downcast_ref::<ProviderError>()
-        .is_some_and(is_server_failure)
+        .is_some_and(is_recoverable)
 }
 
 fn validate_completion_audit(result: &Value, batch_errors: u64) -> Result<()> {
@@ -645,7 +651,7 @@ async fn run_session(
                     active.remove(&id);
                     match translated {
                         Ok(text) => enqueue(&tx, frame("translated", &session, json!({"id":id,"text":text}))).await?,
-                        Err(error) if completion_audit && batch_fallback && server_failure(&error) => {
+                        Err(error) if completion_audit && batch_fallback && recoverable_batch_failure(&error) => {
                             // The provider has already applied its unchanged retry policy.
                             // Let BabelDOC's existing batch -> paragraph fallback run, then
                             // require a completion audit before accepting any output.
@@ -656,7 +662,8 @@ async fn run_session(
                         }
                         Err(error) => {
                             let _ = enqueue(&tx, frame("translated", &session, json!({"id":id,"error":{"code":"translation_failed","message":"Rust translation service failed"}}))).await;
-                            return Err(error.context(format!("Rust translation service failed during {engine_stage}; output is incomplete")));
+                            let callback = if batch_fallback { "batch" } else { "individual" };
+                            return Err(error.context(format!("Rust translation service failed during {engine_stage} ({callback} callback); output is incomplete")));
                         }
                     }
                 }
@@ -796,7 +803,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn paragraph_fallback_requires_a_complete_matching_audit_and_server_error() {
+    fn paragraph_fallback_requires_a_complete_matching_audit_and_recoverable_error() {
         validate_completion_audit(
             &json!({"translation_audit":{
                 "required_paragraphs":4,"completed_paragraphs":4,"batch_errors":1,
@@ -817,16 +824,23 @@ mod tests {
             3,
             ProviderError::new(ErrorKind::HttpStatus(500), "HTTP 500"),
         );
-        assert!(server_failure(&anyhow::Error::new(error)));
+        assert!(recoverable_batch_failure(&anyhow::Error::new(error)));
+        let reset = ProviderError::exhausted(
+            "siliconflowfree.http",
+            3,
+            ProviderError::new(ErrorKind::Transport, "ConnectionReset, OS error 10054"),
+        );
+        assert!(recoverable_batch_failure(&anyhow::Error::new(reset)));
         for kind in [
             ErrorKind::HttpStatus(401),
             ErrorKind::Cancelled,
             ErrorKind::MalformedResponse,
-            ErrorKind::ReadTimeout,
+            ErrorKind::Redirect,
+            ErrorKind::HttpStatus(429),
         ] {
-            assert!(!server_failure(&anyhow::Error::new(ProviderError::new(
-                kind, "fatal"
-            ))));
+            assert!(!recoverable_batch_failure(&anyhow::Error::new(
+                ProviderError::new(kind, "fatal")
+            )));
         }
     }
 
