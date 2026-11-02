@@ -950,6 +950,33 @@ async fn p01_p02_safe_provider_errors_scrub_boundaries_headers_and_overlapping_i
 }
 
 #[tokio::test]
+async fn debug_server_errors_keep_remote_worker_reason_and_redact_credentials() {
+    let mut cfg = config("openai");
+    cfg.api_key = "synthetic-upstream-secret".into();
+    cfg.options["diagnostic_http"] = json!(true);
+    let response = reply(
+        500,
+        json!({"error":{"message":"Remote Python Worker path is unavailable; synthetic-upstream-secret https://invalid/?key=hidden"}}),
+    );
+    let (service, script, _) = service(cfg, vec![response; 3], 0.0);
+    let error = service
+        .translate_typed(&request(), &CancellationToken::new())
+        .await
+        .err()
+        .unwrap();
+    assert_eq!(error.kind, ErrorKind::HttpStatus(500));
+    assert!(
+        error
+            .message
+            .contains("Remote Python Worker path is unavailable")
+    );
+    assert!(!error.message.contains("synthetic-upstream-secret"));
+    assert!(!error.message.contains("https://"));
+    assert_eq!(script.requests().len(), 3);
+    script.empty();
+}
+
+#[tokio::test]
 async fn service_process_ownership_accepts_normalized_aliases() {
     for name in [
         "CLITranslator",

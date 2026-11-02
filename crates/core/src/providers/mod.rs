@@ -64,6 +64,7 @@ impl ProviderContext<'_> {
                     .and_then(Value::as_str)
                     .map(str::to_owned)
             });
+        let unstructured = detail.is_none();
         let mut message = match detail {
             Some(message) => format!(
                 "translation provider returned HTTP {}: {}",
@@ -76,6 +77,13 @@ impl ProviderContext<'_> {
             message.push_str(
                 ". The translation service failed; retry later or choose another provider",
             );
+            if self.option("diagnostic_http").and_then(Value::as_bool) == Some(true) {
+                eprintln!("BabelOxide: {message}");
+                if unstructured && !response.body.is_empty() {
+                    let body = self.sanitize(&String::from_utf8_lossy(&response.body));
+                    eprintln!("BabelOxide: upstream error body: {body}");
+                }
+            }
         }
         ProviderError::new(ErrorKind::HttpStatus(response.status), message)
     }
