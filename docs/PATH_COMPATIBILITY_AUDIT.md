@@ -1,4 +1,4 @@
-# macOS 系統路徑與資源初始化檢查（2026-11-02）
+# Windows／macOS 系統路徑與資源初始化檢查（2026-11-02）
 
 ## 根因與證據邊界
 
@@ -33,7 +33,7 @@
 
 本次審查範圍內，沒有其他已確認的同類 OS 祖先連結誤判；這不是對任意檔案系統、權限配置或同權限惡意程序的全面安全保證。
 
-## Windows 實際驗證
+## Windows 實際驗證（macOS 根目錄修正）
 
 Rust 1.99.1 Windows GNU，既有 Python 3.13.16 環境。Cargo 另使用 `--offline`，保留 `--locked`、全部既有測試及 `-D warnings`。
 
@@ -56,7 +56,47 @@ Rust 1.99.1 Windows GNU，既有 Python 3.13.16 環境。Cargo 另使用 `--offl
 
 BabelDOC 0.6.4、依賴鎖檔、Retry／Backoff、翻譯及 IPC 協定不變。Workflow／失敗日誌收集保持不變：Windows／macOS、僅手動觸發、Artifact 7 天、失敗亦上傳完整 Log 與 Console 摘要。本次不 Push、不合併 main、不觸發 Actions。
 
+## 後續修正：Windows 8.3／長路徑身分一致性
+
+Windows CI 的 `test_plain_paths_and_asset_verification_use_consistent_system_roots` 比較 `plain_path(home)` 與 `home.resolve(strict=True)`。舊 `plain_path()` 只在 Windows 做 `abspath()`，保留 8.3 別名；`resolve()` 則取得檔案系統的長名稱。不能只憑 `RUNNER~1` 與 `runneradmin` 的字串推定兩者相同。
+
+本機建立含空格的獨立測試目錄，透過 Windows `GetShortPathNameW` 取得真正的 8.3 路徑，先以 `samefile()` 與 `st_dev`／`st_ino` 確認身分，再將此短路徑指定為測試程序的 TEMP。未修改版本重現同名測試的路徑不相等斷言；另外重現正式 `validate_output()` 將 repository 內的合法新輸出誤認為 repository 外。原始重現日誌保留為 `baseline-short-path.log`，不是對原 Runner 隨機目錄的推測。
+
+### 修正方式及防護
+
+- Windows Builder 先檢查原始路徑的每一層，仍拒絕 Symlink、Junction 及 Reparse Point，並保留先檢查 `link/..`、後消除 `..` 的順序。
+- 找到最近的既有祖先，保存其 `lstat()`，以 `resolve(strict=True)` 展開既有的 8.3 名稱，再接回尚未建立的輸出尾段。只容許 `FileNotFoundError` 作為尚不存在的路徑；權限等錯誤不被吞掉。
+- 對標準 `\\?\C:\...`／`\\?\UNC\server\share\...` 命名空間統一為一般 drive／UNC 拼法前後，必須以 `samestat()` 確認仍為原本的同一實體。這是固定的命名空間處理，沒有將 `~1` 字串猜成使用者名稱。不能證明相同即失敗。
+- 原始及正規化後的祖先會再次檢查，避免 canonicalize 隱藏連結。Verbatim 路徑若有結尾空格／句點的 component，直接拒絕，避免尚未存在的尾段在 Win32 正規化時改變意義。一般 Win32 路徑依原有系統語意處理。
+- 輸出及受保護的 repository 根也採用一致的正規化方式，含 repository 以 verbatim 名稱表示的情況。既有輸出不覆寫、輸入／輸出不得互相包含、資源 SHA／allowlist 與鎖檔原子更新規則保留。
+- macOS 的固定 root-owned `/var`／`/tmp` 信任根規則沒有修改，也沒有對任意使用者連結開放例外。這仍是路徑式 I/O 防護，不宣稱能完全防範同權限惡意程序持續更換整棵目錄。
+
+### 其他來源審查
+
+再次掃描 Rust crates、Python Worker、共用／Windows／portable Builder 中的 `canonicalize()`、`resolve()`、`symlink_metadata()`、`lstat()`、`relative_to()`、路徑相等及 containment 判斷。
+
+| 範圍 | 本次結論 |
+| --- | --- |
+| Windows／共用 Builder | 修正 `plain_path()` 的既有祖先名稱與身分驗證，以及 repository 比較。補測 Runtime manifest、Cache／Engine Assets、鎖檔及輸出保護。 |
+| Rust `seed.rs` | 正式 seeder 沒有比較未正規化的兩條絕對路徑；逐層 link／reparse 防護可接受真正的 8.3 名稱。只增加 Windows 實際 seeding 回歸：短、長、canonical verbatim 根均得到同一份資源，既有不同使用者內容仍不可覆寫。正式 Rust 程式不修改。 |
+| bridge `lib.rs`／`assets.rs` | Worker 輸入／輸出、資源 home 與 staging 的 containment 兩邊已使用檔案系統 canonical 根。沒有發現同類混用短／長名稱的問題。 |
+| Python Worker、portable Builder、`build_support.py` | Worker 已 `resolve(strict=True)`；bundle 內相對 symlink 的 containment 兩邊均解析；manifest 的根與列舉結果沿用同一表示。沒有已證實需修改的同類問題。 |
+| app output／transfers／background、preview／config／CLI | 檔案輸出比較使用 canonical 路徑或由同一 canonical 根衍生。未發現本次同類問題，保留原始功能。 |
+
+### 本次驗證
+
+- Windows fmt、嚴格 Clippy、Rust workspace Tests：307 通過、0 失敗；原本標記 ignore 的 native PDFium smoke 另外明確執行並通過 1 項，共 308。Release CLI／GUI Build、CLI version／help 通過。保留 `--locked`、`-D warnings`，Cargo 使用既有離線快取。
+- Python Worker 35、Windows／共用 Builder 44、portable Builder 7、CI diagnostics 9、BabelDOC engine regressions 4，共 99 項通過；Ruff 通過。最終 Builder 44 項另以真實 8.3 TEMP 全部執行並通過，沒有略過失敗測試。
+- 新增 Windows Junction／Unix Symlink 共用防護測試，本機實際執行 Junction 分支通過，Unix 原生分支尚待 macOS Runner。同一目錄及不同目錄、正規化期間身分改變、輸入輸出重疊、惡意連結與穿越、verbatim 非預期名稱、UNC 命名空間與錯誤身分等 Windows 回歸通過。UNC 部分用合成 stat 模擬，未連接實際 SMB 分享。
+- Windows CMD 原始碼打包 22 項通過；既有 Workflow 靜態檢查通過，Workflow 完全沒有修改。
+- 新 Release CLI 使用真正短路徑的合成 PDF 與全新 Worker home，透過 Rust／Python IPC 及 localhost 固定回覆，成功產生單語、雙語 PDF。兩份重新開啟後均有預期中文字，雙語保留原文；182 項資源 SHA256 全部符合 manifest，沒有複製 cache DB。使用既有 BabelDOC 0.6.4，未使用私人 PDF、真實 Key 或付費 API，未修改保留的 Windows 完整包。
+- macOS ARM64：直接引用目前正式 `seed.rs`（包含 Unix／macOS 測試）的獨立交叉 Clippy 全 target 通過。這不等於完整 macOS workspace 編譯或原生執行；macOS `/var`／`/tmp` 的實際測試、完整 Tests／Release Build 仍須由使用者手動啟動既有 Runner 驗證。本機沒有 Apple SDK 或 macOS 執行環境。
+
+本次完整日誌與合成資料位於 `.test-output/ci/windows-path-audit-20261102/`，CLI 輸出位於 `.test-output/rust-migration/windows-path-audit-20261102/`。macOS 原生結果與實際 UNC／SMB 環境均未宣稱通過。BabelDOC、GUI／CLI、Retry／Backoff、依賴及 Workflow 不變；不 Push、不合併 main、不觸發 Actions。
+
 ## 參考
 
 - [Rust temp_dir：暫存路徑可能為符號連結、Darwin 暫存根來源](https://doc.rust-lang.org/std/env/fn.temp_dir.html)
 - [Rust canonicalize：解析中間連結、Windows extended-length 路徑](https://doc.rust-lang.org/std/fs/fn.canonicalize.html)
+- [Python 3.13 realpath／samefile／samestat：8.3 展開及檔案身分比較](https://docs.python.org/3.13/library/os.path.html)
+- [Microsoft：Windows 路徑與命名空間](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file)

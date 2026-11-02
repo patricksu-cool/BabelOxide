@@ -159,23 +159,60 @@ def macos_system_path(path: Path) -> Path:
     return path
 
 
+def windows_plain_path(path: Path) -> Path:
+    """Expand existing 8.3 names, retaining a missing output tail and its identity."""
+    ancestor = path
+    missing = []
+    while True:
+        try:
+            before = ancestor.lstat()
+            break
+        except FileNotFoundError:
+            require(ancestor != ancestor.parent, "Build path has no existing root")
+            missing.append(ancestor.name)
+            ancestor = ancestor.parent
+    # The caller checks every original ancestor before and after this operation.
+    # Comparing lstat to stat also rejects a reparse point introduced meanwhile.
+    resolved = ancestor.resolve(strict=True)
+    name = str(resolved)
+    if name.startswith("\\\\?\\UNC\\"):
+        resolved = Path("\\\\" + name[8:])
+    elif resolved.drive.startswith("\\\\?\\") and len(resolved.drive) == 6 and resolved.drive[4].isalpha() and resolved.drive[5] == ":":
+        resolved = Path(name[4:])
+    require(os.path.samestat(before, resolved.stat()), "Build path changed while normalizing its Windows name")
+    return resolved.joinpath(*reversed(missing))
+
+
 def plain_path(path: Path) -> Path:
-    """Refuse links/junctions below verified macOS system roots or on Windows."""
+    """Refuse links before normalizing OS path aliases for subsequent I/O."""
     # Inspect link/.. before lexical normalization can erase the link component.
     path = path.absolute()
     if sys.platform == "darwin":
         path = macos_system_path(path)
-    for component in (path, *path.parents):
-        try:
-            info = component.lstat()
-        except FileNotFoundError:
-            continue
-        require(
-            not stat.S_ISLNK(info.st_mode)
-            and not getattr(info, "st_file_attributes", 0) & 0x400,
-            f"Links or reparse points are not allowed: {component}",
-        )
-    return Path(os.path.abspath(path))  # noqa: PTH100 -- normalize only after inspecting every ancestor
+
+    def inspect(candidate: Path) -> None:
+        for component in (candidate, *candidate.parents):
+            try:
+                info = component.lstat()
+            except FileNotFoundError:
+                continue
+            require(
+                not stat.S_ISLNK(info.st_mode)
+                and not getattr(info, "st_file_attributes", 0) & 0x400,
+                f"Links or reparse points are not allowed: {component}",
+            )
+
+    inspect(path)
+    if os.name == "nt" and path.drive.startswith("\\\\?\\"):
+        # Verbatim names must not silently acquire Win32 trimming semantics,
+        # including in the missing suffix where no identity can be checked.
+        require(all(not part.endswith((".", " ")) for part in path.parts[1:]), "Ambiguous Windows verbatim path")
+    normalized = Path(os.path.abspath(path))  # noqa: PTH100 -- inspect ancestors before collapsing ..
+    if os.name == "nt":
+        normalized = windows_plain_path(normalized)
+        inspect(path)
+        inspect(normalized)
+    return normalized
 
 
 def relative_member(name: str) -> PurePosixPath:
@@ -767,7 +804,8 @@ def supplement_rust_notices(stage: Path, records: list[dict]) -> None:
 
 def validate_output(output: Path, inputs: list[Path]) -> Path:
     output = plain_path(output)
-    require(output.is_relative_to(REPO) and output != REPO, "Output must be a new directory below the repository")
+    repo = plain_path(REPO)
+    require(output.is_relative_to(repo) and output != repo, "Output must be a new directory below the repository")
     require(not output.exists(), f"Output already exists; it will not be replaced: {output}")
     forbidden = [REPO / name for name in (".git", ".venv", ".cargo", "crates", "python-worker", "script", "docs", "target", "build-inputs", "pdf2zh_next", "dist/release")]
     for root in forbidden + inputs:
@@ -858,7 +896,7 @@ def remove_empty_engine_cache(stage: Path) -> list[dict]:
     """Remove only the known empty DB created by the isolated import smoke."""
     stage = plain_path(stage)
     cache = plain_path(stage / "resources/worker-home/.cache/babeldoc")
-    require(cache.is_relative_to(stage) and stage.is_relative_to(REPO), "Engine cache cleanup escaped the generated stage")
+    require(cache.is_relative_to(stage) and stage.is_relative_to(plain_path(REPO)), "Engine cache cleanup escaped the generated stage")
     database = cache / "cache.v1.db"
     if not database.exists():
         return []
@@ -1536,6 +1574,129 @@ class BuilderTests(unittest.TestCase):
                 lock = home / "new.lock"
                 write_lock_file(lock, "synthetic lock\n")
                 self.assertEqual(lock.read_text(), "synthetic lock\n")
+
+    def test_directory_aliases_cannot_hide_links_or_overwrite_user_files(self):
+        with tempfile.TemporaryDirectory(dir=REPO) as directory:
+            root = Path(directory)
+            outside, link = root / "outside", root / "linked"
+            outside.mkdir()
+            sentinel = outside / "sentinel.lock"
+            sentinel.write_bytes(b"synthetic user data")
+            if os.name == "nt":
+                powershell = Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"
+                subprocess.run(
+                    [powershell, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command",
+                     "$ErrorActionPreference='Stop'; New-Item -ItemType Junction -Path $env:TEST_LINK -Target $env:TEST_TARGET | Out-Null"],
+                    env={**os.environ, "TEST_LINK": str(link), "TEST_TARGET": str(outside)},
+                    capture_output=True, check=True,
+                )
+            else:
+                link.symlink_to(outside, target_is_directory=True)
+            try:
+                for spelling in (link, link / ".." / outside.name):
+                    with self.subTest(path=spelling), self.assertRaises(BuildError):
+                        write_lock_file(spelling / sentinel.name, "must not overwrite\n")
+                self.assertEqual(sentinel.read_bytes(), b"synthetic user data")
+                self.assertEqual(list(outside.iterdir()), [sentinel])
+            finally:
+                if os.name == "nt":
+                    link.rmdir()
+                else:
+                    link.unlink()
+
+    if os.name == "nt":
+        def test_windows_short_long_and_extended_paths_share_verified_roots(self):
+            import ctypes
+            from unittest.mock import patch
+
+            short_name = ctypes.WinDLL("kernel32", use_last_error=True).GetShortPathNameW
+            short_name.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32]
+            short_name.restype = ctypes.c_uint32
+            with tempfile.TemporaryDirectory(prefix="Long builder directory ", dir=REPO) as directory:
+                root = Path(directory).resolve(strict=True)
+                buffer = ctypes.create_unicode_buffer(32768)
+                length = short_name(str(root), buffer, len(buffer))
+                if not length:
+                    raise ctypes.WinError(ctypes.get_last_error())
+                self.assertLess(length, len(buffer))
+                short = Path(buffer.value)
+                extended = Path("\\\\?\\" + str(root))
+                self.assertTrue(short.samefile(root))
+                other = root / "Different physical directory"
+                other.mkdir()
+                self.assertFalse(other.samefile(root))
+                self.assertNotEqual(plain_path(other), plain_path(root))
+
+                asset = root / ".cache/babeldoc/fonts/example.ttf"
+                asset.parent.mkdir(parents=True)
+                asset.write_bytes(b"fixed font fixture")
+                expected = {"fonts/example.ttf": {"category": "fonts", "name": "example.ttf",
+                            "bytes": asset.stat().st_size, "sha3_256": digest(asset, "sha3_256")}}
+                runtime = root / "Runtime directory"
+                runtime.mkdir()
+                executable = runtime / "python.exe"
+                executable.write_bytes(b"synthetic runtime bytes")
+                pin = (executable.stat().st_size, digest(executable))
+                runtime_manifest = root / "runtime-files.json"
+                write_json(runtime_manifest, [{"path": "runtime/python.exe", "bytes": pin[0], "sha256": pin[1]}])
+                for spelling in (root, short, extended):
+                    with self.subTest(path=spelling):
+                        self.assertEqual(plain_path(spelling), root)
+                        self.assertTrue(plain_path(spelling).samefile(root))
+                        self.assertEqual(plain_path(spelling / "new tail/output"), root / "new tail/output")
+                        verify_restored(spelling, expected)
+                        self.assertEqual(files_below(spelling / ".cache"), [asset])
+                        self.assertEqual(engine_seed_manifest(spelling, expected)["files"][0]["sha256"], digest(asset))
+                        with patch.dict(RUNTIME_PINS, {"python.exe": pin}, clear=True):
+                            self.assertEqual(runtime_files(spelling / runtime.name, runtime_manifest)[0]["sha256"], pin[1])
+                        write_lock_file(spelling / "new.lock", "synthetic lock\n")
+                        self.assertEqual(validate_output(spelling / "new output", []), root / "new output")
+                        with self.assertRaises(BuildError):
+                            validate_output(spelling / "new output", [root / "new output/input"])
+                        with self.assertRaises(BuildError):
+                            validate_output(root / "new output", [spelling / "new output/input"])
+                        with self.assertRaises(BuildError):
+                            validate_output(spelling / ".cache/new", [root / ".cache"])
+                        with self.assertRaises(BuildError):
+                            validate_output(spelling / ".cache", [])
+                for suffix in ("absent directory.", "absent directory "):
+                    with self.assertRaisesRegex(BuildError, "Ambiguous"):
+                        plain_path(extended / suffix / "output")
+                with patch(__name__ + ".REPO", Path("\\\\?\\" + str(REPO))):
+                    self.assertEqual(validate_output(short / "new output", []), root / "new output")
+                self.assertEqual((root / "new.lock").read_text(), "synthetic lock\n")
+
+        def test_windows_normalization_rejects_changed_file_identity(self):
+            from unittest.mock import patch
+
+            with tempfile.TemporaryDirectory(dir=REPO) as directory:
+                root = Path(directory)
+                source, other = root / "original", root / "different"
+                source.mkdir()
+                other.mkdir()
+                sentinel = other / "sentinel"
+                sentinel.write_bytes(b"synthetic user data")
+                with patch.object(Path, "resolve", return_value=other), self.assertRaisesRegex(BuildError, "changed"):
+                    plain_path(source / "missing output")
+                self.assertEqual(sentinel.read_bytes(), b"synthetic user data")
+                self.assertFalse((source / "missing output").exists())
+
+        def test_windows_unc_namespace_requires_matching_filesystem_identity(self):
+            from unittest.mock import patch
+
+            ordinary = Path(r"\\server\share\Long directory")
+            extended = Path(r"\\?\UNC\server\share\Long directory")
+            identity = os.stat_result((stat.S_IFDIR | 0o700, 100, 1, 1, 0, 0, 0, 0, 0, 0))
+            different = os.stat_result((stat.S_IFDIR | 0o700, 101, 1, 1, 0, 0, 0, 0, 0, 0))
+            # No network share is contacted. Exercise the UNC namespace branch
+            # and its mandatory identity check independently of SMB availability.
+            with patch.object(Path, "lstat", return_value=identity), \
+                    patch.object(Path, "resolve", return_value=extended):
+                with patch.object(Path, "stat", return_value=identity):
+                    self.assertEqual(windows_plain_path(ordinary), ordinary)
+                    self.assertEqual(windows_plain_path(extended), ordinary)
+                with patch.object(Path, "stat", return_value=different), self.assertRaises(BuildError):
+                    windows_plain_path(extended)
 
     def test_unsafe_archive_and_manifest_paths_are_rejected(self):
         for name in ("../outside", "/absolute", "C:/outside", "a\\b", "a//b", "a/./b", "a/../b", "NUL.txt", "a/name.", "a/name ", "a/file:stream", "a/\x00b"):

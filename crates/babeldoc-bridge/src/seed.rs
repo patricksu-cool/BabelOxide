@@ -267,6 +267,61 @@ mod tests {
         Ok(())
     }
 
+    #[cfg(windows)]
+    #[test]
+    fn windows_short_long_and_verbatim_roots_seed_the_same_assets() -> Result<()> {
+        use std::os::windows::ffi::{OsStrExt, OsStringExt};
+
+        #[link(name = "kernel32")]
+        unsafe extern "system" {
+            fn GetShortPathNameW(long: *const u16, short: *mut u16, length: u32) -> u32;
+        }
+
+        let (root, manifest, home) = fixture();
+        let long: Vec<u16> = root
+            .path()
+            .as_os_str()
+            .encode_wide()
+            .chain(Some(0))
+            .collect();
+        let mut buffer = vec![0_u16; 32768];
+        // This queries an existing test directory; it neither creates aliases
+        // nor changes the volume's 8.3 policy.
+        let length =
+            unsafe { GetShortPathNameW(long.as_ptr(), buffer.as_mut_ptr(), buffer.len() as u32) };
+        ensure!(
+            length != 0,
+            "Query test short path: {}",
+            std::io::Error::last_os_error()
+        );
+        ensure!(
+            (length as usize) < buffer.len(),
+            "Short path exceeds test buffer"
+        );
+        let short = PathBuf::from(std::ffi::OsString::from_wide(&buffer[..length as usize]));
+        assert_eq!(short.canonicalize()?, root.path().canonicalize()?);
+        let short_manifest = short.join(manifest.strip_prefix(root.path())?);
+        let short_home = short.join(home.strip_prefix(root.path())?);
+        seed_assets(&short_manifest, &short_home, &CancellationToken::new())?;
+        seed_assets(&manifest, &home, &CancellationToken::new())?;
+        seed_assets(
+            &manifest.canonicalize()?,
+            &home.canonicalize()?,
+            &CancellationToken::new(),
+        )?;
+        assert_eq!(short_home.canonicalize()?, home.canonicalize()?);
+        let other = root.path().join("different home");
+        fs::create_dir(&other)?;
+        assert_ne!(short_home.canonicalize()?, other.canonicalize()?);
+        let target = home.join(".cache/babeldoc/fonts/font.ttf");
+        assert_eq!(fs::read(&target)?, b"fixed font fixture");
+        assert!(!home.join(".cache/babeldoc/cache.db").exists());
+        fs::write(&target, b"synthetic user font")?;
+        assert!(seed_assets(&short_manifest, &short_home, &CancellationToken::new()).is_err());
+        assert_eq!(fs::read(&target)?, b"synthetic user font");
+        Ok(())
+    }
+
     #[test]
     fn changed_user_asset_is_preserved_and_bad_bundle_never_publishes() -> Result<()> {
         let (_root, manifest, home) = fixture();
