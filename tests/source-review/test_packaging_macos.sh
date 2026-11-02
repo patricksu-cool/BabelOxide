@@ -3,19 +3,40 @@
 # SOURCE_REVIEW_TEST_SCRATCH selects the parent of this test's owned sandbox.
 set -euo pipefail
 export LC_ALL=en_US.UTF-8
+export COPYFILE_DISABLE=1
+unset ZIP ZIPOPT UNZIP UNZIPOPT ZIPINFO ZIPINFOOPT
 umask 077
 project=$(cd -P -- "${BASH_SOURCE[0]%/*}/../.." && pwd -P)
 scratch=${SOURCE_REVIEW_TEST_SCRATCH:-${TMPDIR:-/tmp}}
+scratch=$(cd -P -- "$scratch" && pwd -P)
 sandbox=$(mktemp -d "$scratch/mac-source-review-test.XXXXXXXX")
 root="$sandbox/中文 空格 O'Brien ! & (專案)"
 archive="$sandbox/BabelOxide-source-review.zip"
 passed=0
 skipped=0
 status=0
+failure_case='unexpected shell or assertion failure'
+invocations=0
+opaque=''
+encoded=''
+last_saved_log=''
+log_parent=${SOURCE_REVIEW_TEST_LOG_DIR:-"$project/.test-output/ci/source-packaging-macos"}
+mkdir -p -- "$log_parent"
+log_parent=$(cd -P -- "$log_parent" && pwd -P)
+logs=$(mktemp -d "$log_parent/run.XXXXXXXX")
 
 cleanup() {
     result=$?
     trap - EXIT
+    if [ "$result" -ne 0 ]; then
+        printf '\nPackaging test failed; complete redacted logs: %s\n' "$logs" >&2
+        if [ -n "$last_saved_log" ] && [ -f "$last_saved_log" ]; then
+            printf '%s\n' '--- Last 100 lines of the failing packaging invocation ---' >&2
+            tail -n 100 "$last_saved_log" >&2 || :
+            printf '%s\n' '--- End of packaging diagnostics ---' >&2
+        fi
+        printf 'FAIL %s; test exit %s; last packager exit %s. Logs: %s\n' "$failure_case" "$result" "$status" "$logs" >&2
+    fi
     if [ "$result" -ne 0 ] && [ "${SOURCE_REVIEW_TEST_KEEP_FAILURE:-0}" = 1 ]; then
         printf 'Synthetic failure sandbox retained for inspection: %s\n' "$sandbox" >&2
         exit "$result"
@@ -30,7 +51,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-die() { printf 'FAIL %s\n' "$1" >&2; exit 1; }
+die() { failure_case=$1; printf 'FAIL %s\n' "$1" >&2; exit 1; }
 pass() { passed=$((passed + 1)); printf 'PASS %s\n' "$1"; }
 skip() { skipped=$((skipped + 1)); printf 'SKIP %s\n' "$1"; }
 write_fixture() {
@@ -43,11 +64,24 @@ write_fixture() {
 hash_file() {
     perl -MDigest::SHA -e 'open my $f,"<:raw",$ARGV[0] or die "Cannot read hash input\n"; print Digest::SHA->new(256)->addfile($f)->hexdigest' "$1"
 }
+save_log() {
+    last_saved_log="$logs/invocation-$invocations.log"
+    # Keep the raw synthetic log for leak assertions, but never upload its values.
+    perl -e '
+        my $path=shift; open my $f,"<:raw",$path or die "Cannot read packaging log\n";
+        local $/; my $text=<$f>;
+        for my $value (@ARGV) { $text =~ s/\Q$value\E/[REDACTED]/g if length $value; }
+        binmode STDOUT; print $text;
+    ' "$sandbox/run.log" "$opaque" "$encoded" > "$last_saved_log"
+    printf 'Invocation %s: exit %s; log %s\n' "$invocations" "$status" "$last_saved_log" >> "$logs/summary.log"
+}
 invoke() {
+    invocations=$((invocations + 1))
     set +e
-    (cd -- "$sandbox/unrelated" && bash "$root/打包原始碼.command" --no-pause) > "$sandbox/run.log" 2>&1
+    (cd -- "$sandbox/unrelated" && "$BASH" "$root/打包原始碼.command" --no-pause) > "$sandbox/run.log" 2>&1
     status=$?
     set -e
+    save_log
 }
 assert_code() { [ "$status" -eq "$1" ] || die "$2 (exit $status, expected $1)"; }
 assert_no_temporary() {
@@ -57,7 +91,25 @@ assert_no_temporary() {
     done
 }
 assert_no_secret_log() {
+    [ -n "$1" ] || return 0
     perl -e 'open my $f,"<:raw",$ARGV[0] or die; local $/; exit(index(<$f>,$ARGV[1]) < 0 ? 0 : 1)' "$sandbox/run.log" "$1" || die 'synthetic credential appeared in output'
+}
+list_entries() {
+    # Independently enumerate extracted filesystem names, not unzip's filtered
+    # display list or the production script's ZIP metadata reader.
+    local extracted
+    extracted=$(mktemp -d "$sandbox/readback.XXXXXXXX")
+    unzip -qq "$1" -d "$extracted"
+    perl -MFile::Find -e '
+        my $root=shift; my @names;
+        find({no_chdir=>1,wanted=>sub {
+            die "Unexpected extracted link\n" if -l $_;
+            return if -d $_;
+            die "Unexpected extracted file type\n" unless -f $_;
+            push @names,substr($_,length($root)+1);
+        }},$root);
+        print "$_\n" for sort @names;
+    ' "$extracted"
 }
 assert_retained() {
     [ "$(hash_file "$archive")" = "$old_hash" ] || die 'failure changed the old ZIP'
@@ -71,6 +123,7 @@ reject() {
     assert_code "$code" "$name"
     assert_retained
     assert_no_secret_log "$opaque"
+    assert_no_secret_log "$encoded"
     rm -f -- "$root/$path"
     pass "$name; old ZIP and redaction preserved"
 }
@@ -85,6 +138,16 @@ tree_snapshot() {
         print "$_\n" for sort @records;
     ' "$root"
 }
+
+{
+    printf 'Bash: %s\nLocale: %s\n' "$BASH_VERSION" "$LC_ALL"
+    uname -srm
+    command -v perl zip unzip
+    perl -e 'print "Perl: $^V\n"'
+    zip -v
+    unzip -v
+} > "$logs/tools.log" 2>&1
+printf 'Complete packaging test logs: %s\n' "$logs"
 
 mkdir -p -- "$root" "$sandbox/unrelated"
 cp -- "$project/打包原始碼.command" "$project/打包原始碼.cmd" "$project/.gitattributes" "$root/"
@@ -103,6 +166,8 @@ write_fixture python-worker/worker.py 'raise RuntimeError("worker must never be 
 write_fixture script/never_run.py 'raise RuntimeError("build scripts must never be executed")'
 write_fixture tests/fixtures/small.txt 'small synthetic fixture'
 write_fixture 'tests/fixtures/中文 [檔案].txt' 'literal names stay literal'
+write_fixture 'tests/fixtures/功 能 (文件).txt' 'Unicode path fields bind legacy multibyte names'
+write_fixture 'tests/fixtures/-leading $value ; & (v1) # + =,.txt' 'punctuation is never shell input'
 write_fixture docs/ARCHITECTURE.md '# architecture'
 write_fixture resources/config.example.toml '[translation]'
 write_fixture resources/engine-assets.lock.json '{}'
@@ -128,11 +193,11 @@ assert_code 0 'initial packaging with Chinese and punctuation paths'
 assert_no_secret_log "$opaque"
 [ "$before" = "$(tree_snapshot)" ] || die 'packager modified a source file or timestamp'
 unzip -tqq "$archive"
-unzip -Z -1 "$archive" > "$sandbox/entries"
+list_entries "$archive" > "$sandbox/entries"
 for path in "${excluded[@]}"; do
     if grep -Fx -- "$path" "$sandbox/entries" > /dev/null; then die "excluded path entered ZIP: $path"; fi
 done
-for path in Cargo.toml Cargo.lock pyproject.toml uv.lock python-worker/worker.py crates/core/src/lib.rs docs/ARCHITECTURE.md resources/babeloxide.icns '打包原始碼.cmd' '打包原始碼.command' '.gitattributes' 'tests/fixtures/中文 [檔案].txt'; do
+for path in Cargo.toml Cargo.lock pyproject.toml uv.lock python-worker/worker.py crates/core/src/lib.rs docs/ARCHITECTURE.md resources/babeloxide.icns '打包原始碼.cmd' '打包原始碼.command' '.gitattributes' 'tests/fixtures/中文 [檔案].txt' 'tests/fixtures/功 能 (文件).txt' 'tests/fixtures/-leading $value ; & (v1) # + =,.txt'; do
     grep -Fx -- "$path" "$sandbox/entries" > /dev/null || die "missing ZIP source: $path"
 done
 unzip -qq "$archive" -d "$sandbox/extracted"
@@ -146,6 +211,24 @@ perl -MDigest::SHA -e '
 assert_no_temporary
 pass 'Chinese, spaces and punctuation; literal wildcard names; independent cwd; exact extraction; exclusions; no project writes'
 
+for project_name in 'English-project' '中文 空格' "O'Brien ! & (project) [literal] # + ; =,"; do
+    next_root="$sandbox/$project_name"
+    # These are direct children of our resolved, unique sandbox; never move an
+    # arbitrary caller path or merge into an existing directory.
+    case "$root" in "$sandbox"/*) ;; *) die 'unsafe fixture move source' ;; esac
+    case "$next_root" in "$sandbox"/*) ;; *) die 'unsafe fixture move target' ;; esac
+    [ -d "$root" ] && [ ! -L "$root" ] && [ ! -e "$next_root" ] || die 'fixture move is not isolated'
+    mv -- "$root" "$next_root"
+    root=$next_root
+    invoke
+    assert_code 0 "path matrix: $project_name"
+    unzip -tqq "$archive"
+    list_entries "$archive" > "$sandbox/entries"
+    grep -Fx 'tests/fixtures/中文 [檔案].txt' "$sandbox/entries" >/dev/null || die 'path matrix lost a literal source name'
+    assert_no_temporary
+    pass "path matrix: $project_name"
+done
+
 old_hash=$(hash_file "$archive")
 write_fixture README.md 'updated synthetic source'
 write_fixture crates/core/src/new.rs 'pub fn new_source() {}'
@@ -153,10 +236,17 @@ rm -f -- "$root/tests/fixtures/small.txt"
 invoke
 assert_code 0 'repeat packaging'
 [ "$(hash_file "$archive")" != "$old_hash" ] || die 'ZIP did not refresh'
-unzip -Z -1 "$archive" > "$sandbox/entries"
+list_entries "$archive" > "$sandbox/entries"
 grep -Fx 'crates/core/src/new.rs' "$sandbox/entries" >/dev/null || die 'new source missing'
 if grep -Fx 'tests/fixtures/small.txt' "$sandbox/entries" >/dev/null; then die 'deleted source still archived'; fi
 pass 'repeat packaging refreshes additions and deletions'
+
+ZIP='--synthetic-forbidden-option' ZIPOPT='--synthetic-forbidden-option' \
+UNZIP='--synthetic-forbidden-option' UNZIPOPT='--synthetic-forbidden-option' \
+ZIPINFO='--synthetic-forbidden-option' ZIPINFOOPT='--synthetic-forbidden-option' invoke
+assert_code 0 'caller ZIP options cannot alter packaging or diagnostics'
+assert_no_temporary
+pass 'caller ZIP and UnZip option variables cannot change the verified archive'
 
 assign_name=api'_'key
 env_name=API'_'KEY
@@ -231,6 +321,7 @@ if [ -L "$root/docs/linked.txt" ]; then
     assert_retained
     pass 'allowlisted file symlink is rejected'
 else
+    [ "$(uname -s)" != Darwin ] || die 'native macOS must run the file symlink rejection test'
     skip 'file symlinks unavailable in this host; native macOS check still needed'
 fi
 rm -f -- "$root/docs/linked.txt"
@@ -244,6 +335,7 @@ if [ -L "$root/docs/linked" ]; then
 else
     # Git Bash may copy a directory instead of making a link. This is owned data.
     if [ -d "$root/docs/linked" ]; then rm -rf -- "$root/docs/linked"; fi
+    [ "$(uname -s)" != Darwin ] || die 'native macOS must run the directory symlink rejection test'
     skip 'directory symlinks unavailable in this host; native macOS check still needed'
 fi
 
@@ -252,25 +344,143 @@ mkdir -p -- "$sandbox/bin"
 cat > "$sandbox/bin/zip" <<'WRAPPER'
 #!/bin/bash
 set -eu
+if [ "$SOURCE_REVIEW_TEST_ZIP_MODE" = create-fail ]; then
+    printf '%s\n' 'synthetic ZIP creation stderr' >&2
+    exit 73
+fi
 "$SOURCE_REVIEW_TEST_REAL_ZIP" "$@"
+archive=$4
 case "$SOURCE_REVIEW_TEST_ZIP_MODE" in
-    corrupt) printf '%s' 'not a ZIP' > "$4" ;;
+    corrupt) printf '%s' 'not a ZIP' > "$archive" ;;
     alter)
         printf '%s' 'changed content with a valid ZIP CRC and the original entry name' > README.md
-        "$SOURCE_REVIEW_TEST_REAL_ZIP" -q -X -nw "$4" -- ./README.md
+        "$SOURCE_REVIEW_TEST_REAL_ZIP" -q -X -nw "$archive" -- ./README.md
+        ;;
+    unexpected)
+        printf '%s' 'unexpected but valid text' > tests/unexpected.txt
+        "$SOURCE_REVIEW_TEST_REAL_ZIP" -q -X -nw "$archive" -- ./tests/unexpected.txt
+        ;;
+    *)
+        # Alter only this test's synthetic ZIP metadata, never the source tree.
+        perl - "$archive" "$SOURCE_REVIEW_TEST_ZIP_MODE" <<'PERL'
+use strict;
+use warnings;
+my ($path, $mode)=@ARGV;
+open my $f,'+<:raw',$path or die "Cannot open synthetic ZIP\n";
+local $/; my $bytes=<$f>;
+my $end=length($bytes)-22;
+my (undef,undef,undef,$count,$count2,$size,$offset)=unpack('VvvvvVV',substr($bytes,$end,20));
+if ($mode eq 'zip64') {
+    my $end64=pack('VQ<vvVVQ<Q<Q<Q<',0x06064b50,44,45,45,0,0,$count,$count2,$size,$offset);
+    my $locator=pack('VVQ<V',0x07064b50,0,$end,1);
+    my $eocd=pack('VvvvvVVv',0x06054b50,0,0,0xffff,0xffff,0xffffffff,0xffffffff,0);
+    substr($bytes,$end)=$end64.$locator.$eocd;
+} elsif ($mode eq 'truncated') {
+    substr($bytes,-8)='';
+} elsif ($mode eq 'bad-offset') {
+    substr($bytes,$end+16,4)=pack('V',length($bytes)+1);
+} else {
+    my $changed=0;
+    while ($offset<$end) {
+        die "Synthetic central header is invalid\n" unless substr($bytes,$offset,4) eq "PK\1\2";
+        my ($n,$e,$c)=unpack('vvv',substr($bytes,$offset+28,6));
+        my $name=substr($bytes,$offset+46,$n);
+        if (($mode eq 'duplicate' && $name eq 'Cargo.lock') || ($name eq 'README.md' && $mode ne 'duplicate')) {
+            if ($mode eq 'duplicate' || $mode eq 'traversal') {
+                substr($bytes,$offset+46,$n)= $mode eq 'duplicate' ? 'Cargo.toml' : '../bad.rs';
+            } elsif ($mode eq 'linked') {
+                substr($bytes,$offset+38,4)=pack('V',0120777<<16);
+            } elsif ($mode eq 'local-mismatch') {
+                my $local=unpack('V',substr($bytes,$offset+42,4));
+                substr($bytes,$local+30,$n)='../bad.rs';
+            } elsif ($mode eq 'unicode-override') {
+                my $field=pack('vvCV',0x7075,5+$n,1,0).$name;
+                substr($bytes,$offset+46+$n+$e,0)=$field;
+                substr($bytes,$offset+30,2)=pack('v',$e+length($field));
+                substr($bytes,$end+length($field)+12,4)=pack('V',$size+length($field));
+            } else { die "Unknown synthetic mutation\n"; }
+            $changed=1; last;
+        }
+        $offset+=46+$n+$e+$c;
+    }
+    die "Synthetic mutation was not applied\n" unless $changed;
+}
+seek($f,0,0) or die "Cannot seek synthetic ZIP\n";
+print {$f} $bytes or die "Cannot write synthetic ZIP\n";
+truncate($f,length($bytes)) or die "Cannot truncate synthetic ZIP\n";
+close $f or die "Cannot close synthetic ZIP\n";
+PERL
         ;;
 esac
 WRAPPER
 chmod +x "$sandbox/bin/zip"
 export SOURCE_REVIEW_TEST_REAL_ZIP="$real_zip"
-for mode in corrupt alter; do
+for mode in corrupt alter duplicate traversal linked bad-offset truncated unexpected unicode-override local-mismatch; do
+    old_hash=$(hash_file "$archive")
     export SOURCE_REVIEW_TEST_ZIP_MODE="$mode"
     PATH="$sandbox/bin:$PATH" invoke
-    [ "$status" -ne 0 ] || die 'damaged or changed ZIP was published'
+    assert_code 4 "invalid ZIP metadata or bytes: $mode"
     assert_retained
+    pass "invalid ZIP rejected and old ZIP retained: $mode"
 done
+export SOURCE_REVIEW_TEST_ZIP_MODE=zip64
+PATH="$sandbox/bin:$PATH" invoke
+assert_code 0 'valid ZIP64 central directory'
+unzip -tqq "$archive"
+assert_no_temporary
+pass 'valid ZIP64 directory retains UTF-8 entry verification'
+
+old_hash=$(hash_file "$archive")
+export SOURCE_REVIEW_TEST_ZIP_MODE=create-fail
+PATH="$sandbox/bin:$PATH" invoke
+assert_code 73 'ZIP tool failure keeps its real exit code'
+assert_retained
+grep -F 'synthetic ZIP creation stderr' "$sandbox/run.log" >/dev/null || die 'ZIP stderr was lost'
+grep -F '階段=建立暫存 ZIP' "$sandbox/run.log" >/dev/null || die 'ZIP creation stage was lost'
+pass 'ZIP creation failure retains stderr, stage, exit code and old ZIP'
 unset SOURCE_REVIEW_TEST_ZIP_MODE SOURCE_REVIEW_TEST_REAL_ZIP
-pass 'damaged ZIP and CRC-valid changed bytes are rejected before publication'
+
+real_unzip=$(command -v unzip)
+cat > "$sandbox/bin/unzip" <<'WRAPPER'
+#!/bin/bash
+set -eu
+case "${1:-}" in
+    -Z) printf '%s\n' 'display-only ZIP listing must not be parsed' >&2; exit 87 ;;
+    -qq)
+        if [ "$SOURCE_REVIEW_TEST_UNZIP_MODE" = extract-fail ]; then
+            printf '%s\n' 'synthetic extraction stderr' >&2
+            exit 74
+        fi
+        ;;
+esac
+exec "$SOURCE_REVIEW_TEST_REAL_UNZIP" "$@"
+WRAPPER
+chmod +x "$sandbox/bin/unzip"
+rm -f -- "$sandbox/bin/zip"
+export SOURCE_REVIEW_TEST_REAL_UNZIP="$real_unzip" SOURCE_REVIEW_TEST_UNZIP_MODE=normal
+PATH="$sandbox/bin:$PATH" invoke
+assert_code 0 'packaging is independent of filtered unzip display names'
+assert_no_temporary
+pass 'packaging never uses a locale-filtered unzip display list'
+old_hash=$(hash_file "$archive")
+export SOURCE_REVIEW_TEST_UNZIP_MODE=extract-fail
+PATH="$sandbox/bin:$PATH" invoke
+assert_code 74 'extraction failure keeps its real exit code'
+assert_retained
+grep -F 'synthetic extraction stderr' "$sandbox/run.log" >/dev/null || die 'extraction stderr was lost'
+grep -F '階段=ZIP 解壓縮' "$sandbox/run.log" >/dev/null || die 'extraction stage was lost'
+pass 'extraction failure retains stderr, stage, exit code and old ZIP'
+unset SOURCE_REVIEW_TEST_REAL_UNZIP SOURCE_REVIEW_TEST_UNZIP_MODE
+rm -f -- "$sandbox/bin/unzip"
+
+printf '%s\n%s\n' "$opaque" "$encoded" > "$sandbox/run.log"
+invocations=$((invocations + 1))
+save_log
+if grep -F "$opaque" "$last_saved_log" >/dev/null || grep -F "$encoded" "$last_saved_log" >/dev/null; then
+    die 'persisted test diagnostics exposed a synthetic credential'
+fi
+grep -F '[REDACTED]' "$last_saved_log" >/dev/null || die 'test diagnostic redaction did not run'
+pass 'persisted diagnostics redact synthetic credential values'
 
 real_perl=$(command -v perl)
 cat > "$sandbox/bin/perl" <<'WRAPPER'
@@ -280,12 +490,12 @@ if [ "${2:-}" = publish ]; then exit 86; fi
 exec "$SOURCE_REVIEW_TEST_REAL_PERL" "$@"
 WRAPPER
 chmod +x "$sandbox/bin/perl"
-rm -f -- "$sandbox/bin/zip"
 export SOURCE_REVIEW_TEST_REAL_PERL="$real_perl"
 PATH="$sandbox/bin:$PATH" invoke
 assert_code 86 'simulated publication failure'
 assert_retained
+grep -F '階段=原子發布 ZIP' "$sandbox/run.log" >/dev/null || die 'publication failure stage was lost'
 unset SOURCE_REVIEW_TEST_REAL_PERL
 pass 'simulated publication failure preserves old ZIP and removes temporary files'
 
-printf '%s checks passed; %s skipped. macOS Finder and native Bash 3.2 require a Mac.\n' "$passed" "$skipped"
+printf '%s checks passed; %s skipped. Bash %s on %s; Finder interaction is not tested.\n' "$passed" "$skipped" "$BASH_VERSION" "$(uname -s)"

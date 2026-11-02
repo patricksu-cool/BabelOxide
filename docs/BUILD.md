@@ -90,4 +90,8 @@ Windows 雙擊根目錄 `打包原始碼.cmd`；macOS 從 Git checkout 雙擊 `�
 
 `powershell -NoProfile -NonInteractive -File tests/source-review/test_packaging.ps1` 在唯一合成暫存目錄驗證上述契約，不拿私人檔案做 fixtures。CMD 保持 UTF-8 無 BOM／CRLF；PowerShell 測試保留 UTF-8 BOM，供 Windows PowerShell 5.1 正確讀取中文。
 
-Mac 對應測試為 `/bin/bash tests/source-review/test_packaging_macos.sh`；手動 Actions 的 Mac job 會執行。它使用中文／空格路徑、合成秘密與可控損壞 ZIP，檢查重跑、大小上限、二進位 pins、連結拒絕與失敗保舊包。Windows Git Bash 的通過結果不等於原生 Bash 3.2／Finder 通過，尚缺的平台驗證見 [STATUS](STATUS.md)。
+Mac 對應測試為 `/bin/bash tests/source-review/test_packaging_macos.sh`；手動 Actions 的 Mac job 會執行。它使用英文、中文／空格、括號及標點路徑、合成秘密與可控損壞 ZIP，檢查實際解壓、重跑、大小上限、二進位 pins、連結拒絕與失敗保舊包。另驗證 ZIP64、重複項目、路徑穿越、連結屬性、Unicode 欄位、截斷目錄及本地／中央標頭不一致。原生 macOS 必須執行兩項連結拒絕測試，建立連結失敗即失敗；Windows Git Bash 不具備原生連結能力時仍會明示未驗證。
+
+macOS 打包器不再以 `unzip -Z -1` 的顯示文字驗證原始檔名。[Apple 的 `fnprint()`](https://github.com/apple-oss-distributions/zip/blob/main/unzip/unzip60/list.c) 仍會呼叫 [顯示用 `fnfilter()`](https://github.com/apple-oss-distributions/zip/blob/main/unzip/unzip60/extract.c)，可能取代非列印位元組。有效 ZIP 因而可能在項目比對時得到退出碼 4；原始失敗 Runner 未保留 `run.log`，無法還原該次 stderr，但 Windows 已重現「顯示轉換後項目不符 → 退出碼 4」的相同機制。現在按 [ZIP 格式](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT) 讀取有邊界檢查的中央目錄，逐項對照快照清單，支援原始 UTF-8、CRC 綁定的 Unicode 路徑額外欄位及 ZIP64；標頭不一致、重複、缺項、越界、分割／加密或連結項目均停止。CRC32 使用系統 Perl 隨附的 `Compress::Raw::Zlib`，不需安裝套件。ZIP 建立、CRC 檢查及解壓仍使用原有系統工具，逐檔 SHA256、敏感資訊掃描及原子發布保持。
+
+打包命令失敗會顯示階段、腳本行及原始退出碼，保留工具 stderr，不輸出 shell trace、環境變數或憑證內容。封裝與測試會清除繼承的 ZIP／UnZip 選項，保持工具參數固定。測試為每次打包保留獨立日誌、工具版本及摘要於 `.test-output/ci/source-packaging-macos/run.*/`，可用 `SOURCE_REVIEW_TEST_LOG_DIR` 指定測試日誌父目錄；故障會在 Console 顯示末 100 行與失敗摘要。測試產生的合成憑證在持久日誌中遮蔽，但原始測試輸出仍用於檢查是否洩漏。既有 CI 的失敗 Console 摘要與 `always()` 日誌 Artifact 已涵蓋此位置，無須修改 Workflow。Windows Git Bash 的通過結果不等於原生 Bash 3.2／Finder 通過，尚缺的平台驗證見 [STATUS](STATUS.md)。

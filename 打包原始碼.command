@@ -1,11 +1,11 @@
 #!/bin/bash
 # macOS Bash 3.2; only system tools, including Perl (also used by shasum).
 # Keep LF line endings. No project code, worker, or build script is executed.
-set -euo pipefail
+set -Eeuo pipefail
 # Info-ZIP must use a UTF-8 locale to preserve Chinese entry names.
 export LC_ALL=en_US.UTF-8
 export COPYFILE_DISABLE=1
-unset ZIPOPT UNZIP UNZIPOPT
+unset ZIP ZIPOPT UNZIP UNZIPOPT ZIPINFO ZIPINFOOPT
 umask 077
 
 work=''
@@ -14,9 +14,17 @@ destination=''
 published=0
 stage='初始化'
 
+report_error() {
+    local code=$1 line=$2
+    # Never print BASH_COMMAND, shell traces, environment values or source bytes.
+    printf '打包命令失敗：階段=%s；腳本行=%s；退出碼=%s。請見上方 stderr。\n' "$stage" "$line" "$code" >&2 || :
+    exit "$code"
+}
+
 finish() {
     result=$?
-    trap - EXIT HUP INT TERM
+    trap - EXIT ERR HUP INT TERM
+    set +e  # A failed diagnostic/cleanup write must not replace the original exit.
     if [ -n "$work" ] && [ -n "$parent" ]; then
         case "$work" in
             "$parent"/.BabelOxide-source-review.????????)
@@ -41,6 +49,7 @@ finish() {
 }
 pause_option=${1:-}
 trap 'finish "$pause_option"' EXIT
+trap 'report_error "$?" "$LINENO"' ERR
 trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
@@ -52,9 +61,10 @@ review_files() {
 use strict;
 use warnings;
 use utf8;
-use Fcntl qw(:DEFAULT :mode);
+use Fcntl qw(:DEFAULT :mode SEEK_SET);
 use Encode qw(decode encode FB_CROAK LEAVE_SRC);
 use Digest::SHA qw(sha256_hex);
+use Compress::Raw::Zlib qw(crc32);
 use File::Path qw(make_path);
 binmode STDERR, ':encoding(UTF-8)';
 
@@ -127,10 +137,10 @@ sub stop {
 }
 
 sub safe_name {
-    my ($path) = @_;
-    stop('檔名含控制字元或反斜線，無法安全封裝', $path) if $path =~ /[\x00-\x1f\x7f\\]/;
+    my ($path, $code) = @_;
+    stop('檔名含控制字元或反斜線，無法安全封裝', $path, $code) if $path =~ /[\x00-\x1f\x7f\\]/;
     eval { decode('UTF-8', $path, FB_CROAK | LEAVE_SRC) };
-    stop('檔名不是有效 UTF-8', $path) if $@;
+    stop('檔名不是有效 UTF-8', $path, $code) if $@;
 }
 
 sub excluded_file {
@@ -293,6 +303,96 @@ sub manifest {
     return %expected;
 }
 
+sub zip_entries {
+    my ($expected) = @_;
+    open my $zip, '<:raw', "$work/archive.zip" or stop('無法開啟暫存 ZIP', undef, 4);
+    my $length = -s $zip;
+    # Read only central-directory metadata, never a locale-filtered display list.
+    # ZIP creation, CRC testing and extraction remain with the system zip/unzip.
+    my $at = sub {
+        my ($offset, $size) = @_;
+        stop('ZIP 目錄紀錄越界或截斷', undef, 4) if $offset < 0 || $size < 0 || $offset > $length || $size > $length - $offset;
+        seek($zip, $offset, SEEK_SET) or stop('無法定位 ZIP 目錄紀錄', undef, 4);
+        my $bytes = '';
+        while (length($bytes) < $size) {
+            my $read = read($zip, my $chunk, $size - length($bytes));
+            stop('無法完整讀取 ZIP 目錄紀錄', undef, 4) unless defined($read) && $read > 0;
+            $bytes .= $chunk;
+        }
+        return $bytes;
+    };
+    # Our new archives have no archive comments, disk splits or encryption.
+    my $end = $length - 22;
+    my ($signature, $disk, $start_disk, $disk_count, $count, $size, $offset, $comment) =
+        unpack('VvvvvVVv', $at->($end, 22));
+    stop('ZIP 結尾紀錄錯誤（須為無註解的單一 ZIP）', undef, 4) unless $signature == 0x06054b50 && !$disk && !$start_disk && !$comment;
+    if ($end >= 20 && substr($at->($end - 20, 20), 0, 4) eq "PK\x06\x07") {
+        my (undef, $zip64_disk, $zip64_offset, $disks) = unpack('VVQ<V', $at->($end - 20, 20));
+        stop('ZIP64 分割磁碟或目錄位置錯誤', undef, 4) unless !$zip64_disk && $disks == 1 && $zip64_offset < $end - 20;
+        my ($sig64, $record_size, undef, undef, $disk64, $start64, $disk_count64, $count64, $size64, $offset64) =
+            unpack('VQ<vvVVQ<Q<Q<Q<', $at->($zip64_offset, 56));
+        stop('ZIP64 結尾紀錄錯誤', undef, 4) unless $sig64 == 0x06064b50 && $record_size >= 44 &&
+            $record_size == $end - 20 - $zip64_offset - 12 && !$disk64 && !$start64 && $disk_count64 == $count64 &&
+            ($disk_count == 0xffff || $disk_count == $disk_count64) && ($count == 0xffff || $count == $count64) &&
+            ($size == 0xffffffff || $size == $size64) && ($offset == 0xffffffff || $offset == $offset64);
+        ($disk_count, $count, $size, $offset, $end) = ($disk_count64, $count64, $size64, $offset64, $zip64_offset);
+    }
+    stop('ZIP 目錄數量或範圍不符', undef, 4) unless $count == keys(%$expected) && $disk_count == $count &&
+        $offset <= $end && $size == $end - $offset;
+    my $directory_start = $offset;
+    open my $list, '>:raw', "$work/archive.entries" or stop('無法儲存原始 ZIP 項目清單', undef, 4);
+    for (1 .. $count) {
+        my $header = $at->($offset, 46);
+        stop('ZIP 中央目錄標頭錯誤', undef, 4) unless substr($header, 0, 4) eq "PK\x01\x02";
+        my ($name_size, $extra_size, $comment_size, $entry_disk) = unpack('vvvv', substr($header, 28, 8));
+        my $flags = unpack('v', substr($header, 8, 2));
+        my $attributes = unpack('V', substr($header, 38, 4));
+        my $local_offset = unpack('V', substr($header, 42, 4));
+        my $next = $offset + 46 + $name_size + $extra_size + $comment_size;
+        stop('ZIP 項目中繼資料或範圍錯誤', undef, 4) if !$name_size || $next > $end || $comment_size || $entry_disk || ($flags & 0x41) || S_ISLNK($attributes >> 16);
+        my $raw_name = $at->($offset + 46, $name_size);
+        stop('ZIP 原始檔名含不安全路徑', undef, 4) if $raw_name =~ /[\x00-\x1f\x7f]|^\/|^[A-Za-z]:|(?:^|\/)\.\.?(?:\/|$)/;
+        my $extra = $at->($offset + 46 + $name_size, $extra_size);
+        my $unicode_name;
+        while (length $extra) {
+            stop('ZIP 額外欄位截斷', undef, 4) if length($extra) < 4;
+            my ($id, $field_size) = unpack('vv', substr($extra, 0, 4, ''));
+            stop('ZIP 額外欄位長度錯誤', undef, 4) if $field_size > length($extra);
+            my $field = substr($extra, 0, $field_size, '');
+            if ($id == 1 && $local_offset == 0xffffffff) {
+                my $skip = (unpack('V', substr($header, 24, 4)) == 0xffffffff ? 8 : 0) +
+                    (unpack('V', substr($header, 20, 4)) == 0xffffffff ? 8 : 0);
+                stop('ZIP64 項目位置欄位截斷', undef, 4) if $field_size < $skip + 8;
+                $local_offset = unpack('Q<', substr($field, $skip, 8));
+            }
+            if ($id == 0x7075) {
+                # Native Windows Info-ZIP can use a legacy name and a Unicode
+                # path field. Bind it to the exact raw name before trusting it.
+                stop('ZIP Unicode 路徑欄位錯誤', undef, 4) if defined($unicode_name) || $field_size < 5 ||
+                    ord(substr($field, 0, 1)) != 1 || unpack('V', substr($field, 1, 4)) != crc32($raw_name);
+                $unicode_name = substr($field, 5);
+            }
+        }
+        my $path = defined($unicode_name) ? $unicode_name : $raw_name;
+        stop('ZIP UTF-8 檔名與 Unicode 欄位不一致', undef, 4) if ($flags & 0x800) && $path ne $raw_name;
+        safe_name($path, 4);
+        stop('ZIP 有非預期、重複或不安全項目', $path, 4) unless exists $expected->{$path};
+        stop('ZIP 項目位置不在檔案資料區', $path, 4) if $local_offset >= $directory_start;
+        my $local = $at->($local_offset, 30);
+        my ($local_name_size, $local_extra_size) = unpack('vv', substr($local, 26, 4));
+        stop('ZIP 本機標頭與中央目錄檔名或旗標不符', $path, 4) unless substr($local, 0, 4) eq "PK\x03\x04" &&
+            $local_name_size == $name_size && $local_offset + 30 + $name_size + $local_extra_size <= $directory_start &&
+            (unpack('v', substr($local, 6, 2)) & 0x841) == ($flags & 0x841) &&
+            $at->($local_offset + 30, $name_size) eq $raw_name;
+        print {$list} "$path\n" or stop('無法寫入原始 ZIP 項目清單', undef, 4);
+        delete $expected->{$path};
+        $offset = $next;
+    }
+    stop('ZIP 中央目錄長度或項目不符', undef, 4) if $offset != $end || keys %$expected;
+    close $list or stop('無法關閉原始 ZIP 項目清單', undef, 4);
+    close $zip or stop('無法關閉暫存 ZIP', undef, 4);
+}
+
 if ($operation eq 'prepare') {
     my @r = lstat $root;
     stop('專案根目錄必須是實體目錄') unless @r && S_ISDIR($r[2]) && !S_ISLNK($r[2]);
@@ -315,14 +415,7 @@ if ($operation eq 'prepare') {
     print "$count\t$total\t$excluded\t$private\n";
 } elsif ($operation eq 'entries') {
     my %expected = manifest();
-    open my $input, '<:raw', "$work/archive.entries" or stop('無法讀取 ZIP 項目清單', undef, 4);
-    while (my $path = <$input>) {
-        $path =~ s/\r?\n$//;
-        stop('ZIP 有非預期、重複或不安全項目', $path, 4) unless exists $expected{$path};
-        delete $expected{$path};
-    }
-    close $input;
-    stop('ZIP 缺少必要項目', (sort keys %expected)[0], 4) if keys %expected;
+    zip_entries(\%expected);
 } elsif ($operation eq 'verify') {
     my %expected = manifest();
     my @pending = ('');
@@ -377,6 +470,7 @@ if [ -L "$destination" ] || { [ -e "$destination" ] && [ ! -f "$destination" ]; 
 fi
 
 printf 'BabelOxide 原始碼審查 ZIP 打包工具\n專案：%s\n' "$root"
+stage='建立安全暫存目錄'
 work=$(mktemp -d "$parent/.BabelOxide-source-review.XXXXXXXX")
 stage='允許清單、文字與敏感資訊檢查'
 printf '%s\n' '[1/4] 依白名單讀取快照，檢查大小、圖示／Fixture 雜湊與疑似憑證...'
@@ -394,12 +488,14 @@ done < "$work/manifest"
     zip -q -X -nw "$work/archive.zip" -- "${files[@]}"
 )
 
-stage='ZIP 完整性、逐檔 SHA256 與敏感資訊複查'
+stage='ZIP 原始項目清單檢查'
 printf '%s\n' '[3/4] 檢查 ZIP 項目及完整性，解壓後逐檔比對長度、SHA256 並複查憑證...'
-unzip -Z -1 "$work/archive.zip" > "$work/archive.entries"
 review_files entries "$root" "$work"
+stage='ZIP CRC 完整性檢查'
 unzip -tqq "$work/archive.zip"
+stage='ZIP 解壓縮'
 unzip -qq "$work/archive.zip" -d "$work/verified"
+stage='ZIP 逐檔 SHA256 與敏感資訊複查'
 review_files verify "$root" "$work"
 zip_bytes=$(wc -c < "$work/archive.zip")
 
