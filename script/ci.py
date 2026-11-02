@@ -108,6 +108,7 @@ def build(name: str, uv: Path, work: Path, env: dict[str, str]) -> None:
     bundle = output if name == "windows-x64" else output / "BabelOxide.app/Contents/MacOS"
     python = bundle / ("runtime/python/python.exe" if name == "windows-x64" else "runtime/python/bin/python3")
     executable = bundle / (CLI_NAME + (".exe" if name == "windows-x64" else ""))
+    require((bundle / "babeldoc/worker.py").read_bytes() == (ROOT / "python-worker/worker.py").read_bytes(), "Bundle contains a stale Python Worker")
     # A known official VC++ Runtime prerequisite is explicit. Any other missing
     # native import is a build failure, even with the diagnostic builder flag.
     native = json.loads((bundle / "NATIVE_DEPENDENCIES.json").read_bytes())
@@ -122,7 +123,24 @@ def build(name: str, uv: Path, work: Path, env: dict[str, str]) -> None:
     code = "import pymupdf,sys; d=pymupdf.open(); p=d.new_page(); p.insert_text((72,72),'A synthetic bilingual translation fixture.'); d.save(sys.argv[1])"
     run([python, "-I", "-B", "-c", code, fixture], work, isolated, label="make-public-fixture")
     dev_python = ROOT / (".venv/Scripts/python.exe" if os.name == "nt" else ".venv/bin/python")
-    run([dev_python, ROOT / "script/rust_migration_smoke.py", fixture, "--label", "ci-" + name + "-" + run_id, "--exe", executable, "--packaged", "--isolated-cwd", "--timeout-seconds", "600"], work, env, timeout=700, label="cli-ipc-mock-smoke")
+    smoke_label = "ci-" + name + "-" + run_id
+    seeded_home = ROOT / ".test-output/rust-migration" / smoke_label / "isolation/app/cache/babeldoc-home"
+    source_executable = ROOT / "target/release" / executable.name
+    for label, binary, runtime_args in [
+        (smoke_label, executable, ["--packaged"]),
+        (smoke_label + "-source", source_executable, ["--python", python, "--worker-home", seeded_home]),
+    ]:
+        try:
+            run([dev_python, ROOT / "script/rust_migration_smoke.py", fixture, "--label", label, "--exe", binary, *runtime_args, "--auto-extract-glossary", "--lang-out", "zh-TW", "--isolated-cwd", "--timeout-seconds", "600"], work, env, timeout=850, label="cli-ipc-mock-smoke" + ("-source" if binary == source_executable else ""))
+        finally:
+            # Retain engine/CLI validation evidence on success AND failure in
+            # the existing always-uploaded CI log tree, without shipping PDFs.
+            diagnostics = work / label
+            diagnostics.mkdir(exist_ok=True)
+            for filename in ("stdout.jsonl", "stderr.txt", "summary.json", "pdf-validation.stderr.txt", "worker-diagnostics.log"):
+                origin = ROOT / ".test-output/rust-migration" / label / filename
+                if origin.is_file():
+                    shutil.copy2(origin, diagnostics / filename)
     native_env = dict(env, BABELOXIDE_PREVIEW_NATIVE_APP_ROOT=str(bundle), BABELOXIDE_PREVIEW_NATIVE_PDF=str(fixture))
     run(["cargo", "test", "--manifest-path", ROOT / "Cargo.toml", "-p", "babeloxide-pdf-preview", "--test", "native_smoke", "--locked", "--", "--ignored"], work, native_env, label="pdfium-native-smoke")
     run([python, "-I", "-B", ROOT / "script/check_workflow.py"], work, isolated, label="workflow-static-check")

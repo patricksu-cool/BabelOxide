@@ -52,6 +52,8 @@ Windows 的旗標明示需要官方 VC++ x64 Runtime；CI 只容許已知 VC++ R
 
 ## 開發驗證
 
+翻譯失敗、HTTP 500 與找不到 Worker 的處理方式，見 [翻譯診斷與實測](TRANSLATION_DIAGNOSIS.md)。Cargo Build 本身不包含 Python Runtime；原始碼 CLI／GUI 必須明確指定完整的 Worker 環境。
+
 Rust process 測試預設使用專案 `.venv`，可由 `BABELOXIDE_TEST_PYTHON` 明確指定。測試使用合成憑證、本機 socket 與受控子行程，不讀使用者設定。受限沙箱可能拒絕 loopback、socketpair 或原子替換；應在允許這些操作的隔離測試環境重跑，不將未執行列為通過。
 
 `cargo test -p babeloxide-core --test provider_compatibility`、`--test legacy_providers` 與 cache suites 消費獨立 frozen oracle。保留 `tests/baseline/`、core fixtures 與 `resources/licenses/`，不因文件精簡而刪除。原 Python App 已在早期移植中移除；歷史來源與基準保留於 Git，不能把舊 App 還原到正式執行流程。

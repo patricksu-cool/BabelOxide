@@ -89,6 +89,32 @@ impl Default for WorkerOptions {
     }
 }
 
+fn worker_paths(worker: &WorkerOptions) -> Result<(PathBuf, PathBuf)> {
+    let python = worker.python.canonicalize().with_context(|| {
+        format!(
+            "Worker Python is unavailable at {}. Extract the complete BabelOxide bundle; a Cargo build alone has no Python runtime. For development, provide --python and --worker",
+            worker.python.display()
+        )
+    })?;
+    let script = worker.script.canonicalize().with_context(|| {
+        format!(
+            "Worker adapter is unavailable at {}. Extract the complete bundle or provide --worker python-worker/worker.py for development",
+            worker.script.display()
+        )
+    })?;
+    ensure!(
+        python.is_file(),
+        "Worker Python path is not a file: {}",
+        python.display()
+    );
+    ensure!(
+        script.is_file(),
+        "Worker adapter path is not a file: {}",
+        script.display()
+    );
+    Ok((python, script))
+}
+
 async fn read_frame<R: AsyncBufRead + Unpin>(
     reader: &mut R,
     bytes: &mut Vec<u8>,
@@ -134,6 +160,35 @@ async fn enqueue(tx: &mpsc::Sender<Value>, value: Value) -> Result<()> {
         .await
         .context("Worker write queue timed out")?
         .context("Worker writer closed")
+}
+
+fn worker_failure(message: &Value, services: Option<&SessionServices>) -> anyhow::Error {
+    let code = message["code"]
+        .as_str()
+        .filter(|s| s.len() < 64 && s.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_'))
+        .unwrap_or("engine_failed");
+    let mut detail = format!(
+        "BabelDOC worker failed ({code}) during {}: {}",
+        message["stage"].as_str().unwrap_or("worker startup/engine"),
+        message["message"]
+            .as_str()
+            .unwrap_or("No engine diagnostic was supplied")
+    );
+    if let Some(services) = services {
+        // Credentials stay in Rust. Redact again against BOTH configured
+        // services even if an unexpected worker diagnostic echoes a secret.
+        detail = services.main.redact_diagnostic(&detail);
+        if let Some(term) = &services.term {
+            detail = term.redact_diagnostic(&detail);
+        }
+    }
+    anyhow::anyhow!(
+        detail
+            .chars()
+            .take(4096)
+            .map(|c| if c.is_control() { ' ' } else { c })
+            .collect::<String>()
+    )
 }
 
 pub async fn translate_pdf(
@@ -183,6 +238,9 @@ pub async fn translate_pdf_with_initialization(
         "QPS and worker pool must be positive"
     );
     ensure!(!cancel.is_cancelled(), "Translation cancelled");
+    // A missing/incomplete runtime must not send even a billable health probe.
+    worker_paths(worker)
+        .context("Check Python Worker runtime before contacting translation services")?;
     job.input_file = job
         .input_file
         .canonicalize()
@@ -233,9 +291,20 @@ pub async fn translate_pdf_with_initialization(
     };
     // Preflight can probe a service or validate an external executable. Await it
     // cooperatively so cancellation cannot discard its process cleanup future.
-    translator.prepare(&cancel).await?;
+    if initialization.is_some()
+        && let Some(events) = &events
+    {
+        let _ = events.try_send(json!({"type":"progress_start", "stage":"Checking translation service", "overall_progress":0}));
+    }
+    translator
+        .prepare(&cancel)
+        .await
+        .with_context(|| format!("Initialize translation service ({})", translator.name()))?;
     if initialization.is_some() {
-        translator.health_check(&cancel).await?;
+        translator
+            .health_check(&cancel)
+            .await
+            .with_context(|| format!("Translation service preflight ({})", translator.name()))?;
     }
     let (recommended_qps, recommended_pool) = translator.recommendations();
     job.qps = recommended_qps.unwrap_or(job.qps);
@@ -273,9 +342,13 @@ pub async fn translate_pdf_with_initialization(
         if initialization.is_some() {
             term.set_max_qps(term_qps).await?;
         }
-        term.prepare(&cancel).await?;
+        term.prepare(&cancel)
+            .await
+            .with_context(|| format!("Initialize term extraction service ({})", term.name()))?;
         if initialization.is_some() {
-            term.health_check(&cancel).await?;
+            term.health_check(&cancel)
+                .await
+                .with_context(|| format!("Term extraction service preflight ({})", term.name()))?;
         }
         let (qps, workers) = term.recommendations();
         if qps.is_none() {
@@ -389,14 +462,7 @@ async fn run_session(
     cancel: CancellationToken,
     events: Option<mpsc::Sender<Value>>,
 ) -> Result<Value> {
-    let python = worker
-        .python
-        .canonicalize()
-        .context("Worker Python is unavailable; provide --python for development")?;
-    let script = worker
-        .script
-        .canonicalize()
-        .context("Worker adapter is unavailable")?;
+    let (python, script) = worker_paths(worker)?;
     let capacity = plan.capacity;
     let cooperative_cleanup = plan.services.as_ref().is_some_and(|services| {
         services.main.requires_cooperative_cleanup()
@@ -498,10 +564,13 @@ async fn run_session(
         let hello = tokio::select! {
             _ = cancel.cancelled() => bail!("Translation cancelled"),
             _ = &mut writer => { writer_finished = true; bail!("Worker writer failed during startup"); },
-            _ = child.wait() => bail!("Worker exited during startup"),
+            status = child.wait() => bail!("Worker exited during startup: {}", status.context("Observe worker startup exit")?),
             hello = timeout(worker.startup_timeout, read_frame(&mut stdout, &mut frame_buffer)) => hello.context("Worker startup timed out")??.context("Worker exited before ready")?,
         };
-        ensure!(hello["type"] == "ready" && hello["babeldoc_version"] == "0.6.4", "Worker initialization failed or engine version differs");
+        if hello["type"] == "error" {
+            return Err(worker_failure(&hello, plan.services.as_ref()));
+        }
+        ensure!(hello["type"] == "ready" && hello["babeldoc_version"] == "0.6.4", "Worker initialization failed or engine version differs (requires BabelDOC 0.6.4)");
         session = hello["session"].as_str().context("Missing worker session")?.to_owned();
         ensure!(session.len() == 32 && session.bytes().all(|b| b.is_ascii_hexdigit()), "Invalid worker session");
         if plan.operation != "pdf" {
@@ -522,7 +591,8 @@ async fn run_session(
                 _ = tokio::time::sleep_until(exit_deadline.unwrap_or(operation_deadline.unwrap_or(activity + worker.idle_timeout))) => bail!("Worker idle timeout or exit without terminal result"),
                 _ = &mut writer => { writer_finished = true; bail!("Worker writer failed"); },
                 status = child.wait(), if exit_deadline.is_none() => {
-                    ensure!(status.context("Observe worker exit")?.success(), "Worker crashed");
+                    let status = status.context("Observe worker exit")?;
+                    ensure!(status.success(), "Worker crashed: {status}");
                     exit_deadline = Some(Instant::now() + Duration::from_secs(1));
                 }
                 done = requests.join_next(), if !requests.is_empty() => {
@@ -567,7 +637,7 @@ async fn run_session(
                             ensure!(result.is_object(), "Worker result must be an object");
                             return Ok(result);
                         }
-                        "error" => bail!("BabelDOC worker failed ({})", message["code"].as_str().filter(|s| s.len() < 64 && s.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_')).unwrap_or("engine_failed")),
+                        "error" => return Err(worker_failure(&message, plan.services.as_ref())),
                         "cancel_ack" => {},
                         _ => bail!("Unsupported worker message"),
                     }

@@ -188,6 +188,56 @@ def test_asset_system_exit_is_a_safe_terminal_error(monkeypatch):
     assert b"sensitive engine diagnostic" not in boundary.output.getvalue()
 
 
+def test_engine_failure_keeps_stage_traceback_and_original_cause(monkeypatch):
+    async def fail(boundary, *_args):
+        boundary.send("progress", event={"stage": "Parse Page Layout"})
+        try:
+            raise FileNotFoundError("missing model; token=private-token https://invalid/?key=hidden")
+        except FileNotFoundError as cause:
+            raise RuntimeError("cannot initialize layout") from cause
+
+    monkeypatch.setattr(worker.EngineBoundary, "run_engine", fail)
+    boundary = worker.EngineBoundary(io.BytesIO())
+    boundary.start({"task_id": "job-1", "job": {}, "translator": {}})
+    boundary.task.join(timeout=5)
+    messages = [json.loads(line) for line in boundary.output.getvalue().splitlines()]
+    error = messages[-1]
+    assert error["type"] == "error"
+    assert error["code"] == "engine_failed"
+    assert error["stage"] == "Parse Page Layout"
+    assert "FileNotFoundError" in error["message"]
+    assert "RuntimeError" in error["message"]
+    assert "cannot initialize layout" in error["message"]
+    assert "test_boundary.py" in error["message"]
+    assert "private-token" not in error["message"]
+    assert "https://" not in error["message"]
+
+
+def test_error_event_raises_the_original_babeldoc_exception(tmp_path, monkeypatch):
+    expected = ValueError("invalid PDF structure")
+
+    async def translate(_config):
+        yield {"type": "error", "error": expected}
+
+    monkeypatch.setitem(sys.modules, "babeldoc.format.pdf.high_level", SimpleNamespace(
+        init=lambda: None, async_translate=translate,
+    ))
+    monkeypatch.setitem(sys.modules, "babeldoc.format.pdf.translation_config", SimpleNamespace(
+        TranslationConfig=lambda **_options: None, WatermarkOutputMode=str,
+    ))
+    source = tmp_path / "input.pdf"
+    source.write_bytes(b"%PDF-1.4\n")
+    boundary = worker.EngineBoundary(io.BytesIO())
+    with pytest.raises(ValueError) as raised:
+        asyncio.run(boundary.run_engine({
+            "input_file": str(source), "output_dir": str(tmp_path),
+            "lang_in": "en", "lang_out": "zh", "qps": 4,
+            "pool_max_workers": 4, "no_auto_extract_glossary": False,
+            "watermark_output_mode": "no_watermark",
+        }, {"name": "openai", "llm": True}))
+    assert raised.value is expected
+
+
 def test_unknown_operation_does_not_start_engine():
     boundary = worker.EngineBoundary(io.BytesIO())
     with pytest.raises(worker.ProtocolError):

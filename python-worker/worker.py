@@ -8,9 +8,11 @@ import importlib.metadata
 import json
 import logging
 import os
+import re
 import secrets
 import sys
 import threading
+import traceback
 from pathlib import Path
 
 VERSION = 1
@@ -51,6 +53,23 @@ ENGINE_OPTIONS = frozenset(
 
 class ProtocolError(Exception):
     pass
+
+
+def engine_diagnostic(exc):
+    """Keep exception chains/frames, without locals, URLs or credentials."""
+    if isinstance(exc, (SystemExit, KeyboardInterrupt, concurrent.futures.CancelledError)):
+        return type(exc).__name__
+    # Put the immediate exception before the bounded traceback so a long stack
+    # cannot hide the actionable reason in the GUI's bounded failure message.
+    detail = f"{type(exc).__name__}: {exc}\n" + "".join(traceback.format_exception(exc))
+    detail = re.sub(r"https?://[^\s\"'<>]+", "[URL REDACTED]", detail)
+    detail = re.sub(r"(?i)\bBearer\s+[^\s\"'<>]+", "Bearer [REDACTED]", detail)
+    detail = re.sub(
+        r"(?i)((?:api[-_ ]?key|token|secret|password|authorization)\s*[:=]\s*)[^\s,;]+",
+        r"\1[REDACTED]", detail,
+    )
+    detail = re.sub(r"\bsk-[A-Za-z0-9_-]+", "[REDACTED]", detail)
+    return detail[:8192]
 
 
 def read_frame(stream):
@@ -142,8 +161,11 @@ class EngineBoundary:
         self.started = False
         self.terminal = False
         self.capacity = MAX_OUTSTANDING
+        self.stage = "Worker startup"
 
     def send(self, kind, **fields):
+        if kind == "progress" and isinstance(fields.get("event", {}).get("stage"), str):
+            self.stage = fields["event"]["stage"]
         message = {"v": VERSION, "type": kind, "session": self.session, **fields}
         if self.started:
             message["task_id"] = "job-1"
@@ -336,7 +358,10 @@ class EngineBoundary:
                             result[key] = metric
                     break
                 if kind == "error":
-                    raise RuntimeError("BabelDOC processing failed")
+                    error = event.get("error")
+                    if isinstance(error, BaseException):
+                        raise error
+                    raise RuntimeError(str(error or "BabelDOC processing failed"))
                 if kind in {"progress_start", "progress_update", "progress_end"}:
                     # Avoid exception objects, arbitrary engine metadata and document text.
                     progress = {
@@ -450,7 +475,9 @@ class EngineBoundary:
                     if self.failed.is_set()
                     else ("cancelled" if self.cancelled.is_set() else "engine_failed")
                 )
-                self.send("error", code=code, message=f"BabelDOC: {type(exc).__name__}")
+                diagnostic = engine_diagnostic(exc)
+                logging.error("%s: %s", self.stage, diagnostic)
+                self.send("error", code=code, stage=self.stage, message=diagnostic)
             finally:
                 faulthandler.cancel_dump_traceback_later()
                 self.terminal = True
@@ -559,7 +586,7 @@ def main():
     except (Exception, KeyboardInterrupt) as exc:
         status = 1
         try:
-            boundary.send("error", code="protocol_failed", message=type(exc).__name__)
+            boundary.send("error", code="protocol_failed", stage=boundary.stage, message=engine_diagnostic(exc))
         except (OSError, ProtocolError):
             pass
     finally:

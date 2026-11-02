@@ -42,6 +42,9 @@ pub(crate) fn build(
     options.insert("qps".into(), json!(qps));
     options.insert("ignore_cache".into(), json!(t.ignore_cache));
     options.insert("lang_in".into(), json!(t.lang_in));
+    if settings.basic()?.debug {
+        options.insert("diagnostic_http".into(), json!(true));
+    }
     let mut result = TranslatorConfig {
         provider: String::new(),
         endpoint: String::new(),

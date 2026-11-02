@@ -276,7 +276,10 @@ mod tests {
             .translate(&request("translate"), &CancellationToken::new())
             .await
             .unwrap_err();
-        assert_eq!(error.to_string(), "translation request timed out");
+        assert_eq!(
+            error.to_string(),
+            "translation request timed out (ReadTimeout)"
+        );
         task.abort();
     }
 

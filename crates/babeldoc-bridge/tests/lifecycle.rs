@@ -130,6 +130,60 @@ async fn startup_crash_is_reported_without_waiting_for_startup_timeout() -> Resu
 }
 
 #[tokio::test]
+async fn missing_runtime_is_reported_before_any_service_preflight() -> Result<()> {
+    for missing_python in [true, false] {
+        let mut fixture = Fixture::new("exit_without_terminal")?;
+        let missing = fixture.directory.path().join("missing-runtime-component");
+        if missing_python {
+            fixture.worker.python = missing;
+        } else {
+            fixture.worker.script = missing;
+        }
+        let error = translate_pdf_with_initialization(
+            &fixture.worker,
+            fixture.job.clone(),
+            fixture.service()?,
+            None,
+            CancellationToken::new(),
+            None,
+            Some(FactoryInitialization {
+                matching_engine_settings: true,
+            }),
+        )
+        .await
+        .expect_err("incomplete runtime cannot start translation");
+        let diagnostic = format!("{error:#}");
+        ensure!(diagnostic.contains("before contacting translation services"));
+        ensure!(diagnostic.contains("missing-runtime-component"));
+        ensure!(!diagnostic.contains("HTTP request failed"));
+        ensure!(!fixture.directory.path().join("worker.pid").exists());
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn worker_errors_preserve_startup_or_engine_cause_and_redact_credentials() -> Result<()> {
+    for (scenario, stage, cause) in [
+        ("startup_error", "Worker startup", "ModuleNotFoundError"),
+        ("engine_error", "Parse PDF", "ValueError: invalid PDF"),
+    ] {
+        let fixture = Fixture::new(scenario)?;
+        let error = fixture
+            .run()
+            .await
+            .expect_err("engine errors must be terminal");
+        let diagnostic = format!("{error:#}");
+        ensure!(
+            diagnostic.contains(stage) && diagnostic.contains(cause),
+            "{diagnostic}"
+        );
+        ensure!(!diagnostic.contains("synthetic-unused-fixture-key"));
+        ensure!(!diagnostic.contains("https://"));
+    }
+    Ok(())
+}
+
+#[tokio::test]
 async fn resource_operations_need_no_pdf_or_translator() -> Result<()> {
     for operation_name in ["warmup", "generate", "restore"] {
         let mut fixture = Fixture::new("asset_success")?;

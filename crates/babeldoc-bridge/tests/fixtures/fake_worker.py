@@ -117,6 +117,9 @@ def main():
         os._exit(23)
     if scenario == "startup_hang":
         hang()
+    if scenario == "startup_error":
+        send("error", code="protocol_failed", stage="Worker startup", message="ModuleNotFoundError: babeldoc")
+        hang()
 
     send("ready", babeldoc_version="0.6.4", operations=[
         "pdf", "warmup", "generate_offline_assets", "restore_offline_assets"
@@ -135,6 +138,9 @@ def main():
             "dont_write_bytecode": sys.flags.dont_write_bytecode,
         })
         return 0
+    if scenario == "engine_error":
+        send("error", code="engine_failed", stage="Parse PDF", message="ValueError: invalid PDF; synthetic-unused-fixture-key https://invalid/?key=hidden")
+        hang()
     if scenario == "progress_flood":
         for number in range(2000):
             send("progress", event={"stage": "progress flood", "number": number})

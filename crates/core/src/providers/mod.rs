@@ -64,7 +64,7 @@ impl ProviderContext<'_> {
                     .and_then(Value::as_str)
                     .map(str::to_owned)
             });
-        let message = match detail {
+        let mut message = match detail {
             Some(message) => format!(
                 "translation provider returned HTTP {}: {}",
                 response.status,
@@ -72,6 +72,11 @@ impl ProviderContext<'_> {
             ),
             None => format!("translation provider returned HTTP {}", response.status),
         };
+        if response.status >= 500 {
+            message.push_str(
+                ". The translation service failed; retry later or choose another provider",
+            );
+        }
         ProviderError::new(ErrorKind::HttpStatus(response.status), message)
     }
     pub async fn retry<T, F, Fut>(&self, policy: RetryPolicy, operation: F) -> ProviderResult<T>
@@ -84,7 +89,7 @@ impl ProviderContext<'_> {
     pub fn record_usage(&self, usage: Usage) {
         self.runtime.metrics().record_usage(usage);
     }
-    fn sanitize(&self, message: &str) -> String {
+    pub(crate) fn sanitize(&self, message: &str) -> String {
         let mut secrets = Vec::new();
         if !self.request.text.is_empty() {
             secrets.push(self.request.text.as_str());
