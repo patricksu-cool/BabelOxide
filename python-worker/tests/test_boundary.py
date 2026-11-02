@@ -2,6 +2,7 @@
 
 import asyncio
 import concurrent.futures
+import contextlib
 import importlib.util
 import io
 import json
@@ -101,7 +102,7 @@ def test_cancellation_releases_a_blocked_synchronous_callback():
             boundary.cancel()
 
 
-def test_rust_failure_is_fatal_even_if_babeldoc_would_fallback():
+def test_non_batch_rust_failure_still_cancels_the_document():
     boundary = worker.EngineBoundary(io.BytesIO())
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         future = executor.submit(boundary.request, "main", "translate", "pending")
@@ -116,6 +117,97 @@ def test_rust_failure_is_fatal_even_if_babeldoc_would_fallback():
             assert boundary.cancelled.is_set()
         finally:
             boundary.cancel()
+
+
+def test_batch_http_failure_reaches_babeldoc_without_cancelling_other_requests():
+    boundary = worker.EngineBoundary(io.BytesIO())
+    boundary.completion = worker.ParagraphCompletion()
+
+    class Paragraphs:
+        def pre_translate_paragraph(self, _paragraph, _tracker):
+            return "source", object()
+
+        def post_translate_paragraph(self, _paragraph, _tracker):
+            return True
+
+    class Batches:
+        def translate_paragraph(self):
+            return boundary.request("main", "llm_translate", "batch")
+
+    original = Batches.translate_paragraph
+    with boundary.completion.watch(Paragraphs, Batches):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            future = executor.submit(Batches().translate_paragraph)
+            other = executor.submit(boundary.request, "main", "translate", "other")
+            try:
+                wait_for_requests(boundary, 2)
+                messages = [json.loads(line) for line in boundary.output.getvalue().splitlines()]
+                for message in messages:
+                    if message["text"] == "batch":
+                        assert message["batch_fallback"] is True
+                        boundary.respond({"id": message["id"], "error": {
+                            "code": "batch_translation_failed", "message": "HTTP 500",
+                        }})
+                    else:
+                        assert message["batch_fallback"] is False
+                        boundary.respond({"id": message["id"], "text": "translated"})
+                with pytest.raises(worker.BatchTranslationError, match="HTTP 500"):
+                    future.result(timeout=2)
+                assert other.result(timeout=2) == "translated"
+                assert not boundary.failed.is_set()
+                assert not boundary.cancelled.is_set()
+                # A recovered callback alone never proves document completion.
+                with pytest.raises(worker.IncompleteTranslationError):
+                    boundary.completion.verify()
+                tracker = object()
+                paragraphs = Paragraphs()
+                paragraphs.pre_translate_paragraph(None, tracker)
+                paragraphs.post_translate_paragraph(None, tracker)
+                assert boundary.completion.verify() == {
+                    "required_paragraphs": 1, "completed_paragraphs": 1, "batch_errors": 1,
+                }
+            finally:
+                boundary.cancel()
+    assert Batches.translate_paragraph is original
+
+
+def test_completion_audit_requires_successful_application_and_distinct_trackers():
+    audit = worker.ParagraphCompletion()
+
+    class Paragraphs:
+        def pre_translate_paragraph(self, paragraph, _tracker):
+            return (None, None) if paragraph == "skip" else ("source", "input")
+
+        def post_translate_paragraph(self, paragraph, tracker):
+            tracker.output = "returned API output"
+            if paragraph == "parse-error":
+                raise ValueError("placeholder parse failed after tracker.set_output")
+            return False  # An engine-approved unchanged placeholder is valid.
+
+    class Batches:
+        def translate_paragraph(self):
+            pass
+
+    first = SimpleNamespace(debug_id="same-id")
+    second = SimpleNamespace(debug_id="same-id")
+    with audit.watch(Paragraphs, Batches):
+        translator = Paragraphs()
+        translator.pre_translate_paragraph("skip", object())
+        translator.pre_translate_paragraph("text", first)
+        translator.post_translate_paragraph("ok", first)
+        translator.pre_translate_paragraph("text", second)
+        with pytest.raises(ValueError):
+            translator.post_translate_paragraph("parse-error", second)
+        assert second.output
+        with pytest.raises(worker.IncompleteTranslationError, match="1 of 2"):
+            audit.verify()
+        # BabelDOC's per-paragraph fallback reuses the original tracker.
+        translator.pre_translate_paragraph("text", second)
+        translator.post_translate_paragraph("ok", second)
+        assert audit.verify()["completed_paragraphs"] == 2
+        translator.pre_translate_paragraph("text", first)
+        with pytest.raises(worker.IncompleteTranslationError, match="1 of 2"):
+            audit.verify()
 
 
 def test_duplicate_and_unknown_response_ids_are_protocol_failures():
@@ -225,6 +317,7 @@ def test_error_event_raises_the_original_babeldoc_exception(tmp_path, monkeypatc
     monkeypatch.setitem(sys.modules, "babeldoc.format.pdf.translation_config", SimpleNamespace(
         TranslationConfig=lambda **_options: None, WatermarkOutputMode=str,
     ))
+    monkeypatch.setattr(worker.ParagraphCompletion, "watch", lambda _self: contextlib.nullcontext())
     source = tmp_path / "input.pdf"
     source.write_bytes(b"%PDF-1.4\n")
     boundary = worker.EngineBoundary(io.BytesIO())
@@ -330,6 +423,7 @@ def test_engine_options_glossary_split_and_metrics_stay_at_engine_boundary(
     }
     for name, module in modules.items():
         monkeypatch.setitem(sys.modules, name, module)
+    monkeypatch.setattr(worker.ParagraphCompletion, "watch", lambda _self: contextlib.nullcontext())
     source = tmp_path / "input.pdf"
     source.write_bytes(b"%PDF-1.4\n")
     glossary = tmp_path / "glossary.csv"

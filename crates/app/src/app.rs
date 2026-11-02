@@ -21,6 +21,7 @@ mod workflow;
 struct Batch {
     handle: TaskHandle,
     inputs: Vec<PathBuf>,
+    outputs: Vec<PathBuf>,
     snapshot: TaskSnapshot,
     settings: babeloxide_config::Settings,
 }
@@ -201,7 +202,11 @@ impl NativeApp {
     fn poll(&mut self, context: &egui::Context) {
         while let Ok(event) = self.background.events.try_recv() {
             match event {
-                Event::Submitted { handle, inputs } => {
+                Event::Submitted {
+                    handle,
+                    inputs,
+                    outputs,
+                } => {
                     self.submitting = false;
                     self.error = None;
                     self.kind = DocumentKind::Original;
@@ -211,6 +216,7 @@ impl NativeApp {
                         snapshot: handle.snapshot(),
                         handle,
                         inputs,
+                        outputs,
                         settings: self
                             .pending_settings
                             .take()
@@ -1030,6 +1036,16 @@ impl NativeApp {
         };
         let snapshot = batch.snapshot.clone();
         let inputs = batch.inputs.clone();
+        if let Some(output) = batch
+            .outputs
+            .get(self.selected_file.min(inputs.len().saturating_sub(1)))
+        {
+            ui.small(format!(
+                "{}: {}",
+                self.text("Output folder"),
+                output.display()
+            ));
+        }
         ui.horizontal(|ui| {
             ui.strong(self.status_text(snapshot.status));
             ui.label(format!(

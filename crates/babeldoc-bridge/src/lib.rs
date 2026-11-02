@@ -5,7 +5,9 @@ mod seed;
 pub use assets::maintain_assets;
 
 use anyhow::{Context, Result, bail, ensure};
-use babeloxide_core::{PdfJob, TranslationRequest, TranslationService, process};
+use babeloxide_core::{
+    ErrorKind, PdfJob, ProviderError, TranslationRequest, TranslationService, process,
+};
 use serde_json::{Value, json};
 use std::{
     collections::HashSet,
@@ -73,6 +75,13 @@ impl Default for WorkerOptions {
             .ok()
             .and_then(|p| p.parent().map(PathBuf::from))
             .unwrap_or_default();
+        Self::for_bundle(&root)
+    }
+}
+
+impl WorkerOptions {
+    /// Explicit trusted bundle directory, also usable by source-built binaries.
+    pub fn for_bundle(root: &Path) -> Self {
         Self {
             python: root.join(if cfg!(windows) {
                 "runtime/python/python.exe"
@@ -92,13 +101,13 @@ impl Default for WorkerOptions {
 fn worker_paths(worker: &WorkerOptions) -> Result<(PathBuf, PathBuf)> {
     let python = worker.python.canonicalize().with_context(|| {
         format!(
-            "Worker Python is unavailable at {}. Extract the complete BabelOxide bundle; a Cargo build alone has no Python runtime. For development, provide --python and --worker",
+            "Worker Python is unavailable at {}. A Cargo build alone has no Python runtime. Use a complete BabelOxide bundle, or --runtime-dir <bundle-directory> for a source-built CLI/GUI (alternatively --python and --worker)",
             worker.python.display()
         )
     })?;
     let script = worker.script.canonicalize().with_context(|| {
         format!(
-            "Worker adapter is unavailable at {}. Extract the complete bundle or provide --worker python-worker/worker.py for development",
+            "Worker adapter is unavailable at {}. Use a complete bundle, or --runtime-dir <bundle-directory> --worker python-worker/worker.py for source development",
             worker.script.display()
         )
     })?;
@@ -189,6 +198,38 @@ fn worker_failure(message: &Value, services: Option<&SessionServices>) -> anyhow
             .map(|c| if c.is_control() { ' ' } else { c })
             .collect::<String>()
     )
+}
+
+fn server_failure(error: &anyhow::Error) -> bool {
+    fn is_server_failure(error: &ProviderError) -> bool {
+        match &error.kind {
+            ErrorKind::HttpStatus(status) => (500..600).contains(status),
+            ErrorKind::RetryExhausted { last, .. } => is_server_failure(last),
+            _ => false,
+        }
+    }
+    error
+        .downcast_ref::<ProviderError>()
+        .is_some_and(is_server_failure)
+}
+
+fn validate_completion_audit(result: &Value, batch_errors: u64) -> Result<()> {
+    let audit = &result["translation_audit"];
+    let required = audit["required_paragraphs"]
+        .as_u64()
+        .context("Worker omitted required paragraph count")?;
+    let completed = audit["completed_paragraphs"]
+        .as_u64()
+        .context("Worker omitted completed paragraph count")?;
+    ensure!(
+        required == completed && (batch_errors == 0 || required > 0),
+        "BabelDOC fallback left incomplete paragraphs"
+    );
+    ensure!(
+        audit["batch_errors"].as_u64() == Some(batch_errors),
+        "Worker batch failure audit differs from Rust requests"
+    );
+    Ok(())
 }
 
 pub async fn translate_pdf(
@@ -557,7 +598,7 @@ async fn run_session(
         Ok::<(), anyhow::Error>(())
     });
     let requests_cancel = cancel.child_token();
-    let mut requests: JoinSet<(String, Result<String>)> = JoinSet::new();
+    let mut requests: JoinSet<(String, bool, Result<String>)> = JoinSet::new();
     let mut session = String::new();
     let mut writer_finished = false;
     let outcome: Result<Value> = async {
@@ -571,6 +612,9 @@ async fn run_session(
             return Err(worker_failure(&hello, plan.services.as_ref()));
         }
         ensure!(hello["type"] == "ready" && hello["babeldoc_version"] == "0.6.4", "Worker initialization failed or engine version differs (requires BabelDOC 0.6.4)");
+        let completion_audit = hello["paragraph_completion_audit"].as_u64() == Some(1);
+        let mut batch_errors = 0_u64;
+        let mut last_batch_error = None;
         session = hello["session"].as_str().context("Missing worker session")?.to_owned();
         ensure!(session.len() == 32 && session.bytes().all(|b| b.is_ascii_hexdigit()), "Invalid worker session");
         if plan.operation != "pdf" {
@@ -579,6 +623,7 @@ async fn run_session(
         enqueue(&tx, frame("start", &session, plan.start)).await?;
         let mut active = HashSet::new();
         let mut seen = HashSet::new();
+        let mut engine_stage = "Starting PDF engine".to_owned();
         let mut activity = Instant::now();
         // Resource APIs have no byte-progress callback. Their timeout is an
         // absolute operation deadline; incidental progress cannot renew it.
@@ -596,13 +641,22 @@ async fn run_session(
                     exit_deadline = Some(Instant::now() + Duration::from_secs(1));
                 }
                 done = requests.join_next(), if !requests.is_empty() => {
-                    let (id, translated) = done.context("Missing translation task")?.context("Translation task panicked")?;
+                    let (id, batch_fallback, translated) = done.context("Missing translation task")?.context("Translation task panicked")?;
                     active.remove(&id);
                     match translated {
                         Ok(text) => enqueue(&tx, frame("translated", &session, json!({"id":id,"text":text}))).await?,
+                        Err(error) if completion_audit && batch_fallback && server_failure(&error) => {
+                            // The provider has already applied its unchanged retry policy.
+                            // Let BabelDOC's existing batch -> paragraph fallback run, then
+                            // require a completion audit before accepting any output.
+                            batch_errors += 1;
+                            let message = error.to_string();
+                            enqueue(&tx, frame("translated", &session, json!({"id":id,"error":{"code":"batch_translation_failed","message":message}}))).await?;
+                            last_batch_error = Some(error);
+                        }
                         Err(error) => {
                             let _ = enqueue(&tx, frame("translated", &session, json!({"id":id,"error":{"code":"translation_failed","message":"Rust translation service failed"}}))).await;
-                            return Err(error.context("Rust translation service failed; output is incomplete"));
+                            return Err(error.context(format!("Rust translation service failed during {engine_stage}; output is incomplete")));
                         }
                     }
                 }
@@ -613,6 +667,7 @@ async fn run_session(
                     match message["type"].as_str().unwrap_or("") {
                         "translate" => {
                             let services = plan.services.as_ref().context("Resource worker requested a translation")?;
+                            let batch_fallback = message["batch_fallback"].as_bool() == Some(true);
                             let request: TranslationRequest = serde_json::from_value(message).map_err(|_| anyhow::anyhow!("Malformed translation request"))?;
                             ensure!(seen.len() < 1_000_000, "Task exceeded the request ID budget");
                             ensure!(request.id.len() <= 64 && !request.id.is_empty() && seen.insert(request.id.clone()), "Invalid or repeated request ID");
@@ -624,20 +679,40 @@ async fn run_session(
                                 _ => bail!("Worker requested an unknown translation service"),
                             };
                             let request_cancel = requests_cancel.clone();
+                            let batch_fallback = batch_fallback && request.translator == "main" && request.method == "llm_translate" && service.is_llm();
                             requests.spawn(async move {
                                 let result = service.translate(&request, &request_cancel).await;
-                                (request.id, result)
+                                (request.id, batch_fallback, result)
                             });
                         }
                         // Progress can be dropped under backpressure; terminal results are returned separately.
-                        "progress" => if let Some(events) = &events { let _ = events.try_send(message["event"].clone()); },
+                        "progress" => {
+                            if let Some(stage) = message["event"]["stage"].as_str() {
+                                engine_stage = stage.chars().take(256).collect();
+                                if let Some(services) = &plan.services {
+                                    engine_stage = services.main.redact_diagnostic(&engine_stage);
+                                    if let Some(term) = &services.term { engine_stage = term.redact_diagnostic(&engine_stage); }
+                                }
+                            }
+                            if let Some(events) = &events { let _ = events.try_send(message["event"].clone()); }
+                        },
                         "finished" => {
                             ensure!(active.is_empty(), "Worker finished with pending translations");
                             let result = message["result"].clone();
                             ensure!(result.is_object(), "Worker result must be an object");
+                            if completion_audit && plan.operation == "pdf"
+                                && let Err(failure) = validate_completion_audit(&result, batch_errors) {
+                                return Err(last_batch_error.map_or_else(|| failure, |error| error.context("Worker did not confirm complete BabelDOC paragraph fallback")));
+                            }
                             return Ok(result);
                         }
-                        "error" => return Err(worker_failure(&message, plan.services.as_ref())),
+                        "error" => {
+                            let failure = worker_failure(&message, plan.services.as_ref());
+                            return Err(if message["code"] == "incomplete_translation" {
+                                let detail = failure.to_string();
+                                last_batch_error.map_or(failure, |error| error.context(detail))
+                            } else { failure });
+                        },
                         "cancel_ack" => {},
                         _ => bail!("Unsupported worker message"),
                     }
@@ -719,6 +794,41 @@ async fn run_session(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn paragraph_fallback_requires_a_complete_matching_audit_and_server_error() {
+        validate_completion_audit(
+            &json!({"translation_audit":{
+                "required_paragraphs":4,"completed_paragraphs":4,"batch_errors":1,
+            }}),
+            1,
+        )
+        .unwrap();
+        for result in [
+            json!({}),
+            json!({"translation_audit":{"required_paragraphs":4,"completed_paragraphs":3,"batch_errors":1}}),
+            json!({"translation_audit":{"required_paragraphs":0,"completed_paragraphs":0,"batch_errors":1}}),
+            json!({"translation_audit":{"required_paragraphs":4,"completed_paragraphs":4,"batch_errors":0}}),
+        ] {
+            assert!(validate_completion_audit(&result, 1).is_err());
+        }
+        let error = ProviderError::exhausted(
+            "test.http",
+            3,
+            ProviderError::new(ErrorKind::HttpStatus(500), "HTTP 500"),
+        );
+        assert!(server_failure(&anyhow::Error::new(error)));
+        for kind in [
+            ErrorKind::HttpStatus(401),
+            ErrorKind::Cancelled,
+            ErrorKind::MalformedResponse,
+            ErrorKind::ReadTimeout,
+        ] {
+            assert!(!server_failure(&anyhow::Error::new(ProviderError::new(
+                kind, "fatal"
+            ))));
+        }
+    }
 
     #[tokio::test]
     async fn framing_rejects_partial_and_oversized_messages() {

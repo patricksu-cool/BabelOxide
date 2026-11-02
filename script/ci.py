@@ -129,9 +129,10 @@ def build(name: str, uv: Path, work: Path, env: dict[str, str]) -> None:
     for label, binary, runtime_args in [
         (smoke_label, executable, ["--packaged"]),
         (smoke_label + "-source", source_executable, ["--python", python, "--worker-home", seeded_home]),
+        (smoke_label + "-fallback", executable, ["--packaged", "--failure-mode", "batches"]),
     ]:
         try:
-            run([dev_python, ROOT / "script/rust_migration_smoke.py", fixture, "--label", label, "--exe", binary, *runtime_args, "--auto-extract-glossary", "--lang-out", "zh-TW", "--isolated-cwd", "--timeout-seconds", "600"], work, env, timeout=850, label="cli-ipc-mock-smoke" + ("-source" if binary == source_executable else ""))
+            run([dev_python, ROOT / "script/rust_migration_smoke.py", fixture, "--label", label, "--exe", binary, *runtime_args, "--auto-extract-glossary", "--lang-out", "zh-TW", "--isolated-cwd", "--timeout-seconds", "600"], work, env, timeout=850, label="cli-ipc-mock-smoke" + ("-source" if binary == source_executable else "-fallback" if label.endswith("-fallback") else ""))
         finally:
             # Retain engine/CLI validation evidence on success AND failure in
             # the existing always-uploaded CI log tree, without shipping PDFs.

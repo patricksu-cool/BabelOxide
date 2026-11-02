@@ -52,7 +52,27 @@ Windows 的旗標明示需要官方 VC++ x64 Runtime；CI 只容許已知 VC++ R
 
 ## 開發驗證
 
-翻譯失敗、HTTP 500 與找不到 Worker 的處理方式，見 [翻譯診斷與實測](TRANSLATION_DIAGNOSIS.md)。Cargo Build 本身不包含 Python Runtime；原始碼 CLI／GUI 必須明確指定完整的 Worker 環境。
+翻譯失敗、HTTP 500 與找不到 Worker 的處理方式，見 [翻譯診斷與實測](TRANSLATION_DIAGNOSIS.md)。Cargo Build 本身只編譯 Rust，不會安裝 Python Runtime 或 PDFium；因此直接執行 `target/release/BabelOxide-gui` 既不能翻譯，也沒有原生 PDF 預覽。請執行上面的完整包 builder，或明確重用完整包的執行環境。
+
+macOS 原始碼 GUI 使用已解壓的完整 ARM64 包（macOS 14+）：
+
+```bash
+cargo build --release --locked
+bundle="/absolute/path/BabelOxide-v1.0.0-macos-arm64/BabelOxide.app/Contents/MacOS"
+./target/release/BabelOxide-gui --runtime-dir "$bundle" --worker "$PWD/python-worker/worker.py"
+```
+
+Windows 對應命令：
+
+```powershell
+cargo build --release --locked
+$bundle = 'C:\absolute\path\BabelOxide-v1.0.0-windows-x64'
+.\target\release\BabelOxide-gui.exe --runtime-dir $bundle --worker .\python-worker\worker.py
+```
+
+`--runtime-dir` 同時選擇固定的 Python、BabelDOC、資源 manifest 與 `native/pdfium`，`--worker` 使用目前 checkout 的修正版；兩者都不搜尋系統 Python／PDFium，不改全域 PATH。設定及可變快取仍屬於原始碼 EXE 的應用程式儲存區；既有私人設定不會被完整包覆寫。CLI 使用相同參數。
+
+GUI 的輸出位置空白時，使用應用程式可寫儲存區下的 `outputs`，並在任務區顯示實際資料夾；Finder 的 `/` 啟動目錄不再決定輸出及引擎暫存位置。使用者明確指定的位置（包括 `.`）不變；CLI 的預設輸出仍是目前目錄。
 
 Rust process 測試預設使用專案 `.venv`，可由 `BABELOXIDE_TEST_PYTHON` 明確指定。測試使用合成憑證、本機 socket 與受控子行程，不讀使用者設定。受限沙箱可能拒絕 loopback、socketpair 或原子替換；應在允許這些操作的隔離測試環境重跑，不將未執行列為通過。
 

@@ -1,10 +1,36 @@
 # 翻譯診斷與實測（2026-11-02）
 
-這次將「上游 HTTP 500」與「找不到 Python Worker」分開處理，不能用其中一個解釋所有版本。
+本文件保留先前實測紀錄，並補充使用者在 Windows 47%／86% 與 macOS 正式包回報後找到的共用流程問題。
+
+## 追加確認的共用流程缺陷
+
+Windows 的完整錯誤證明 HTTP 500 發生在文件處理期間。收到 HTTP 500 的原因在翻譯服務端；但先前 Rust bridge 會在任何回呼的服務重試耗盡時立即取消整份文件，Worker 也會永久設定失敗並取消 BabelDOC。這攔截了 **BabelDOC 0.6.4 既有的「批次翻譯失敗 → 逐段翻譯」回復流程**，因此只增加錯誤日誌並沒有處理這個相容性缺陷。
+
+修正僅允許引擎批次回呼的 HTTP 5xx 在原有重試耗盡後交回 BabelDOC；不修改任何 Provider 的 Retry／Backoff。逐段請求、術語擷取、驗證／權限／網路及服務預檢錯誤仍維持失敗。Worker 在私有引擎行程內暫時包裝固定版引擎的段落準備、套用與批次呼叫，離開時還原；不修改已安裝的 BabelDOC，不取代其解析、回復或排版。
+
+只有必要段落的 `post_translate_paragraph` **正常返回**才算完成；`tracker.output` 在解析之前就會設定，不能當完成依據。計數以持有參照的 tracker 身分區分，避免不同頁相同 debug ID 或物件 ID 重用。正常略過的短字串／垂直文字遵守 BabelDOC 既有規則。若仍有未完成段落，Worker 與 Rust 都拒絕成功結果；錯誤鏈保留原始 HTTP 500，逐段請求失敗也不會以原文代替成功。
+
+這修復本機過早取消，不代表遠端服務恢復。若 500 發生在服務預檢、術語擷取，或逐段翻譯仍收到 500，任務仍會失敗並指出處理階段。不能從 47%／86% 兩個百分比判定具體子階段，也不能保證不穩定的 Free 服務每次成功。
+
+macOS 完整包的 `/.tmp…` 錯誤另有明確來源：未指定輸出的 GUI 任務沿用 `current_dir()`，而 bridge 在該輸出目錄建立引擎暫存目錄。Finder 啟動時可為唯讀的 `/`。GUI 現在改用已解析的可寫應用程式儲存區下的 `outputs`，並顯示實際輸出位置；使用者明確指定的路徑與 CLI 預設語意不變。
+
+原始碼版找不到 Python 及沒有預覽，則是 `cargo build` 沒有準備 Python／PDFium。新增明確的 `--runtime-dir` 同時提供引擎、固定資源與預覽庫，不增加系統路徑搜尋。缺庫訊息也說明如何準備；Mac 的架構錯誤不再誤稱 Windows DLL。
+
+### 本輪來源實測
+
+- 兩份指定 PDF 全部 6／5 頁：正常 Mock 的單語／雙語輸出皆通過解析及每頁渲染，原檔 SHA256 不變；必要段落完成數為 83／83、142／142。
+- 同樣的完整 PDF，每一個批次 API 請求均持續回 HTTP 500（各走完既有三次請求），修正版仍透過正常 BabelDOC 回復完成。兩份分別有 26／36 個耗盡重試的批次交回引擎；最終仍為 83／83、142／142 段落。單語及雙語的文字、字元座標、圖片、字型、幾何與正常 Mock 相同，所有頁的 Poppler 96 DPI RGB 像素差異為 0。
+- 舊 diagnostics 完整包在相同受控批次 500 測試退出 1，沒有成功結果；修正版在逐段請求也持續 500 時仍退出 1，保留 HTTP 500 與處理階段，不接受不完整輸出。
+- 真實 SiliconFlowFree：PDF 1 第一頁以修正版來源 Release CLI 完成，20／20 段落、主翻譯無 cache hit，單語／雙語都可解析、渲染，均包含 1,054 個中文字。未改私人設定。
+- 格式、嚴格 Clippy、Release CLI／GUI build 通過；Rust 317 個一般測試、Worker 39、Windows Builder 44、跨平台 Builder 7、CI 9、鎖定引擎 4、Windows 原始碼封裝 22 個檢查通過。原生 PDFium 另由完整包驗證。
+
+本輪證據集中在 `.test-output/translation-recovery/` 與 `rust-migration/recovery-*`；正式包／PDF 2 真實 API 的最終結果以該輪的 `summary.json` 為準。macOS 的唯讀啟動情境已由注入根目錄輸出、實際背景任務及暫存建立回歸涵蓋；本機沒有 Mac，仍須原生 CLI／Finder GUI 驗證。
+
+兩平台 CI 增加完整引擎的批次 500 注入 smoke，檢查段落完成紀錄與有效單語／雙語 PDF，避免只有健康 API／正常 Mock 通過而漏掉回復流程。
 
 使用者已補充：從完整解壓後的舊 Windows GUI 啟動。該路徑就是本機已測試成功的下載包；裸 Cargo Build 缺少 Runtime 的獨立案例，不能用來解釋這個正式包的原始故障。
 
-## 已確認的失敗條件
+## 前輪已確認的失敗條件
 
 - Cargo Release Build 只有 Rust CLI／GUI，`target/release` 不會自動帶入 CPython、Worker、BabelDOC、模型及字型。直接執行其預設路徑會找不到 `runtime/python/python.exe`（Mac 為 `runtime/python/bin/python3`）或 `babeldoc/worker.py`。已用真實 PDF 及本機 API 重現。
 - 舊流程先做主服務及術語服務的健康檢查，才檢查 Worker 路徑。Runtime 缺失時仍會發出 API 請求；若上游先回 HTTP 500，缺檔問題還會被遮住。現在先檢查 Runtime，顯示實際路徑及完整解壓／開發啟動方式，缺檔不會呼叫 API。
@@ -16,17 +42,24 @@
 
 ## 正確啟動原始碼版本
 
-先建置完整執行包，或準備 BabelDOC **0.6.4** 的獨立 Worker Runtime。單獨的 Cargo Build 不能當作完整安裝包。使用既有完整包的 Runtime 可以避免改動系統 Python：
+先建置完整執行包，或明確重用 BabelDOC **0.6.4** 的完整包。單獨的 Cargo Build 不能當作完整安裝包。以下方式同時提供翻譯及預覽，不改動系統 Python：
 
 ```powershell
 cargo build --release --locked
-# $bundle 是完整解壓後的 Windows 包，$paper 是輸入 PDF。
-# 第一次先把該包的固定資源還原到獨立開發快取。
-target/release/BabelOxide.exe --python "$bundle/runtime/python/python.exe" --worker python-worker/worker.py --worker-home .test-output/source-home --restore-offline-assets "$bundle/engine-assets/offline_assets_b485a82328a20d1e4b5c37bb9c6472e7af9943333bdffd39a05b1f57d6d7a1da.zip" --json
-target/release/BabelOxide.exe $paper --python "$bundle/runtime/python/python.exe" --worker python-worker/worker.py --worker-home .test-output/source-home --pages 1-2 --output .test-output/source-pdf --json
+# $bundle 是完整解壓後的 Windows 包根目錄，$paper 是輸入 PDF。
+target/release/BabelOxide.exe $paper --runtime-dir $bundle --worker python-worker/worker.py --pages 1-2 --output .test-output/source-pdf --json
+target/release/BabelOxide-gui.exe --runtime-dir $bundle --worker python-worker/worker.py
 ```
 
-GUI 可用相同 `--python`、`--worker`、`--worker-home` 選項啟動。macOS 用 `.app/Contents/MacOS` 作為包根目錄、`runtime/python/bin/python3` 作為 Interpreter；需要原生 Apple Silicon Mac 實測。
+macOS：
+
+```bash
+cargo build --release --locked
+bundle="/absolute/path/BabelOxide-v1.0.0-macos-arm64/BabelOxide.app/Contents/MacOS"
+./target/release/BabelOxide-gui --runtime-dir "$bundle" --worker "$PWD/python-worker/worker.py"
+```
+
+完整原始碼建包命令見 [BUILD](BUILD.md)。`--runtime-dir` 只指定不可變的執行環境，設定／可變快取仍由原始碼執行檔的 ConfigStore 決定，不讀入完整包私人設定；資源按既有 manifest 核對／複製。Mac 原生執行仍需 Apple Silicon Mac 驗證。
 
 正式包應保留 EXE／App 旁的 `runtime`、`babeldoc`、`resources`、`native`、`engine-assets` 等完整目錄，不能只複製 EXE。缺檔時重新解壓完整包；不要把私人設定檔覆蓋成範本。
 
@@ -52,7 +85,7 @@ Windows/macOS CI 都會檢查包內 Worker 與目前原始碼一致，分別測�
 
 追加證據位於本機 `.test-output/translation-followup/`。上游持續回 500 時，需要等待服務恢復或由使用者改用其他已配置的服務；本機修正保留原有重試，不會偽造譯文、自動改寫私人設定或宣稱已修復遠端 nginx。
 
-## 修正後的實測結果
+## 前輪修正的實測結果
 
 | 項目 | 結果 |
 |---|---|

@@ -41,6 +41,7 @@ pub(crate) enum Event {
     Submitted {
         handle: TaskHandle,
         inputs: Vec<PathBuf>,
+        outputs: Vec<PathBuf>,
     },
     Saved(Settings),
     Reloaded(Settings),
@@ -336,14 +337,25 @@ async fn run(
                 if shutdown.requested.load(Ordering::Acquire) {
                     break;
                 }
+                let app_root = store.app_root().to_path_buf();
                 let prepared = match task_from_settings(&settings, worker.clone(), cache) {
                     Ok(mut spec) => tokio::task::spawn_blocking(move || -> Result<_> {
+                        crate::output_paths::apply_gui_default_output(
+                            &mut spec.jobs,
+                            &settings,
+                            &app_root,
+                        )?;
                         let mut guards =
                             crate::output_paths::isolate_colliding_outputs(&mut spec.jobs)?;
                         guards.extend(crate::output_paths::preserve_existing_outputs(
                             &mut spec.jobs,
                         )?);
-                        Ok((spec, guards))
+                        let outputs = spec
+                            .jobs
+                            .iter()
+                            .map(|job| job.output_dir.canonicalize())
+                            .collect::<std::io::Result<Vec<_>>>()?;
+                        Ok((spec, guards, outputs))
                     })
                     .await
                     .context("Cannot prepare batch output folders")
@@ -355,16 +367,16 @@ async fn run(
                 if shutdown.requested.load(Ordering::Acquire) {
                     break;
                 }
-                let submitted = prepared.and_then(|(spec, guards)| {
+                let submitted = prepared.and_then(|(spec, guards, outputs)| {
                     let handle = manager.submit(spec)?;
                     let isolated = !guards.is_empty();
                     for guard in guards {
                         let _ = guard.keep();
                     }
-                    Ok((handle, isolated))
+                    Ok((handle, isolated, outputs))
                 });
                 match submitted {
-                    Ok((handle, isolated)) => {
+                    Ok((handle, isolated, outputs)) => {
                         let mut updates = handle.subscribe();
                         let wake = shutdown.clone();
                         tokio::spawn(async move {
@@ -376,7 +388,16 @@ async fn run(
                                 }
                             }
                         });
-                        emit(&events, &shutdown, Event::Submitted { handle, inputs }).await;
+                        emit(
+                            &events,
+                            &shutdown,
+                            Event::Submitted {
+                                handle,
+                                inputs,
+                                outputs,
+                            },
+                        )
+                        .await;
                         if isolated {
                             emit(
                                 &events,
@@ -794,6 +815,48 @@ mod tests {
         assert!(result.is_file());
         assert!(!fixture.directory.path().join("app/cache").exists());
         assert!(!fixture.directory.path().join("app/config.toml").exists());
+        background.control.close(None);
+        thread.finish();
+    }
+
+    #[tokio::test]
+    async fn submit_blank_output_uses_and_reports_application_storage() {
+        let mut fixture = WorkerFixture::new("finished_then_exit");
+        fixture
+            .settings
+            .set("translation.output", serde_json::Value::Null)
+            .unwrap();
+        let (mut background, thread) = fixture.background();
+        background
+            .send(Command::Translate(fixture.settings.clone()))
+            .unwrap();
+        let (handle, outputs) = tokio::time::timeout(std::time::Duration::from_secs(10), async {
+            loop {
+                match background.events.recv().await.unwrap() {
+                    Event::Submitted {
+                        handle, outputs, ..
+                    } => return (handle, outputs),
+                    Event::Warning(_) => {}
+                    _ => panic!("Expected controlled task submission"),
+                }
+            }
+        })
+        .await
+        .unwrap();
+        let expected = fixture
+            .directory
+            .path()
+            .join("app/outputs")
+            .canonicalize()
+            .unwrap();
+        assert_eq!(outputs.as_slice(), std::slice::from_ref(&expected));
+        let snapshot = tokio::time::timeout(std::time::Duration::from_secs(10), handle.wait())
+            .await
+            .unwrap();
+        assert_eq!(snapshot.status, babeloxide_tasks::TaskStatus::Succeeded);
+        let result = PathBuf::from(snapshot.results[0]["mono_pdf_path"].as_str().unwrap());
+        assert_eq!(result.parent(), Some(expected.as_path()));
+        assert!(result.is_file());
         background.control.close(None);
         thread.finish();
     }

@@ -521,6 +521,73 @@ fn model_service(endpoint: &str, model: &str) -> Result<Arc<TranslationService>>
 }
 
 #[tokio::test]
+async fn batch_http_exhaustion_can_reach_engine_fallback_but_incomplete_output_is_rejected()
+-> Result<()> {
+    for scenario in [
+        "batch_fallback_success",
+        "batch_fallback_missing",
+        "batch_fallback_incomplete",
+        "batch_fallback_error",
+    ] {
+        let fixture = Fixture::new(scenario)?;
+        let listener = TcpListener::bind("127.0.0.1:0").await?;
+        let endpoint = format!("http://{}/v1", listener.local_addr()?);
+        let server = tokio::spawn(async move {
+            let mut statuses = Vec::new();
+            for _ in 0..4 {
+                let (mut stream, _) = listener.accept().await?;
+                let request = read_http_body(&mut stream).await?;
+                let batch = request["messages"][0]["content"] == "fixture-failed-batch";
+                let status = if batch { 500 } else { 200 };
+                statuses.push(status);
+                let body = serde_json::to_vec(&if batch {
+                    json!({"error":{"message":"synthetic-loopback-key https://invalid/?key=hidden upstream failure"}})
+                } else {
+                    json!({"choices":[{"message":{"content":"translated paragraph"}}]})
+                })?;
+                stream.write_all(format!("HTTP/1.1 {status} Test\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", body.len()).as_bytes()).await?;
+                stream.write_all(&body).await?;
+            }
+            Ok::<_, anyhow::Error>(statuses)
+        });
+        let result = timeout(
+            DEADLINE,
+            translate_pdf(
+                &fixture.worker,
+                fixture.job.clone(),
+                model_service(&endpoint, "fallback-model")?,
+                CancellationToken::new(),
+                None,
+            ),
+        )
+        .await
+        .context("Fallback IPC hung")?;
+        ensure!(
+            server.await?? == [500, 500, 500, 200],
+            "Provider retry count changed"
+        );
+        if scenario == "batch_fallback_success" {
+            ensure!(result?["translation_audit"]["completed_paragraphs"] == 2);
+        } else {
+            let error = format!(
+                "{:#}",
+                result.expect_err("incomplete or unaudited output must fail")
+            );
+            ensure!(
+                error.contains("HTTP 500"),
+                "Original service failure was lost: {error}"
+            );
+            ensure!(!error.contains("synthetic-loopback-key") && !error.contains("https://"));
+        }
+        let error_frame = fs::read_to_string(fixture.directory.path().join("batch-error.json"))?;
+        ensure!(
+            !error_frame.contains("synthetic-loopback-key") && !error_frame.contains("https://")
+        );
+    }
+    Ok(())
+}
+
+#[tokio::test]
 async fn main_and_term_requests_use_separate_services_and_usage() -> Result<()> {
     let mut fixture = Fixture::new("translation_routing")?;
     fixture.job.qps = 100_000;

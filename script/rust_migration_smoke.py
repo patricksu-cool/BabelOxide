@@ -48,6 +48,7 @@ def main():
         "--python", type=Path, default=ROOT / (".venv/Scripts/python.exe" if os.name == "nt" else ".venv/bin/python")
     )
     parser.add_argument("--worker-home", type=Path)
+    parser.add_argument("--runtime-dir", type=Path)
     parser.add_argument("--packaged", action="store_true")
     parser.add_argument(
         "--portable-config",
@@ -58,6 +59,8 @@ def main():
     parser.add_argument("--pages")
     parser.add_argument("--auto-extract-glossary", action="store_true")
     parser.add_argument("--http-status", type=int, choices=(200, 400, 500), default=200)
+    parser.add_argument("--failure-mode", choices=("none", "batches", "document"), default="none",
+                        help="Inject HTTP 500 after healthy preflight; batches exercises BabelDOC paragraph fallback")
     parser.add_argument(
         "--fixed-text",
         help="Fixed local response for font/output smoke; default is identity",
@@ -79,7 +82,7 @@ def main():
         )
     if not 1 <= args.timeout_seconds <= 7200:
         parser.error("timeout must be between 1 and 7200 seconds")
-    if not args.packaged and args.worker_home is None:
+    if not args.packaged and args.worker_home is None and args.runtime_dir is None:
         parser.error("development smoke requires --worker-home")
     if not args.source.is_file():
         parser.error("source PDF does not exist or is not a file")
@@ -133,7 +136,11 @@ def main():
                 )
             elif args.fixed_text is not None:
                 translated = args.fixed_text
-            calls.append({"batch": batch, "glossary": glossary, "model": body.get("model"), "status": args.http_status})
+            status = args.http_status
+            if ((args.failure_mode == "batches" and batch)
+                    or (args.failure_mode == "document" and not glossary and translated.strip() != "Hello")):
+                status = 500
+            calls.append({"batch": batch, "glossary": glossary, "model": body.get("model"), "status": status})
             reply = {
                 "id": "local-fixture",
                 "object": "chat.completion",
@@ -152,10 +159,10 @@ def main():
                     "total_tokens": 0,
                 },
             }
-            if args.http_status != 200:
+            if status != 200:
                 reply = {"error": {"message": "Local fixture translation service failure"}}
             data = json.dumps(reply).encode()
-            self.send_response(args.http_status)
+            self.send_response(status)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(data)))
             self.end_headers()
@@ -216,7 +223,10 @@ def main():
     ]
     if not args.auto_extract_glossary:
         command.append("--no-auto-extract-glossary")
-    if not args.packaged:
+    if args.runtime_dir is not None:
+        command.extend(["--runtime-dir", str(args.runtime_dir.resolve()), "--worker", str(ROOT / "python-worker/worker.py")])
+        args.python = args.runtime_dir / ("runtime/python/python.exe" if os.name == "nt" else "runtime/python/bin/python3")
+    elif not args.packaged:
         command.extend(
             [
                 "--python",
@@ -265,6 +275,7 @@ def main():
         "glossary_requests": sum(call["glossary"] for call in calls),
         "http_statuses": sorted({call["status"] for call in calls}),
         "pages": args.pages or "all",
+        "failure_mode": args.failure_mode,
         "provider": "loopback fixed-text fixture"
         if args.fixed_text is not None
         else "loopback identity fixture",
@@ -298,6 +309,13 @@ def main():
                 raise ValueError("Successful smoke requires one finish event and actual API requests")
             if finishes[0]["result"]["translation_metrics"]["main"]["calls"] <= 1:
                 raise ValueError("Successful smoke requires document translation beyond the API health probe")
+            audit = finishes[0]["result"].get("translation_audit", {})
+            if args.failure_mode == "batches" and not (
+                any(call["status"] == 500 and call["batch"] for call in calls)
+                and audit.get("batch_errors", 0) > 0
+                and audit.get("required_paragraphs", 0) == audit.get("completed_paragraphs")
+            ):
+                raise ValueError("Batch failure smoke did not prove complete BabelDOC paragraph fallback")
             paths = []
             for key in ("mono_pdf_path", "dual_pdf_path"):
                 path = Path(finishes[0]["result"][key]).resolve(strict=True)

@@ -121,7 +121,7 @@ def main():
         send("error", code="protocol_failed", stage="Worker startup", message="ModuleNotFoundError: babeldoc")
         hang()
 
-    send("ready", babeldoc_version="0.6.4", operations=[
+    send("ready", babeldoc_version="0.6.4", paragraph_completion_audit=1 if scenario.startswith("batch_fallback_") else 0, operations=[
         "pdf", "warmup", "generate_offline_assets", "restore_offline_assets"
     ])
     start = json.loads(sys.stdin.buffer.readline())
@@ -141,6 +141,29 @@ def main():
     if scenario == "engine_error":
         send("error", code="engine_failed", stage="Parse PDF", message="ValueError: invalid PDF; synthetic-unused-fixture-key https://invalid/?key=hidden")
         hang()
+    if scenario.startswith("batch_fallback_"):
+        send("translate", id="w-batch", method="llm_translate", text="fixture-failed-batch",
+             ignore_cache=True, rate_limit_params={"request_json_mode": True}, translator="main", batch_fallback=True)
+        reply = json.loads(sys.stdin.buffer.readline())
+        if reply.get("error", {}).get("code") != "batch_translation_failed":
+            raise RuntimeError("Fixture expected recoverable batch failure")
+        (ROOT / "batch-error.json").write_text(json.dumps(reply), encoding="utf-8")
+        send("translate", id="w-paragraph", method="llm_translate", text="fixture-paragraph",
+             ignore_cache=True, rate_limit_params=None, translator="main", batch_fallback=False)
+        reply = json.loads(sys.stdin.buffer.readline())
+        if reply.get("text") != "translated paragraph":
+            raise RuntimeError("Fixture expected successful paragraph fallback")
+        if scenario == "batch_fallback_error":
+            send("error", code="incomplete_translation", stage="Translate Paragraphs",
+                 message="1 of 2 required paragraphs were not applied")
+        else:
+            audit = {} if scenario == "batch_fallback_missing" else {"translation_audit": {
+                "required_paragraphs": 2,
+                "completed_paragraphs": 1 if scenario == "batch_fallback_incomplete" else 2,
+                "batch_errors": 1,
+            }}
+            finish(start["job"], scenario, **audit)
+        return 0
     if scenario == "progress_flood":
         for number in range(2000):
             send("progress", event={"stage": "progress flood", "number": number})

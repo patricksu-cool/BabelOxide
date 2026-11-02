@@ -45,10 +45,12 @@ pub fn launch(invocation: Invocation, environment: BTreeMap<String, String>) -> 
         store.save_user_defaults(&settings)?;
     }
     let executable = std::env::current_exe().context("Cannot locate the application executable")?;
-    let bundle_root = executable
-        .parent()
-        .context("Cannot locate the application folder")?
-        .to_path_buf();
+    let bundle_root = invocation.runtime_dir.clone().unwrap_or(
+        executable
+            .parent()
+            .context("Cannot locate the application folder")?
+            .to_path_buf(),
+    );
     let worker = invocation.worker_for_store(&store);
     launch_with_settings(LaunchOptions {
         store,
