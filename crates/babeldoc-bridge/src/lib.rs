@@ -13,7 +13,10 @@ use std::{
     collections::HashSet,
     path::{Path, PathBuf},
     process::Stdio,
-    sync::Arc,
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
     time::Duration,
 };
 use tokio::{
@@ -568,6 +571,7 @@ async fn run_session(
     }
     process::prepare(&mut command);
     let mut child = command.spawn().context("Start BabelDOC worker")?;
+    let worker_pid = child.id().context("Worker PID unavailable")?;
     let scope = match process::contain_and_resume(&mut child) {
         Ok(scope) => scope,
         Err(error) => {
@@ -593,13 +597,19 @@ async fn run_session(
         tokio::io::copy(&mut stderr, &mut tokio::io::sink()).await
     });
     let (tx, mut rx) = mpsc::channel::<Value>(capacity + 4);
+    let shutdown_written = Arc::new(AtomicBool::new(false));
+    let written = shutdown_written.clone();
     let mut writer = tokio::spawn(async move {
         while let Some(value) = rx.recv().await {
+            let shutdown = value["type"] == "shutdown";
             let mut raw = serde_json::to_vec(&value)?;
             raw.push(b'\n');
             ensure!(raw.len() <= MAX_FRAME_BYTES, "Host frame exceeds limit");
             stdin.write_all(&raw).await.context("Write worker pipe")?;
             stdin.flush().await?;
+            if shutdown {
+                written.store(true, Ordering::Release);
+            }
         }
         Ok::<(), anyhow::Error>(())
     });
@@ -729,8 +739,21 @@ async fn run_session(
     }.await;
     requests_cancel.cancel();
     // Keep output flowing while cooperative cancellation reaps provider processes.
+    let shutdown_ack = Arc::new(AtomicBool::new(false));
+    let acknowledged = shutdown_ack.clone();
+    let stdout_eof = Arc::new(AtomicBool::new(false));
+    let eof = stdout_eof.clone();
+    let drain_session = session.clone();
     let drain = tokio::spawn(async move {
-        while read_frame(&mut stdout, &mut frame_buffer).await?.is_some() {}
+        while let Some(message) = read_frame(&mut stdout, &mut frame_buffer).await? {
+            if message["type"] == "shutdown_ack"
+                && message["session"] == drain_session
+                && message["task_id"] == "job-1"
+            {
+                acknowledged.store(true, Ordering::Release);
+            }
+        }
+        eof.store(true, Ordering::Release);
         Ok::<(), anyhow::Error>(())
     });
     if !session.is_empty() && outcome.is_err() {
@@ -745,23 +768,33 @@ async fn run_session(
         requests.abort_all();
         while requests.join_next().await.is_some() {}
     }
-    if !session.is_empty() {
-        let _ = enqueue(&tx, frame("shutdown", &session, json!({}))).await;
-    }
+    let shutdown_enqueued = !session.is_empty()
+        && enqueue(&tx, frame("shutdown", &session, json!({})))
+            .await
+            .is_ok();
     drop(tx);
+    let exit_started = Instant::now();
+    let mut exit_timed_out = false;
     let exited = match timeout(worker.shutdown_timeout, child.wait()).await {
         Ok(result) => result.context("Wait for worker"),
         Err(_) => {
+            exit_timed_out = true;
             let _ = child.kill().await;
             Err(anyhow::anyhow!(
-                "Worker shutdown timed out; process tree terminated"
+                "Worker shutdown timed out while waiting for process exit"
             ))
         }
     };
+    let exit_wait_ms = exit_started.elapsed().as_millis();
     let tree_cleanup = scope.terminate_and_wait().await;
+    let exit_status = child.try_wait();
+    let exit_code = exit_status
+        .as_ref()
+        .ok()
+        .and_then(|s| s.and_then(|s| s.code()));
     #[cfg(windows)]
     drop(scope);
-    let _writer_ok = if writer_finished {
+    let writer_ok = if writer_finished {
         false
     } else {
         match timeout(Duration::from_secs(2), &mut writer).await {
@@ -783,19 +816,50 @@ async fn run_session(
     }
     drain.abort();
     let _ = drain.await;
-    match outcome {
+    // Only lifecycle metadata, never IPC payloads, paths, or provider credentials.
+    // An ACK confirms receipt, but it does not replace observing process exit.
+    let lifecycle = format!(
+        "Worker lifecycle: pid={worker_pid}; shutdown_enqueued={shutdown_enqueued}; \
+         shutdown_written={}; shutdown_ack={}; writer_ok={writer_ok}; stdout_eof_observed={}; exit_status={exit_status:?}; exit_code={exit_code:?}; \
+         exit_wait_ms={exit_wait_ms}; exit_timeout_ms={}; timeout_phase={}; \
+         forced_worker_kill={exit_timed_out}; process_tree_cleanup={}",
+        shutdown_written.load(Ordering::Acquire),
+        shutdown_ack.load(Ordering::Acquire),
+        stdout_eof.load(Ordering::Acquire),
+        worker.shutdown_timeout.as_millis(),
+        if exit_timed_out {
+            "process_exit"
+        } else {
+            "none"
+        },
+        if tree_cleanup.is_ok() {
+            "verified_no_live_processes"
+        } else {
+            "failed_residual_processes_unknown"
+        },
+    );
+    tracing::debug!("{lifecycle}");
+    let completed = match outcome {
         Err(primary) => {
-            if tree_cleanup.is_err() {
-                return Err(primary.context("Worker process-tree cleanup also failed"));
-            }
+            let primary = match tree_cleanup {
+                Ok(()) => primary,
+                Err(error) => primary.context(format!(
+                    "Worker process-tree cleanup also failed: {error:#}"
+                )),
+            };
             Err(primary)
         }
-        Ok(result) => {
+        Ok(result) => (|| {
             tree_cleanup.context("Clean up worker process tree")?;
             ensure!(exited?.success(), "Worker exited with a failure status");
             Ok(result)
-        }
-    }
+        })(),
+    };
+    completed.map_err(|error| {
+        // Keep the actionable cause first, including for callers using Display.
+        let message = format!("{error}; {lifecycle}");
+        error.context(message)
+    })
 }
 
 #[cfg(test)]

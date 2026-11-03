@@ -24,6 +24,7 @@ use tokio::{
 use tokio_util::sync::CancellationToken;
 
 const DEADLINE: Duration = Duration::from_secs(10);
+const FORCED_SHUTDOWN_GRACE: Duration = Duration::from_millis(250);
 
 struct Fixture {
     directory: TempDir,
@@ -68,7 +69,9 @@ impl Fixture {
             startup_timeout: Duration::from_secs(5),
             // Failure tests must finish far before this timeout.
             idle_timeout: Duration::from_secs(60),
-            shutdown_timeout: Duration::from_millis(250),
+            // A finished frame precedes Python/OS finalization. Allow bounded
+            // normal cleanup under CI load; forced-kill tests set a short grace.
+            shutdown_timeout: Duration::from_secs(2),
         };
         let job = PdfJob {
             input_file: input,
@@ -396,6 +399,107 @@ async fn worker_runtime_ignores_user_paths_and_does_not_write_package_bytecode()
                 "isolated":1,"ignore_environment":1,"no_user_site":1,"dont_write_bytecode":1
             })
     );
+    ensure!(fixture.directory.path().join("shutdown-received").is_file());
+    Ok(())
+}
+
+#[cfg(any(windows, unix))]
+#[tokio::test]
+async fn normal_shutdown_waits_for_ack_and_finite_interpreter_cleanup() -> Result<()> {
+    let fixture = Fixture::new("shutdown_delayed")?;
+    let (events, mut received) = mpsc::channel(2);
+    let operation = translate_pdf(
+        &fixture.worker,
+        fixture.job.clone(),
+        fixture.service()?,
+        CancellationToken::new(),
+        Some(events),
+    );
+    tokio::pin!(operation);
+    let event = tokio::select! {
+        event = timeout(DEADLINE, received.recv()) => event?.context("fixture progress closed")?,
+        result = &mut operation => bail!("worker ended before shutdown gate: {result:?}"),
+    };
+    ensure!(event["stage"] == "shutdown_ready");
+    let worker = process_observer::ObservedProcess::from_pid_file(
+        fixture.directory.path().join("worker.pid"),
+    )?;
+    fs::write(fixture.directory.path().join("release-worker"), b"finish")?;
+    timeout(DEADLINE, &mut operation).await??;
+    ensure!(fixture.directory.path().join("shutdown-received").is_file());
+    ensure!(fixture.directory.path().join("cleanup-complete").is_file());
+    worker.assert_exited_now()?;
+    Ok(())
+}
+
+#[cfg(any(windows, unix))]
+#[tokio::test]
+async fn finished_worker_must_exit_even_after_shutdown_ack_and_tree_is_reaped() -> Result<()> {
+    for (scenario, ack) in [
+        ("shutdown_ack_then_hang", true),
+        ("shutdown_ignored", false),
+    ] {
+        let mut fixture = Fixture::new(scenario)?;
+        // Receiving an ACK needs normal scheduling grace too. Keep the short
+        // deadline for the non-cooperative fixture; both must still be killed.
+        if !ack {
+            fixture.worker.shutdown_timeout = FORCED_SHUTDOWN_GRACE;
+        }
+        let (events, mut received) = mpsc::channel(2);
+        let operation = translate_pdf(
+            &fixture.worker,
+            fixture.job.clone(),
+            fixture.service()?,
+            CancellationToken::new(),
+            Some(events),
+        );
+        tokio::pin!(operation);
+        let event = tokio::select! {
+            event = timeout(DEADLINE, received.recv()) => event?.context("fixture progress closed")?,
+            result = &mut operation => bail!("worker ended before shutdown gate: {result:?}"),
+        };
+        ensure!(event["stage"] == "shutdown_ready");
+        let worker = process_observer::ObservedProcess::from_pid_file(
+            fixture.directory.path().join("worker.pid"),
+        )?;
+        let descendant = process_observer::ObservedProcess::from_pid_file(
+            fixture.directory.path().join("descendant.pid"),
+        )?;
+        fs::write(fixture.directory.path().join("release-worker"), b"finish")?;
+        let error = timeout(DEADLINE, &mut operation)
+            .await?
+            .expect_err("finished and ACK must not hide a stuck worker");
+        let diagnostic = format!("{error:#}");
+        // A Windows venv may launch Python through a redirector. The bridge
+        // reports its owned child PID; worker.pid belongs to the interpreter.
+        let child_pid: u32 = diagnostic
+            .split("pid=")
+            .nth(1)
+            .context("missing owned worker PID")?
+            .split(';')
+            .next()
+            .context("missing PID delimiter")?
+            .parse()?;
+        ensure!(child_pid > 0);
+        for expected in [
+            "Worker shutdown timed out",
+            "shutdown_enqueued=true",
+            "shutdown_written=",
+            &format!("shutdown_ack={ack}"),
+            "exit_status=Ok(Some(",
+            "exit_wait_ms=",
+            "timeout_phase=process_exit",
+            "forced_worker_kill=true",
+            "process_tree_cleanup=verified_no_live_processes",
+        ] {
+            ensure!(
+                diagnostic.contains(expected),
+                "missing {expected}: {diagnostic}"
+            );
+        }
+        worker.assert_exited_now()?;
+        descendant.assert_exited_now()?;
+    }
     Ok(())
 }
 

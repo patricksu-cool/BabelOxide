@@ -6,6 +6,7 @@ inherit stdout deliberately, reproducing a process which exits before pipe EOF.
 
 from __future__ import annotations
 
+import atexit
 import json
 import os
 import subprocess
@@ -74,6 +75,26 @@ def finish(job, scenario, **metrics):
     send("finished", result=result)
 
 
+def shutdown(scenario):
+    if scenario == "shutdown_ignored":
+        hang()
+    message = json.loads(sys.stdin.buffer.readline())
+    if message != {"v": 1, "type": "shutdown", "session": SESSION, "task_id": "job-1"}:
+        raise RuntimeError("Fixture expected a valid shutdown frame")
+    (ROOT / "shutdown-received").write_text("shutdown", encoding="ascii")
+    send("shutdown_ack")
+    if scenario == "shutdown_ack_then_hang":
+        hang()
+    if scenario == "shutdown_delayed":
+        # A terminal IPC frame and even its ACK precede interpreter finalization.
+        # Model finite cleanup longer than the former test-only 250 ms grace.
+        def finalize():
+            time.sleep(0.5)
+            (ROOT / "cleanup-complete").write_text("complete", encoding="ascii")
+
+        atexit.register(finalize)
+
+
 def finish_assets(start, scenario):
     if "job" in start or "translator" in start:
         raise RuntimeError("Maintenance must not receive PDF or translator options")
@@ -137,6 +158,15 @@ def main():
             "no_user_site": sys.flags.no_user_site,
             "dont_write_bytecode": sys.flags.dont_write_bytecode,
         })
+        shutdown(scenario)
+        return 0
+    if scenario in {"shutdown_delayed", "shutdown_ack_then_hang", "shutdown_ignored"}:
+        if scenario != "shutdown_delayed":
+            spawn_descendant()
+        send("progress", event={"stage": "shutdown_ready"})
+        wait_for_file(ROOT / "release-worker")
+        finish(start["job"], scenario)
+        shutdown(scenario)
         return 0
     if scenario == "engine_error":
         send("error", code="engine_failed", stage="Parse PDF", message="ValueError: invalid PDF; synthetic-unused-fixture-key https://invalid/?key=hidden")
