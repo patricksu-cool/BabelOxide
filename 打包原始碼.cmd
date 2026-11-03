@@ -41,7 +41,7 @@ function Get-Sha256([byte[]]$Bytes) {
 $sourceRoots = @('crates', 'python-worker', 'script', 'tests', 'docs', '.cargo', '.github', 'resources')
 $rootFiles = @(
     'Cargo.toml', 'Cargo.lock', 'pyproject.toml', 'uv.lock', 'README.md', '.gitignore',
-    'LICENSE', 'THIRD_PARTY_NOTICES.md', '打包原始碼.cmd', '打包原始碼.command', 'AGENTS.md', 'CHANGELOG.md', 'CONTRIBUTING.md', 'SECURITY.md',
+    'LICENSE', 'THIRD_PARTY_NOTICES.md', '打包原始碼.cmd', '打包原始碼.command', '啟動開發版.cmd', '啟動開發版.command', 'AGENTS.md', 'CHANGELOG.md', 'CONTRIBUTING.md', 'SECURITY.md',
     '.gitattributes', '.gitmodules', '.editorconfig', '.env.example', 'rust-toolchain.toml',
     'rust-toolchain', 'rustfmt.toml', '.rustfmt.toml', 'clippy.toml', '.clippy.toml',
     'deny.toml', 'Makefile', 'justfile'

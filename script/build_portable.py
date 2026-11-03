@@ -73,7 +73,12 @@ def prepare_inputs(name: str, inputs: Path, uv: Path, bin_dir: Path, work: Path)
         extract_archive(archive, pdfium)
     assets = inputs / f"offline_assets_{windows.ASSET_TAG}.zip"
     expected = windows.asset_members(windows.read_json(windows.ASSET_INVENTORY))
-    if not assets.exists():
+    _, lock = platform_profile(name)
+    cache = inputs / "uv-cache"
+    receipt = inputs / "wheel-cache.json"
+    cache_identity = {"platform": name, "requirements_sha256": sha256(lock)}
+    cached = cache.is_dir() and receipt.is_file() and windows.read_json(receipt) == cache_identity
+    if not assets.exists() or not cached:
         # A separate copied interpreter is only a build input, never the user's
         # venv or a source of mutable configuration for the published bundle.
         seed_runtime = work / "seed-runtime"
@@ -81,9 +86,13 @@ def prepare_inputs(name: str, inputs: Path, uv: Path, bin_dir: Path, work: Path)
         python, site = python_layout(seed_runtime, name)
         if name == "windows-x64":
             (seed_runtime / "python313._pth").write_text(windows.PTH_CONTENT, encoding="ascii")
-        _, lock = platform_profile(name)
         env = isolated_environment(work)
+        # The seed and final bundle use the same hash-checked wheel cache. It is
+        # a build input, separated by platform, never an installed user venv.
+        env["UV_CACHE_DIR"] = str(cache)
         run([uv, "--no-config", "pip", "install", "--python", python, "--target", site, "--no-deps", "--no-index", "--require-hashes", "--only-binary", ":all:", "--link-mode", "copy", "-r", lock], work, env, label="seed-runtime-install")
+        write_json(receipt, cache_identity)
+    if not assets.exists():
         executable = bin_dir / (CLI_NAME + (".exe" if name == "windows-x64" else ""))
         run([executable, "--python", python, "--worker", ROOT / "python-worker/worker.py", "--worker-home", work / "seed-home", "--generate-offline-assets", inputs, "--json"], work, env, timeout=1800, label="download-locked-engine-assets")
     windows.verify_zip(assets, expected)
@@ -128,6 +137,7 @@ def build_macos(args, runtime: Path, assets: Path, work: Path) -> Path:
         require(source.is_file(), "Build both native Rust binaries before packaging")
         shutil.copy2(source, stage / name)
     env = isolated_environment(work)
+    env["UV_CACHE_DIR"] = str(args.inputs / "uv-cache")
     run([args.uv, "--no-config", "pip", "install", "--python", python, "--target", site, "--no-deps", "--no-index", "--require-hashes", "--only-binary", ":all:", "--link-mode", "copy", "-r", lock], work, env, label="install-macos-wheels")
     require(not any(site.rglob("*.pth")), "Wheel introduced an unreviewed .pth hook")
     excluded = mac_entrypoints(stage, python, site)
@@ -222,7 +232,7 @@ def main(argv=None) -> int:
     print("Preserved build logs: " + str(work), flush=True)
     runtime, assets = prepare_inputs(args.platform, args.inputs, args.uv, args.bin_dir, work)
     if args.platform == "windows-x64":
-        arguments = ["--output", str(args.output), "--bin-dir", str(args.bin_dir), "--runtime-source", str(runtime), "--runtime-manifest", str(args.inputs / "runtime-files.json"), "--pdfium-source", str(args.inputs / "pdfium"), "--assets-zip", str(assets), "--online", "--uv", str(args.uv)]
+        arguments = ["--output", str(args.output), "--bin-dir", str(args.bin_dir), "--runtime-source", str(runtime), "--runtime-manifest", str(args.inputs / "runtime-files.json"), "--pdfium-source", str(args.inputs / "pdfium"), "--assets-zip", str(assets), "--wheel-cache", str(args.inputs / "uv-cache"), "--uv", str(args.uv)]
         if args.cargo_registry_src:
             arguments += ["--cargo-registry-src", str(args.cargo_registry_src)]
         if args.source_commit:

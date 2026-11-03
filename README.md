@@ -2,11 +2,11 @@
 
 原生 PDF 翻譯工具，保留公式、圖表與版面，支援單語及雙語輸出。Rust 負責 egui GUI、CLI、服務、設定、快取、重試與任務；最小 Python Worker 僅橋接 **BabelDOC 0.6.4**，沒有 Gradio。
 
-Windows x64 完整包已通過本機建置、中文空格路徑搬移、CLI／GUI 與 PDF 回歸驗證。macOS arm64 原生驗證尚未完成，1.0.0 保留為工作分支版本，尚未建立正式版本標籤。實際結果與待審項目見 [STATUS](docs/STATUS.md)。
+Windows x64 與 macOS ARM64 的 Actions 完整包已由使用者確認可翻譯及預覽 PDF。原始碼另需準備 Runtime，開發啟動方式見下方；本機驗證以 Windows 為主，macOS 開發入口仍待原生驗收。1.0.0 保留為工作分支版本，尚未建立正式版本標籤。歷次結果見 [STATUS](docs/STATUS.md)。
 
 ## 使用
 
-Windows 開啟 `dist/BabelOxide-v1.0.0-windows-x64/BabelOxide-gui.exe`。本機保留已驗證的完整資料夾；需要搬移時可用 7-Zip 壓縮整個資料夾。原始碼由 Git 維護，需要審查包時在 Windows 執行 `打包原始碼.cmd`，macOS 執行 `打包原始碼.command`，輸出上一層的 `BabelOxide-source-review.zip`。Mac 原生驗收完成後使用完整 `BabelOxide.app`，目前沒有已驗證的 Mac 成品。
+Windows 開啟完整包中的 `BabelOxide-gui.exe`，macOS 開啟 `BabelOxide.app`。需要搬移時請保留完整資料夾。原始碼由 Git 維護，需要審查包時在 Windows 執行 `打包原始碼.cmd`，macOS 執行 `打包原始碼.command`，輸出上一層的 `BabelOxide-source-review.zip`。
 
 1. 加入或拖放 PDF。
 2. 選語言、服務與模型，在「設定 → 服務」保存網址與 Key。
@@ -35,6 +35,17 @@ Windows ZIP 建議用已支援長路徑的 7-Zip 解壓到較短位置；完整�
 - 新包只帶空 Key 範本，不攜入本機私人設定。升級既有可攜資料夾時保留自己的 config、cache 與成果。舊 CLI 檔名已改為 BabelOxide，外部腳本須更新。
 
 ## 建置與維護
+
+從原始碼執行須先安裝 Rust／Cargo 與 uv。`cargo build --release --locked` 只編譯 Rust；在 Windows 雙擊根目錄 `啟動開發版.cmd`，macOS ARM64（14+）雙擊 `啟動開發版.command`。首次啟動會沿用正式 Builder，下載並驗證固定的 Python、BabelDOC 0.6.4、PDFium、模型與字型，再啟動原始碼 GUI；不需要先下載完整 Artifact，後續重用本機 Runtime／快取。
+
+```powershell
+.\啟動開發版.cmd --build --prepare  # 編譯、準備並檢查，不開啟 GUI
+.\啟動開發版.cmd --check            # 檢查既有 Runtime，不呼叫翻譯 API
+.\啟動開發版.cmd                    # 啟動 GUI（macOS 改用 ./啟動開發版.command）
+.\啟動開發版.cmd --cli -- --version # 使用相同 Runtime 啟動 Release CLI
+```
+
+開發環境與獨立發行包的差異、指定既有 Runtime 及檢查日誌見 [BUILD](docs/BUILD.md#開發驗證)。準備／檢查不修改私人設定，也不呼叫翻譯服務；實際按下翻譯仍使用你選擇的服務。
 
 ```text
 crates/          Rust workspace

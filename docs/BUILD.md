@@ -52,25 +52,42 @@ Windows 的旗標明示需要官方 VC++ x64 Runtime；CI 只容許已知 VC++ R
 
 ## 開發驗證
 
-翻譯失敗、HTTP 500 與找不到 Worker 的處理方式，見 [翻譯診斷與實測](TRANSLATION_DIAGNOSIS.md)。Cargo Build 本身只編譯 Rust，不會安裝 Python Runtime 或 PDFium；因此直接執行 `target/release/BabelOxide-gui` 既不能翻譯，也沒有原生 PDF 預覽。請執行上面的完整包 builder，或明確重用完整包的執行環境。
+`cargo build --release --locked` 只編譯 Rust，不安裝外部執行環境。新 checkout 的 `target/release/` 沒有 Python 與 PDFium，直接啟動 GUI 時可開視窗，但翻譯會在 Worker 路徑檢查失敗，預覽則缺少原生函式庫；這與完整 Artifact 的翻譯／渲染演算法無關。
 
-macOS 原始碼 GUI 使用已解壓的完整 ARM64 包（macOS 14+）：
-
-```bash
-cargo build --release --locked
-bundle="/absolute/path/BabelOxide-v1.0.0-macos-arm64/BabelOxide.app/Contents/MacOS"
-./target/release/BabelOxide-gui --runtime-dir "$bundle" --worker "$PWD/python-worker/worker.py"
-```
-
-Windows 對應命令：
+先安裝 Rust／Cargo 與 uv，從原始碼目錄執行（不需要既有 Artifact）：
 
 ```powershell
+# Windows x64；亦可直接雙擊啟動開發版.cmd
 cargo build --release --locked
-$bundle = 'C:\absolute\path\BabelOxide-v1.0.0-windows-x64'
-.\target\release\BabelOxide-gui.exe --runtime-dir $bundle --worker .\python-worker\worker.py
+.\啟動開發版.cmd --prepare
+.\啟動開發版.cmd
 ```
 
-`--runtime-dir` 同時選擇固定的 Python、BabelDOC、資源 manifest 與 `native/pdfium`，`--worker` 使用目前 checkout 的修正版；兩者都不搜尋系統 Python／PDFium，不改全域 PATH。設定及可變快取仍屬於原始碼 EXE 的應用程式儲存區；既有私人設定不會被完整包覆寫。CLI 使用相同參數。
+```bash
+# macOS ARM64、macOS 14+；Finder 可雙擊 .command
+cargo build --release --locked
+./啟動開發版.command --prepare
+./啟動開發版.command
+```
+
+未編譯時啟動工具會執行 locked Release build；修改 Rust 後使用 `--build` 強制重建。`--prepare` 完成準備及檢查即退出，`--check` 只檢查既有 Rust／Runtime，不重建或下載 Runtime；不帶選項會檢查後啟動 GUI。兩個入口共用 `script/dev.py`，由腳本位置定位根目錄，支援中文、空格及不同啟動工作目錄。`.command` 在 Git 記錄為 executable；解壓工具若遺失權限，只需 `chmod u+x ./啟動開發版.command`。
+
+首次準備呼叫原有 `build_portable.py`，並保留正式 Builder 的來源 pins、wheel lock／hash、原生架構、依賴及資產驗證。下載放在 `build-inputs/<platform>/`，wheels 共用該平台的 `uv-cache/`；固定資源改變時建立新的 `dist/BabelOxide-dev-<platform>-<digest>/`，不覆寫舊資料夾。Python Runtime、模型與原生函式庫不進 Git。首次需要網路與較大型資源下載；成功後不會反覆下載相同內容。工具只在專案內管理環境，不安裝全域 Python、不改全域 PATH；Finder 入口只為其子行程加入一般 Cargo／uv 工具位置。
+
+每次啟動／`--check` 會核對不可變 Runtime 清單、固定 Python 3.13.16／BabelDOC 0.6.4／wheel closure、模型與字型 seed，執行 Rust→Worker warmup，以及隔離 Python 原生 import／PDFium 初始化。日誌在 `.test-output/dev-launch/`；錯誤會顯示原因與日誌路徑。檢查不建立翻譯服務，不消耗 API 額度。若資源已損毀，保留錯誤日誌，移開該生成的 `BabelOxide-dev-…` 資料夾再執行 `--prepare`；可保留已核對的下載快取。
+
+CLI 使用同一套 Runtime：
+
+```powershell
+.\啟動開發版.cmd --cli -- --version
+# 翻譯參數放在 -- 後；macOS 對應 ./啟動開發版.command --cli -- ...
+```
+
+已有可信任的完整 Bundle 時，可用 `啟動開發版.cmd --runtime-dir "C:\完整包路徑" --check` 重用；macOS 指向 `BabelOxide.app/Contents/MacOS`。CLI／GUI 本身也接受 `--runtime-dir`，它同時選擇 Python、BabelDOC、資源 manifest 與 `native/pdfium`，明確的 `--python`／`--worker` 再覆寫對應欄位。僅指定 `--python` 與 `--worker` 不會提供 PDFium 或完整模型種子，因此不是完整 GUI 開發流程。開發啟動工具統一傳入一個 Runtime 根目錄及目前 checkout 的 `python-worker/worker.py`，禁止在轉交的 CLI 參數中混用其他 Runtime。
+
+預設路徑相對 EXE，`--runtime-dir` 的相對路徑按呼叫者工作目錄解析為絕對路徑；PDFium 只從該根目錄的 `native/pdfium` 載入，不搜尋 CWD／系統 Python／系統 PDFium。兩平台原則一致，Python 在固定 Runtime 的隔離模式執行，套件由其 `site-packages` 載入。設定與可變翻譯／引擎快取仍屬於原始碼 EXE 的應用程式儲存區，Runtime 檢查使用獨立暫存設定，不搬移或覆寫私人設定。完整發行包仍使用原有相鄰資源佈局，無需這些開發腳本。
+
+開發啟動產生的資料夾用於支援目前 checkout；需交付可獨立執行的成品時，使用上節完整包 Builder／Actions。HTTP 500 等翻譯服務錯誤另見 [翻譯診斷與實測](TRANSLATION_DIAGNOSIS.md)。
 
 GUI 的輸出位置空白時，使用應用程式可寫儲存區下的 `outputs`，並在任務區顯示實際資料夾；Finder 的 `/` 啟動目錄不再決定輸出及引擎暫存位置。使用者明確指定的位置（包括 `.`）不變；CLI 的預設輸出仍是目前目錄。
 

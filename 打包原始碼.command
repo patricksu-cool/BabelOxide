@@ -75,7 +75,7 @@ my @roots = qw(crates python-worker script tests docs .cargo .github resources);
 my %roots = map { $_ => 1 } @roots;
 my %root_files = map { $_ => 1 } (
     qw(Cargo.toml Cargo.lock pyproject.toml uv.lock README.md .gitignore LICENSE THIRD_PARTY_NOTICES.md),
-    '打包原始碼.cmd', '打包原始碼.command',
+    '打包原始碼.cmd', '打包原始碼.command', '啟動開發版.cmd', '啟動開發版.command',
     qw(AGENTS.md CHANGELOG.md CONTRIBUTING.md SECURITY.md .gitattributes .gitmodules .editorconfig .env.example),
     qw(rust-toolchain.toml rust-toolchain rustfmt.toml .rustfmt.toml clippy.toml .clippy.toml deny.toml Makefile justfile)
 );
@@ -283,7 +283,7 @@ sub snapshot {
     print {$copy} $bytes or stop('無法寫入快照', $path);
     close $copy or stop('無法關閉快照', $path);
     # A Windows checkout may not retain executable permissions; the Mac launcher must.
-    my $executable = ($mode & 0111) || $path eq encode('UTF-8', '打包原始碼.command');
+    my $executable = ($mode & 0111) || $path eq encode('UTF-8', '打包原始碼.command') || $path eq encode('UTF-8', '啟動開發版.command');
     chmod($executable ? 0755 : 0644, $output) or stop('無法設定快照權限', $path);
     print {$manifest} sha256_hex($bytes), "\t", length($bytes), "\t$path\n" or stop('無法寫入驗證清單');
     $seen{$path} = 1;

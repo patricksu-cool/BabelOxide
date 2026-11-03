@@ -87,6 +87,8 @@ try {
         'pyproject.toml' = '[project]'
         'uv.lock' = 'version = 1'
         'README.md' = 'fixture source review'
+        '啟動開發版.cmd' = 'exit /b 0'
+        '啟動開發版.command' = '#!/bin/bash'
         '.gitignore' = '/target/'
         'LICENSE' = '2. Basic Permissions.'
         'THIRD_PARTY_NOTICES.md' = 'fixture source and modification notice'

@@ -16,6 +16,43 @@ from build_hybrid_windows import BuildError, verify_zip
 
 
 class PortableBuildTests(unittest.TestCase):
+    def test_preparation_populates_and_reuses_one_platform_wheel_cache(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            inputs = root / "inputs"
+            (inputs / "runtime").mkdir(parents=True)
+            (inputs / "runtime/python.exe").write_bytes(b"synthetic pristine Python")
+            (inputs / "pdfium").mkdir()
+            assets = inputs / f"offline_assets_{portable.windows.ASSET_TAG}.zip"
+            lock = root / "requirements.txt"
+            lock.write_bytes(b"synthetic pinned requirements")
+            commands = []
+
+            def run(command, work, env, **kwargs):
+                commands.append((command, env.copy()))
+                self.assertEqual(env["UV_CACHE_DIR"], str(inputs / "uv-cache"))
+                if kwargs["label"] == "seed-runtime-install":
+                    self.assertIn("--require-hashes", command)
+                    (inputs / "uv-cache").mkdir(exist_ok=True)
+                else:
+                    self.assertIn("--generate-offline-assets", command)
+                    assets.write_bytes(b"synthetic verified asset archive")
+
+            with patch.object(portable.windows, "runtime_files"), patch.object(portable.windows, "verify_zip"), patch.object(portable, "platform_profile", return_value=([], lock)), patch.object(portable, "run", side_effect=run), patch.object(portable, "fetch", side_effect=AssertionError("No archive is missing")):
+                first = root / "first"
+                first.mkdir()
+                portable.prepare_inputs("windows-x64", inputs, Path("uv"), Path("bins"), first)
+                self.assertEqual(len(commands), 2)
+                second = root / "second"
+                second.mkdir()
+                portable.prepare_inputs("windows-x64", inputs, Path("uv"), Path("bins"), second)
+                self.assertEqual(len(commands), 2, "A second preparation must reuse verified cached inputs")
+                lock.write_bytes(b"changed pinned requirements")
+                third = root / "third"
+                third.mkdir()
+                portable.prepare_inputs("windows-x64", inputs, Path("uv"), Path("bins"), third)
+                self.assertEqual(len(commands), 3, "A changed lock must populate its wheel cache again")
+
     def test_exact_mac_closure_keeps_existing_versions_without_windows_only_dependency(self):
         mac, _ = portable.platform_profile("macos-arm64")
         win, _ = portable.platform_profile("windows-x64")

@@ -80,6 +80,7 @@ def check(uv: Path, work: Path, env: dict[str, str]) -> None:
     run([python, ROOT / "script/build_hybrid_windows.py", "--self-test"], work, env, label="windows-builder-tests")
     run([python, "-m", "unittest", "discover", "-s", ROOT / "script", "-p", "test_build_portable.py"], work, env, label="portable-builder-tests")
     run([python, "-m", "unittest", "discover", "-s", ROOT / "script", "-p", "test_ci.py"], work, env, label="ci-diagnostics-tests")
+    run([python, "-m", "unittest", "discover", "-s", ROOT / "script", "-p", "test_dev.py"], work, env, label="development-launch-tests")
     run([python, "-m", "ruff", "check", ROOT / "python-worker", ROOT / "script"], work, env, label="python-lint")
     if os.name == "nt":
         powershell = Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"

@@ -5,7 +5,7 @@
 ## 平台與交付
 
 - Windows 已在此機測試完整 runtime；ONNX Runtime 的兩個 import 仍需官方 Microsoft VC++ v14 x64 Runtime（`msvcp140_1.dll`）。請按 [Microsoft 說明](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170) 安裝，不從 System32 複製 DLL。未驗乾淨 VM、不同實體磁碟與真實唯讀 ACL。
-- macOS 只支援 Apple Silicon arm64、macOS 14+ 的建置目標；目前沒有 Mac 原生 build／import／桌面驗收，亦無已合格 Mac 產物。CI 遇到缺失原生依賴會失敗；沒有 Intel 包。
+- macOS 只支援 Apple Silicon arm64、macOS 14+；使用者已確認 Actions 完整包可翻譯及預覽。本機沒有 macOS，新開發入口的原生執行／Finder 驗收仍待完成。CI 遇到缺失原生依賴會失敗；沒有 Intel 包。
 - Mac 包未簽章／公證，Gatekeeper 可能阻擋；不移除 quarantine 或停用安全機制。CPU／CoreML 可用性需在 Mac 原生驗證，沒有 GPU 加速保證。
 - Windows 的 Job Object 程序樹清理有受控測試；非 Windows 目前只 wait direct child，尚無同等 process-group／後代終止保證。Mac 使用 CLITranslator／Claude Code 等外部程序前須特別驗證取消與關閉。
 - 125%／150%／200% 真實 OS DPI、完整鍵盤／螢幕閱讀器無障礙、所有顯示卡／驅動及超大型 PDF 長期資源測試未完成。egui 縮放與窄視窗布局的測試不等於上述認證。
@@ -34,6 +34,8 @@ Tencent 仍要求已設定靜態 ID／Key；完整 `TENCENTCLOUD_SECRET_ID`／`T
 ## 檔案、設定與 PDF
 
 使用完整程式資料夾；缺 runtime／native／assets 時先核對 `RELEASE_FILES.json`，按 lock 重建，避免任意 pip install。完整包不依賴開發 `.venv`。預設設定、fallback、cache 與 IPC 詳見 [ARCHITECTURE](ARCHITECTURE.md)。
+
+Cargo 只編譯 Rust；從原始碼執行請用根目錄的 `啟動開發版.cmd`／`啟動開發版.command` 準備及檢查完整 Runtime，或明確指定可信任的 `--runtime-dir`，詳見 [開發流程](BUILD.md#開發驗證)。這不會讓單獨的 `target/release` 資料夾變成可攜發行包。
 
 Windows 超長 EXE 路徑受 COM／OLE 與原生套件限制；GUI 使用既有磁碟短檔名重啟，無短檔名時提示縮短路徑。Worker 的 Python 路徑達 260 字元時，只將 OpenCV 設為單執行緒；不修改系統路徑政策、ONNX 或 API 併行設定。
 
