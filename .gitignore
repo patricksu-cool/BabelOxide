@@ -3,6 +3,7 @@
 /dist/
 /build-inputs/
 /.venv*/
+/.build-tools/
 /.uv-cache/
 /.test-output/
 /.baseline-home/

@@ -292,7 +292,7 @@ async fn download_inner<N: DownloadNetwork>(
             "連結回傳的是網頁，請提供可直接下載的 PDF 連結"
         );
         let directory = tempfile::Builder::new()
-            .prefix("pdf2zh-download-")
+            .prefix("babeloxide-download-")
             .tempdir()
             .context("無法建立 PDF 下載暫存資料夾")?;
         // A random basename also prevents different URL inputs from publishing
@@ -1212,7 +1212,7 @@ mod tests {
 
     #[tokio::test]
     async fn cold_start_download_client_initializes_tls() {
-        const CHILD_FLAG: &str = "PDF2ZH_TEST_COLD_DOWNLOAD_TLS_CHILD";
+        const CHILD_FLAG: &str = "BABELOXIDE_TEST_COLD_DOWNLOAD_TLS_CHILD";
         const TEST_NAME: &str = "transfers::tests::cold_start_download_client_initializes_tls";
         if std::env::var_os(CHILD_FLAG).is_some() {
             assert!(

@@ -5,13 +5,18 @@ mod seed;
 pub use assets::maintain_assets;
 
 use anyhow::{Context, Result, bail, ensure};
-use pdf2zh_core::{PdfJob, TranslationRequest, TranslationService, process};
+use babeloxide_core::{
+    ErrorKind, PdfJob, ProviderError, TranslationRequest, TranslationService, process,
+};
 use serde_json::{Value, json};
 use std::{
     collections::HashSet,
     path::{Path, PathBuf},
     process::Stdio,
-    sync::Arc,
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
     time::Duration,
 };
 use tokio::{
@@ -73,6 +78,13 @@ impl Default for WorkerOptions {
             .ok()
             .and_then(|p| p.parent().map(PathBuf::from))
             .unwrap_or_default();
+        Self::for_bundle(&root)
+    }
+}
+
+impl WorkerOptions {
+    /// Explicit trusted bundle directory, also usable by source-built binaries.
+    pub fn for_bundle(root: &Path) -> Self {
         Self {
             python: root.join(if cfg!(windows) {
                 "runtime/python/python.exe"
@@ -87,6 +99,32 @@ impl Default for WorkerOptions {
             shutdown_timeout: Duration::from_secs(10),
         }
     }
+}
+
+fn worker_paths(worker: &WorkerOptions) -> Result<(PathBuf, PathBuf)> {
+    let python = worker.python.canonicalize().with_context(|| {
+        format!(
+            "Worker Python is unavailable at {}. A Cargo build alone has no Python runtime. Use a complete BabelOxide bundle, or --runtime-dir <bundle-directory> for a source-built CLI/GUI (alternatively --python and --worker)",
+            worker.python.display()
+        )
+    })?;
+    let script = worker.script.canonicalize().with_context(|| {
+        format!(
+            "Worker adapter is unavailable at {}. Use a complete bundle, or --runtime-dir <bundle-directory> --worker python-worker/worker.py for source development",
+            worker.script.display()
+        )
+    })?;
+    ensure!(
+        python.is_file(),
+        "Worker Python path is not a file: {}",
+        python.display()
+    );
+    ensure!(
+        script.is_file(),
+        "Worker adapter path is not a file: {}",
+        script.display()
+    );
+    Ok((python, script))
 }
 
 async fn read_frame<R: AsyncBufRead + Unpin>(
@@ -136,6 +174,73 @@ async fn enqueue(tx: &mpsc::Sender<Value>, value: Value) -> Result<()> {
         .context("Worker writer closed")
 }
 
+fn worker_failure(message: &Value, services: Option<&SessionServices>) -> anyhow::Error {
+    let code = message["code"]
+        .as_str()
+        .filter(|s| s.len() < 64 && s.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_'))
+        .unwrap_or("engine_failed");
+    let mut detail = format!(
+        "BabelDOC worker failed ({code}) during {}: {}",
+        message["stage"].as_str().unwrap_or("worker startup/engine"),
+        message["message"]
+            .as_str()
+            .unwrap_or("No engine diagnostic was supplied")
+    );
+    if let Some(services) = services {
+        // Credentials stay in Rust. Redact again against BOTH configured
+        // services even if an unexpected worker diagnostic echoes a secret.
+        detail = services.main.redact_diagnostic(&detail);
+        if let Some(term) = &services.term {
+            detail = term.redact_diagnostic(&detail);
+        }
+    }
+    anyhow::anyhow!(
+        detail
+            .chars()
+            .take(4096)
+            .map(|c| if c.is_control() { ' ' } else { c })
+            .collect::<String>()
+    )
+}
+
+fn recoverable_batch_failure(error: &anyhow::Error) -> bool {
+    fn is_recoverable(error: &ProviderError) -> bool {
+        match &error.kind {
+            ErrorKind::HttpStatus(status) => (500..600).contains(status),
+            ErrorKind::Transport
+            | ErrorKind::Connect
+            | ErrorKind::ConnectTimeout
+            | ErrorKind::ReadTransport
+            | ErrorKind::ReadTimeout
+            | ErrorKind::Timeout => true,
+            ErrorKind::RetryExhausted { last, .. } => is_recoverable(last),
+            _ => false,
+        }
+    }
+    error
+        .downcast_ref::<ProviderError>()
+        .is_some_and(is_recoverable)
+}
+
+fn validate_completion_audit(result: &Value, batch_errors: u64) -> Result<()> {
+    let audit = &result["translation_audit"];
+    let required = audit["required_paragraphs"]
+        .as_u64()
+        .context("Worker omitted required paragraph count")?;
+    let completed = audit["completed_paragraphs"]
+        .as_u64()
+        .context("Worker omitted completed paragraph count")?;
+    ensure!(
+        required == completed && (batch_errors == 0 || required > 0),
+        "BabelDOC fallback left incomplete paragraphs"
+    );
+    ensure!(
+        audit["batch_errors"].as_u64() == Some(batch_errors),
+        "Worker batch failure audit differs from Rust requests"
+    );
+    Ok(())
+}
+
 pub async fn translate_pdf(
     worker: &WorkerOptions,
     job: PdfJob,
@@ -183,6 +288,9 @@ pub async fn translate_pdf_with_initialization(
         "QPS and worker pool must be positive"
     );
     ensure!(!cancel.is_cancelled(), "Translation cancelled");
+    // A missing/incomplete runtime must not send even a billable health probe.
+    worker_paths(worker)
+        .context("Check Python Worker runtime before contacting translation services")?;
     job.input_file = job
         .input_file
         .canonicalize()
@@ -233,9 +341,20 @@ pub async fn translate_pdf_with_initialization(
     };
     // Preflight can probe a service or validate an external executable. Await it
     // cooperatively so cancellation cannot discard its process cleanup future.
-    translator.prepare(&cancel).await?;
+    if initialization.is_some()
+        && let Some(events) = &events
+    {
+        let _ = events.try_send(json!({"type":"progress_start", "stage":"Checking translation service", "overall_progress":0}));
+    }
+    translator
+        .prepare(&cancel)
+        .await
+        .with_context(|| format!("Initialize translation service ({})", translator.name()))?;
     if initialization.is_some() {
-        translator.health_check(&cancel).await?;
+        translator
+            .health_check(&cancel)
+            .await
+            .with_context(|| format!("Translation service preflight ({})", translator.name()))?;
     }
     let (recommended_qps, recommended_pool) = translator.recommendations();
     job.qps = recommended_qps.unwrap_or(job.qps);
@@ -273,9 +392,13 @@ pub async fn translate_pdf_with_initialization(
         if initialization.is_some() {
             term.set_max_qps(term_qps).await?;
         }
-        term.prepare(&cancel).await?;
+        term.prepare(&cancel)
+            .await
+            .with_context(|| format!("Initialize term extraction service ({})", term.name()))?;
         if initialization.is_some() {
-            term.health_check(&cancel).await?;
+            term.health_check(&cancel)
+                .await
+                .with_context(|| format!("Term extraction service preflight ({})", term.name()))?;
         }
         let (qps, workers) = term.recommendations();
         if qps.is_none() {
@@ -389,14 +512,7 @@ async fn run_session(
     cancel: CancellationToken,
     events: Option<mpsc::Sender<Value>>,
 ) -> Result<Value> {
-    let python = worker
-        .python
-        .canonicalize()
-        .context("Worker Python is unavailable; provide --python for development")?;
-    let script = worker
-        .script
-        .canonicalize()
-        .context("Worker adapter is unavailable")?;
+    let (python, script) = worker_paths(worker)?;
     let capacity = plan.capacity;
     let cooperative_cleanup = plan.services.as_ref().is_some_and(|services| {
         services.main.requires_cooperative_cleanup()
@@ -427,7 +543,7 @@ async fn run_session(
     // paths use Windows extended-length syntax. No engine input depends on CWD.
     // Keep this directory alive until the contained worker has been reaped.
     let launch_directory = tempfile::Builder::new()
-        .prefix("pdf2zh-worker-")
+        .prefix("babeloxide-worker-")
         .tempdir()
         .context("Create worker launch directory")?;
     let mut command = Command::new(python);
@@ -455,6 +571,7 @@ async fn run_session(
     }
     process::prepare(&mut command);
     let mut child = command.spawn().context("Start BabelDOC worker")?;
+    let worker_pid = child.id().context("Worker PID unavailable")?;
     let scope = match process::contain_and_resume(&mut child) {
         Ok(scope) => scope,
         Err(error) => {
@@ -480,28 +597,40 @@ async fn run_session(
         tokio::io::copy(&mut stderr, &mut tokio::io::sink()).await
     });
     let (tx, mut rx) = mpsc::channel::<Value>(capacity + 4);
+    let shutdown_written = Arc::new(AtomicBool::new(false));
+    let written = shutdown_written.clone();
     let mut writer = tokio::spawn(async move {
         while let Some(value) = rx.recv().await {
+            let shutdown = value["type"] == "shutdown";
             let mut raw = serde_json::to_vec(&value)?;
             raw.push(b'\n');
             ensure!(raw.len() <= MAX_FRAME_BYTES, "Host frame exceeds limit");
             stdin.write_all(&raw).await.context("Write worker pipe")?;
             stdin.flush().await?;
+            if shutdown {
+                written.store(true, Ordering::Release);
+            }
         }
         Ok::<(), anyhow::Error>(())
     });
     let requests_cancel = cancel.child_token();
-    let mut requests: JoinSet<(String, Result<String>)> = JoinSet::new();
+    let mut requests: JoinSet<(String, bool, Result<String>)> = JoinSet::new();
     let mut session = String::new();
     let mut writer_finished = false;
     let outcome: Result<Value> = async {
         let hello = tokio::select! {
             _ = cancel.cancelled() => bail!("Translation cancelled"),
             _ = &mut writer => { writer_finished = true; bail!("Worker writer failed during startup"); },
-            _ = child.wait() => bail!("Worker exited during startup"),
+            status = child.wait() => bail!("Worker exited during startup: {}", status.context("Observe worker startup exit")?),
             hello = timeout(worker.startup_timeout, read_frame(&mut stdout, &mut frame_buffer)) => hello.context("Worker startup timed out")??.context("Worker exited before ready")?,
         };
-        ensure!(hello["type"] == "ready" && hello["babeldoc_version"] == "0.6.3", "Worker initialization failed or engine version differs");
+        if hello["type"] == "error" {
+            return Err(worker_failure(&hello, plan.services.as_ref()));
+        }
+        ensure!(hello["type"] == "ready" && hello["babeldoc_version"] == "0.6.4", "Worker initialization failed or engine version differs (requires BabelDOC 0.6.4)");
+        let completion_audit = hello["paragraph_completion_audit"].as_u64() == Some(1);
+        let mut batch_errors = 0_u64;
+        let mut last_batch_error = None;
         session = hello["session"].as_str().context("Missing worker session")?.to_owned();
         ensure!(session.len() == 32 && session.bytes().all(|b| b.is_ascii_hexdigit()), "Invalid worker session");
         if plan.operation != "pdf" {
@@ -510,6 +639,7 @@ async fn run_session(
         enqueue(&tx, frame("start", &session, plan.start)).await?;
         let mut active = HashSet::new();
         let mut seen = HashSet::new();
+        let mut engine_stage = "Starting PDF engine".to_owned();
         let mut activity = Instant::now();
         // Resource APIs have no byte-progress callback. Their timeout is an
         // absolute operation deadline; incidental progress cannot renew it.
@@ -522,17 +652,28 @@ async fn run_session(
                 _ = tokio::time::sleep_until(exit_deadline.unwrap_or(operation_deadline.unwrap_or(activity + worker.idle_timeout))) => bail!("Worker idle timeout or exit without terminal result"),
                 _ = &mut writer => { writer_finished = true; bail!("Worker writer failed"); },
                 status = child.wait(), if exit_deadline.is_none() => {
-                    ensure!(status.context("Observe worker exit")?.success(), "Worker crashed");
+                    let status = status.context("Observe worker exit")?;
+                    ensure!(status.success(), "Worker crashed: {status}");
                     exit_deadline = Some(Instant::now() + Duration::from_secs(1));
                 }
                 done = requests.join_next(), if !requests.is_empty() => {
-                    let (id, translated) = done.context("Missing translation task")?.context("Translation task panicked")?;
+                    let (id, batch_fallback, translated) = done.context("Missing translation task")?.context("Translation task panicked")?;
                     active.remove(&id);
                     match translated {
                         Ok(text) => enqueue(&tx, frame("translated", &session, json!({"id":id,"text":text}))).await?,
+                        Err(error) if completion_audit && batch_fallback && recoverable_batch_failure(&error) => {
+                            // The provider has already applied its unchanged retry policy.
+                            // Let BabelDOC's existing batch -> paragraph fallback run, then
+                            // require a completion audit before accepting any output.
+                            batch_errors += 1;
+                            let message = error.to_string();
+                            enqueue(&tx, frame("translated", &session, json!({"id":id,"error":{"code":"batch_translation_failed","message":message}}))).await?;
+                            last_batch_error = Some(error);
+                        }
                         Err(error) => {
                             let _ = enqueue(&tx, frame("translated", &session, json!({"id":id,"error":{"code":"translation_failed","message":"Rust translation service failed"}}))).await;
-                            return Err(error.context("Rust translation service failed; output is incomplete"));
+                            let callback = if batch_fallback { "batch" } else { "individual" };
+                            return Err(error.context(format!("Rust translation service failed during {engine_stage} ({callback} callback); output is incomplete")));
                         }
                     }
                 }
@@ -543,6 +684,7 @@ async fn run_session(
                     match message["type"].as_str().unwrap_or("") {
                         "translate" => {
                             let services = plan.services.as_ref().context("Resource worker requested a translation")?;
+                            let batch_fallback = message["batch_fallback"].as_bool() == Some(true);
                             let request: TranslationRequest = serde_json::from_value(message).map_err(|_| anyhow::anyhow!("Malformed translation request"))?;
                             ensure!(seen.len() < 1_000_000, "Task exceeded the request ID budget");
                             ensure!(request.id.len() <= 64 && !request.id.is_empty() && seen.insert(request.id.clone()), "Invalid or repeated request ID");
@@ -554,20 +696,40 @@ async fn run_session(
                                 _ => bail!("Worker requested an unknown translation service"),
                             };
                             let request_cancel = requests_cancel.clone();
+                            let batch_fallback = batch_fallback && request.translator == "main" && request.method == "llm_translate" && service.is_llm();
                             requests.spawn(async move {
                                 let result = service.translate(&request, &request_cancel).await;
-                                (request.id, result)
+                                (request.id, batch_fallback, result)
                             });
                         }
                         // Progress can be dropped under backpressure; terminal results are returned separately.
-                        "progress" => if let Some(events) = &events { let _ = events.try_send(message["event"].clone()); },
+                        "progress" => {
+                            if let Some(stage) = message["event"]["stage"].as_str() {
+                                engine_stage = stage.chars().take(256).collect();
+                                if let Some(services) = &plan.services {
+                                    engine_stage = services.main.redact_diagnostic(&engine_stage);
+                                    if let Some(term) = &services.term { engine_stage = term.redact_diagnostic(&engine_stage); }
+                                }
+                            }
+                            if let Some(events) = &events { let _ = events.try_send(message["event"].clone()); }
+                        },
                         "finished" => {
                             ensure!(active.is_empty(), "Worker finished with pending translations");
                             let result = message["result"].clone();
                             ensure!(result.is_object(), "Worker result must be an object");
+                            if completion_audit && plan.operation == "pdf"
+                                && let Err(failure) = validate_completion_audit(&result, batch_errors) {
+                                return Err(last_batch_error.map_or_else(|| failure, |error| error.context("Worker did not confirm complete BabelDOC paragraph fallback")));
+                            }
                             return Ok(result);
                         }
-                        "error" => bail!("BabelDOC worker failed ({})", message["code"].as_str().filter(|s| s.len() < 64 && s.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_')).unwrap_or("engine_failed")),
+                        "error" => {
+                            let failure = worker_failure(&message, plan.services.as_ref());
+                            return Err(if message["code"] == "incomplete_translation" {
+                                let detail = failure.to_string();
+                                last_batch_error.map_or(failure, |error| error.context(detail))
+                            } else { failure });
+                        },
                         "cancel_ack" => {},
                         _ => bail!("Unsupported worker message"),
                     }
@@ -577,8 +739,21 @@ async fn run_session(
     }.await;
     requests_cancel.cancel();
     // Keep output flowing while cooperative cancellation reaps provider processes.
+    let shutdown_ack = Arc::new(AtomicBool::new(false));
+    let acknowledged = shutdown_ack.clone();
+    let stdout_eof = Arc::new(AtomicBool::new(false));
+    let eof = stdout_eof.clone();
+    let drain_session = session.clone();
     let drain = tokio::spawn(async move {
-        while read_frame(&mut stdout, &mut frame_buffer).await?.is_some() {}
+        while let Some(message) = read_frame(&mut stdout, &mut frame_buffer).await? {
+            if message["type"] == "shutdown_ack"
+                && message["session"] == drain_session
+                && message["task_id"] == "job-1"
+            {
+                acknowledged.store(true, Ordering::Release);
+            }
+        }
+        eof.store(true, Ordering::Release);
         Ok::<(), anyhow::Error>(())
     });
     if !session.is_empty() && outcome.is_err() {
@@ -593,22 +768,33 @@ async fn run_session(
         requests.abort_all();
         while requests.join_next().await.is_some() {}
     }
-    if !session.is_empty() {
-        let _ = enqueue(&tx, frame("shutdown", &session, json!({}))).await;
-    }
+    let shutdown_enqueued = !session.is_empty()
+        && enqueue(&tx, frame("shutdown", &session, json!({})))
+            .await
+            .is_ok();
     drop(tx);
+    let exit_started = Instant::now();
+    let mut exit_timed_out = false;
     let exited = match timeout(worker.shutdown_timeout, child.wait()).await {
         Ok(result) => result.context("Wait for worker"),
         Err(_) => {
+            exit_timed_out = true;
             let _ = child.kill().await;
             Err(anyhow::anyhow!(
-                "Worker shutdown timed out; process tree terminated"
+                "Worker shutdown timed out while waiting for process exit"
             ))
         }
     };
+    let exit_wait_ms = exit_started.elapsed().as_millis();
     let tree_cleanup = scope.terminate_and_wait().await;
+    let exit_status = child.try_wait();
+    let exit_code = exit_status
+        .as_ref()
+        .ok()
+        .and_then(|s| s.and_then(|s| s.code()));
+    #[cfg(windows)]
     drop(scope);
-    let _writer_ok = if writer_finished {
+    let writer_ok = if writer_finished {
         false
     } else {
         match timeout(Duration::from_secs(2), &mut writer).await {
@@ -630,24 +816,97 @@ async fn run_session(
     }
     drain.abort();
     let _ = drain.await;
-    match outcome {
+    // Only lifecycle metadata, never IPC payloads, paths, or provider credentials.
+    // An ACK confirms receipt, but it does not replace observing process exit.
+    let lifecycle = format!(
+        "Worker lifecycle: pid={worker_pid}; shutdown_enqueued={shutdown_enqueued}; \
+         shutdown_written={}; shutdown_ack={}; writer_ok={writer_ok}; stdout_eof_observed={}; exit_status={exit_status:?}; exit_code={exit_code:?}; \
+         exit_wait_ms={exit_wait_ms}; exit_timeout_ms={}; timeout_phase={}; \
+         forced_worker_kill={exit_timed_out}; process_tree_cleanup={}",
+        shutdown_written.load(Ordering::Acquire),
+        shutdown_ack.load(Ordering::Acquire),
+        stdout_eof.load(Ordering::Acquire),
+        worker.shutdown_timeout.as_millis(),
+        if exit_timed_out {
+            "process_exit"
+        } else {
+            "none"
+        },
+        if tree_cleanup.is_ok() {
+            "verified_no_live_processes"
+        } else {
+            "failed_residual_processes_unknown"
+        },
+    );
+    tracing::debug!("{lifecycle}");
+    let completed = match outcome {
         Err(primary) => {
-            if tree_cleanup.is_err() {
-                return Err(primary.context("Worker process-tree cleanup also failed"));
-            }
+            let primary = match tree_cleanup {
+                Ok(()) => primary,
+                Err(error) => primary.context(format!(
+                    "Worker process-tree cleanup also failed: {error:#}"
+                )),
+            };
             Err(primary)
         }
-        Ok(result) => {
+        Ok(result) => (|| {
             tree_cleanup.context("Clean up worker process tree")?;
             ensure!(exited?.success(), "Worker exited with a failure status");
             Ok(result)
-        }
-    }
+        })(),
+    };
+    completed.map_err(|error| {
+        // Keep the actionable cause first, including for callers using Display.
+        let message = format!("{error}; {lifecycle}");
+        error.context(message)
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn paragraph_fallback_requires_a_complete_matching_audit_and_recoverable_error() {
+        validate_completion_audit(
+            &json!({"translation_audit":{
+                "required_paragraphs":4,"completed_paragraphs":4,"batch_errors":1,
+            }}),
+            1,
+        )
+        .unwrap();
+        for result in [
+            json!({}),
+            json!({"translation_audit":{"required_paragraphs":4,"completed_paragraphs":3,"batch_errors":1}}),
+            json!({"translation_audit":{"required_paragraphs":0,"completed_paragraphs":0,"batch_errors":1}}),
+            json!({"translation_audit":{"required_paragraphs":4,"completed_paragraphs":4,"batch_errors":0}}),
+        ] {
+            assert!(validate_completion_audit(&result, 1).is_err());
+        }
+        let error = ProviderError::exhausted(
+            "test.http",
+            3,
+            ProviderError::new(ErrorKind::HttpStatus(500), "HTTP 500"),
+        );
+        assert!(recoverable_batch_failure(&anyhow::Error::new(error)));
+        let reset = ProviderError::exhausted(
+            "siliconflowfree.http",
+            3,
+            ProviderError::new(ErrorKind::Transport, "ConnectionReset, OS error 10054"),
+        );
+        assert!(recoverable_batch_failure(&anyhow::Error::new(reset)));
+        for kind in [
+            ErrorKind::HttpStatus(401),
+            ErrorKind::Cancelled,
+            ErrorKind::MalformedResponse,
+            ErrorKind::Redirect,
+            ErrorKind::HttpStatus(429),
+        ] {
+            assert!(!recoverable_batch_failure(&anyhow::Error::new(
+                ProviderError::new(kind, "fatal")
+            )));
+        }
+    }
 
     #[tokio::test]
     async fn framing_rejects_partial_and_oversized_messages() {

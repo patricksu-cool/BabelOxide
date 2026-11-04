@@ -4,11 +4,12 @@
 use std::{collections::BTreeMap, fs, path::PathBuf, sync::Arc, time::Duration};
 
 use anyhow::{Context, Result, bail, ensure};
-use babeldoc_bridge::{
-    AssetOperation, FactoryInitialization, WorkerOptions, maintain_assets, translate_pdf,
-    translate_pdf_with_initialization, translate_pdf_with_services,
+use babeloxide_bridge::{
+    AssetOperation, WorkerOptions, maintain_assets, translate_pdf, translate_pdf_with_services,
 };
-use pdf2zh_core::{
+#[cfg(any(windows, unix))]
+use babeloxide_bridge::{FactoryInitialization, translate_pdf_with_initialization};
+use babeloxide_core::{
     CacheBackend, CacheError, CacheFuture, CacheKey, PdfJob, TranslationService, TranslatorConfig,
 };
 use serde_json::{Value, json};
@@ -23,6 +24,7 @@ use tokio::{
 use tokio_util::sync::CancellationToken;
 
 const DEADLINE: Duration = Duration::from_secs(10);
+const FORCED_SHUTDOWN_GRACE: Duration = Duration::from_millis(250);
 
 struct Fixture {
     directory: TempDir,
@@ -35,7 +37,7 @@ impl Fixture {
         let repository = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("../..")
             .canonicalize()?;
-        let python = std::env::var_os("PDF2ZH_TEST_PYTHON")
+        let python = std::env::var_os("BABELOXIDE_TEST_PYTHON")
             .map(PathBuf::from)
             .unwrap_or_else(|| {
                 repository.join(if cfg!(windows) {
@@ -46,7 +48,7 @@ impl Fixture {
             });
         ensure!(
             python.is_file(),
-            "Lifecycle tests need the existing local Python or PDF2ZH_TEST_PYTHON"
+            "Lifecycle tests need the existing local Python or BABELOXIDE_TEST_PYTHON"
         );
         let directory = tempfile::tempdir()?;
         let script = directory.path().join("fake_worker.py");
@@ -67,7 +69,9 @@ impl Fixture {
             startup_timeout: Duration::from_secs(5),
             // Failure tests must finish far before this timeout.
             idle_timeout: Duration::from_secs(60),
-            shutdown_timeout: Duration::from_millis(250),
+            // A finished frame precedes Python/OS finalization. Allow bounded
+            // normal cleanup under CI load; forced-kill tests set a short grace.
+            shutdown_timeout: Duration::from_secs(2),
         };
         let job = PdfJob {
             input_file: input,
@@ -125,6 +129,60 @@ async fn startup_crash_is_reported_without_waiting_for_startup_timeout() -> Resu
         !format!("{error:#}").contains("Fixture exceeded"),
         "startup crash was only noticed by the test deadline: {error:#}"
     );
+    Ok(())
+}
+
+#[tokio::test]
+async fn missing_runtime_is_reported_before_any_service_preflight() -> Result<()> {
+    for missing_python in [true, false] {
+        let mut fixture = Fixture::new("exit_without_terminal")?;
+        let missing = fixture.directory.path().join("missing-runtime-component");
+        if missing_python {
+            fixture.worker.python = missing;
+        } else {
+            fixture.worker.script = missing;
+        }
+        let error = translate_pdf_with_initialization(
+            &fixture.worker,
+            fixture.job.clone(),
+            fixture.service()?,
+            None,
+            CancellationToken::new(),
+            None,
+            Some(FactoryInitialization {
+                matching_engine_settings: true,
+            }),
+        )
+        .await
+        .expect_err("incomplete runtime cannot start translation");
+        let diagnostic = format!("{error:#}");
+        ensure!(diagnostic.contains("before contacting translation services"));
+        ensure!(diagnostic.contains("missing-runtime-component"));
+        ensure!(!diagnostic.contains("HTTP request failed"));
+        ensure!(!fixture.directory.path().join("worker.pid").exists());
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn worker_errors_preserve_startup_or_engine_cause_and_redact_credentials() -> Result<()> {
+    for (scenario, stage, cause) in [
+        ("startup_error", "Worker startup", "ModuleNotFoundError"),
+        ("engine_error", "Parse PDF", "ValueError: invalid PDF"),
+    ] {
+        let fixture = Fixture::new(scenario)?;
+        let error = fixture
+            .run()
+            .await
+            .expect_err("engine errors must be terminal");
+        let diagnostic = format!("{error:#}");
+        ensure!(
+            diagnostic.contains(stage) && diagnostic.contains(cause),
+            "{diagnostic}"
+        );
+        ensure!(!diagnostic.contains("synthetic-unused-fixture-key"));
+        ensure!(!diagnostic.contains("https://"));
+    }
     Ok(())
 }
 
@@ -282,19 +340,19 @@ async fn resource_cancellation_waits_for_worker_tree_and_preserves_archive() -> 
         event = timeout(DEADLINE, progress.recv()) => { ensure!(event?.context("progress closed")?["stage"] == "assets blocked"); }
         result = &mut operation => bail!("Resource operation ended before cancel: {result:?}"),
     }
-    #[cfg(windows)]
-    let worker = windows_process::ObservedProcess::from_pid_file(
+    #[cfg(any(windows, unix))]
+    let worker = process_observer::ObservedProcess::from_pid_file(
         fixture.directory.path().join("worker.pid"),
     )?;
-    #[cfg(windows)]
-    let descendant = windows_process::ObservedProcess::from_pid_file(
+    #[cfg(any(windows, unix))]
+    let descendant = process_observer::ObservedProcess::from_pid_file(
         fixture.directory.path().join("descendant.pid"),
     )?;
     cancel.cancel();
     timeout(DEADLINE, &mut operation)
         .await?
         .expect_err("cancel must fail");
-    #[cfg(windows)]
+    #[cfg(any(windows, unix))]
     {
         worker.assert_exited_now()?;
         descendant.assert_exited_now()?;
@@ -341,6 +399,107 @@ async fn worker_runtime_ignores_user_paths_and_does_not_write_package_bytecode()
                 "isolated":1,"ignore_environment":1,"no_user_site":1,"dont_write_bytecode":1
             })
     );
+    ensure!(fixture.directory.path().join("shutdown-received").is_file());
+    Ok(())
+}
+
+#[cfg(any(windows, unix))]
+#[tokio::test]
+async fn normal_shutdown_waits_for_ack_and_finite_interpreter_cleanup() -> Result<()> {
+    let fixture = Fixture::new("shutdown_delayed")?;
+    let (events, mut received) = mpsc::channel(2);
+    let operation = translate_pdf(
+        &fixture.worker,
+        fixture.job.clone(),
+        fixture.service()?,
+        CancellationToken::new(),
+        Some(events),
+    );
+    tokio::pin!(operation);
+    let event = tokio::select! {
+        event = timeout(DEADLINE, received.recv()) => event?.context("fixture progress closed")?,
+        result = &mut operation => bail!("worker ended before shutdown gate: {result:?}"),
+    };
+    ensure!(event["stage"] == "shutdown_ready");
+    let worker = process_observer::ObservedProcess::from_pid_file(
+        fixture.directory.path().join("worker.pid"),
+    )?;
+    fs::write(fixture.directory.path().join("release-worker"), b"finish")?;
+    timeout(DEADLINE, &mut operation).await??;
+    ensure!(fixture.directory.path().join("shutdown-received").is_file());
+    ensure!(fixture.directory.path().join("cleanup-complete").is_file());
+    worker.assert_exited_now()?;
+    Ok(())
+}
+
+#[cfg(any(windows, unix))]
+#[tokio::test]
+async fn finished_worker_must_exit_even_after_shutdown_ack_and_tree_is_reaped() -> Result<()> {
+    for (scenario, ack) in [
+        ("shutdown_ack_then_hang", true),
+        ("shutdown_ignored", false),
+    ] {
+        let mut fixture = Fixture::new(scenario)?;
+        // Receiving an ACK needs normal scheduling grace too. Keep the short
+        // deadline for the non-cooperative fixture; both must still be killed.
+        if !ack {
+            fixture.worker.shutdown_timeout = FORCED_SHUTDOWN_GRACE;
+        }
+        let (events, mut received) = mpsc::channel(2);
+        let operation = translate_pdf(
+            &fixture.worker,
+            fixture.job.clone(),
+            fixture.service()?,
+            CancellationToken::new(),
+            Some(events),
+        );
+        tokio::pin!(operation);
+        let event = tokio::select! {
+            event = timeout(DEADLINE, received.recv()) => event?.context("fixture progress closed")?,
+            result = &mut operation => bail!("worker ended before shutdown gate: {result:?}"),
+        };
+        ensure!(event["stage"] == "shutdown_ready");
+        let worker = process_observer::ObservedProcess::from_pid_file(
+            fixture.directory.path().join("worker.pid"),
+        )?;
+        let descendant = process_observer::ObservedProcess::from_pid_file(
+            fixture.directory.path().join("descendant.pid"),
+        )?;
+        fs::write(fixture.directory.path().join("release-worker"), b"finish")?;
+        let error = timeout(DEADLINE, &mut operation)
+            .await?
+            .expect_err("finished and ACK must not hide a stuck worker");
+        let diagnostic = format!("{error:#}");
+        // A Windows venv may launch Python through a redirector. The bridge
+        // reports its owned child PID; worker.pid belongs to the interpreter.
+        let child_pid: u32 = diagnostic
+            .split("pid=")
+            .nth(1)
+            .context("missing owned worker PID")?
+            .split(';')
+            .next()
+            .context("missing PID delimiter")?
+            .parse()?;
+        ensure!(child_pid > 0);
+        for expected in [
+            "Worker shutdown timed out",
+            "shutdown_enqueued=true",
+            "shutdown_written=",
+            &format!("shutdown_ack={ack}"),
+            "exit_status=Ok(Some(",
+            "exit_wait_ms=",
+            "timeout_phase=process_exit",
+            "forced_worker_kill=true",
+            "process_tree_cleanup=verified_no_live_processes",
+        ] {
+            ensure!(
+                diagnostic.contains(expected),
+                "missing {expected}: {diagnostic}"
+            );
+        }
+        worker.assert_exited_now()?;
+        descendant.assert_exited_now()?;
+    }
     Ok(())
 }
 
@@ -463,6 +622,87 @@ fn model_service(endpoint: &str, model: &str) -> Result<Arc<TranslationService>>
         lang_out: "zh-TW".into(),
         options: json!({"qps": 100_000}),
     })?))
+}
+
+#[tokio::test]
+async fn batch_http_exhaustion_can_reach_engine_fallback_but_incomplete_output_is_rejected()
+-> Result<()> {
+    for scenario in [
+        "batch_fallback_success",
+        "batch_fallback_transport",
+        "batch_fallback_missing",
+        "batch_fallback_incomplete",
+        "batch_fallback_error",
+    ] {
+        let fixture = Fixture::new(scenario)?;
+        let listener = TcpListener::bind("127.0.0.1:0").await?;
+        let endpoint = format!("http://{}/v1", listener.local_addr()?);
+        let reset_batch = scenario == "batch_fallback_transport";
+        let server = tokio::spawn(async move {
+            let mut statuses = Vec::new();
+            for _ in 0..4 {
+                let (mut stream, _) = listener.accept().await?;
+                let request = read_http_body(&mut stream).await?;
+                let batch = request["messages"][0]["content"] == "fixture-failed-batch";
+                if batch && reset_batch {
+                    // A peer closing before response headers exercises a real
+                    // reqwest transport error after the normal SDK retries.
+                    statuses.push(0);
+                    drop(stream);
+                    continue;
+                }
+                let status = if batch { 500 } else { 200 };
+                statuses.push(status);
+                let body = serde_json::to_vec(&if batch {
+                    json!({"error":{"message":"synthetic-loopback-key https://invalid/?key=hidden upstream failure"}})
+                } else {
+                    json!({"choices":[{"message":{"content":"translated paragraph"}}]})
+                })?;
+                stream.write_all(format!("HTTP/1.1 {status} Test\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", body.len()).as_bytes()).await?;
+                stream.write_all(&body).await?;
+            }
+            Ok::<_, anyhow::Error>(statuses)
+        });
+        let result = timeout(
+            DEADLINE,
+            translate_pdf(
+                &fixture.worker,
+                fixture.job.clone(),
+                model_service(&endpoint, "fallback-model")?,
+                CancellationToken::new(),
+                None,
+            ),
+        )
+        .await
+        .context("Fallback IPC hung")?;
+        ensure!(
+            server.await??
+                == if reset_batch {
+                    [0, 0, 0, 200]
+                } else {
+                    [500, 500, 500, 200]
+                },
+            "Provider retry count changed"
+        );
+        if scenario == "batch_fallback_success" || reset_batch {
+            ensure!(result?["translation_audit"]["completed_paragraphs"] == 2);
+        } else {
+            let error = format!(
+                "{:#}",
+                result.expect_err("incomplete or unaudited output must fail")
+            );
+            ensure!(
+                error.contains("HTTP 500"),
+                "Original service failure was lost: {error}"
+            );
+            ensure!(!error.contains("synthetic-loopback-key") && !error.contains("https://"));
+        }
+        let error_frame = fs::read_to_string(fixture.directory.path().join("batch-error.json"))?;
+        ensure!(
+            !error_frame.contains("synthetic-loopback-key") && !error_frame.contains("https://")
+        );
+    }
+    Ok(())
 }
 
 #[tokio::test]
@@ -723,8 +963,8 @@ async fn cancellation_force_kills_worker_that_ignores_stdin() -> Result<()> {
         result = &mut operation => bail!("worker ended before cancellation: {result:?}"),
     };
     ensure!(event["stage"] == "worker_ready");
-    #[cfg(windows)]
-    let worker = windows_process::ObservedProcess::from_pid_file(
+    #[cfg(any(windows, unix))]
+    let worker = process_observer::ObservedProcess::from_pid_file(
         fixture.directory.path().join("worker.pid"),
     )?;
     cancel.cancel();
@@ -733,9 +973,52 @@ async fn cancellation_force_kills_worker_that_ignores_stdin() -> Result<()> {
         .context("cancellation did not force worker cleanup")?
         .expect_err("cancel must not succeed");
     ensure!(format!("{error:#}").contains("cancelled"));
-    #[cfg(windows)]
+    #[cfg(any(windows, unix))]
     worker.assert_exited().await?;
     Ok(())
+}
+
+#[cfg(windows)]
+use windows_process as process_observer;
+
+#[cfg(unix)]
+mod process_observer {
+    use super::*;
+    mod snapshot {
+        include!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../test-support/unix_process.rs"
+        ));
+    }
+
+    pub struct ObservedProcess(snapshot::Process);
+
+    impl ObservedProcess {
+        pub fn from_pid_file(path: PathBuf) -> Result<Self> {
+            let pid = fs::read_to_string(path)?.trim().parse()?;
+            Ok(Self(snapshot::Process::observe(pid)?))
+        }
+
+        pub async fn assert_exited(&self) -> Result<()> {
+            timeout(Duration::from_secs(3), async {
+                while self.0.running()? {
+                    tokio::time::sleep(Duration::from_millis(20)).await;
+                }
+                Ok::<_, anyhow::Error>(())
+            })
+            .await
+            .context("fixture process survived bridge cleanup")??;
+            Ok(())
+        }
+
+        pub fn assert_exited_now(&self) -> Result<()> {
+            ensure!(
+                !self.0.running()?,
+                "process still active when bridge returned"
+            );
+            Ok(())
+        }
+    }
 }
 
 #[cfg(windows)]
@@ -800,7 +1083,7 @@ mod windows_process {
     }
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, unix))]
 #[tokio::test]
 async fn crash_is_observed_while_descendant_keeps_stdout_open() -> Result<()> {
     let fixture = Fixture::new("crash_with_descendant")?;
@@ -818,10 +1101,10 @@ async fn crash_is_observed_while_descendant_keeps_stdout_open() -> Result<()> {
         result = &mut operation => bail!("worker ended before crash gate: {result:?}"),
     };
     ensure!(event["stage"] == "descendant_ready");
-    let worker = windows_process::ObservedProcess::from_pid_file(
+    let worker = process_observer::ObservedProcess::from_pid_file(
         fixture.directory.path().join("worker.pid"),
     )?;
-    let descendant = windows_process::ObservedProcess::from_pid_file(
+    let descendant = process_observer::ObservedProcess::from_pid_file(
         fixture.directory.path().join("descendant.pid"),
     )?;
     fs::write(
@@ -838,7 +1121,7 @@ async fn crash_is_observed_while_descendant_keeps_stdout_open() -> Result<()> {
     Ok(())
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, unix))]
 #[tokio::test]
 async fn cancellation_force_kills_the_entire_contained_tree() -> Result<()> {
     let fixture = Fixture::new("cancel_hang_with_descendant")?;
@@ -857,10 +1140,10 @@ async fn cancellation_force_kills_the_entire_contained_tree() -> Result<()> {
         result = &mut operation => bail!("worker ended before cancellation: {result:?}"),
     };
     ensure!(event["stage"] == "descendant_ready");
-    let worker = windows_process::ObservedProcess::from_pid_file(
+    let worker = process_observer::ObservedProcess::from_pid_file(
         fixture.directory.path().join("worker.pid"),
     )?;
-    let descendant = windows_process::ObservedProcess::from_pid_file(
+    let descendant = process_observer::ObservedProcess::from_pid_file(
         fixture.directory.path().join("descendant.pid"),
     )?;
     cancel.cancel();
@@ -874,32 +1157,36 @@ async fn cancellation_force_kills_the_entire_contained_tree() -> Result<()> {
     Ok(())
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, unix))]
 #[tokio::test]
 async fn cancelling_a_cli_request_waits_for_native_process_tree_cleanup() -> Result<()> {
     cancel_cli_process_tree(false).await
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, unix))]
 #[tokio::test]
 async fn cancelling_factory_health_reaps_native_tree_without_starting_python() -> Result<()> {
     cancel_cli_process_tree(true).await
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, unix))]
 async fn cancel_cli_process_tree(initialize: bool) -> Result<()> {
     let mut fixture = Fixture::new("cli_pending")?;
     // This timeout must not abort CLI providers while they kill and reap.
     fixture.worker.shutdown_timeout = Duration::ZERO;
     let source = fixture.directory.path().join("offline_cli.rs");
-    let executable = fixture.directory.path().join("offline_cli.exe");
+    let executable = fixture.directory.path().join(if cfg!(windows) {
+        "offline_cli.exe"
+    } else {
+        "offline_cli"
+    });
     fs::write(
         &source,
         include_str!("../../core/src/providers/legacy/fixtures/offline_cli.rs"),
     )?;
     let mut compiler = std::process::Command::new("rustc");
     compiler.args(["--edition=2024", "--crate-name", "bridge_cli_fixture"]);
-    #[cfg(target_env = "gnu")]
+    #[cfg(all(windows, target_env = "gnu"))]
     compiler.args([
         "-C",
         "linker=rust-lld",
@@ -954,10 +1241,10 @@ async fn cancel_cli_process_tree(initialize: bool) -> Result<()> {
         }
         Ok::<_, anyhow::Error>(())
     }).await.context("native process did not become ready")??;
-    let child = windows_process::ObservedProcess::from_pid_file(
+    let child = process_observer::ObservedProcess::from_pid_file(
         fixture.directory.path().join("child.pid"),
     )?;
-    let descendant = windows_process::ObservedProcess::from_pid_file(
+    let descendant = process_observer::ObservedProcess::from_pid_file(
         fixture.directory.path().join("descendant.pid"),
     )?;
     cancel.cancel();

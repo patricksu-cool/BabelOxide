@@ -3,7 +3,8 @@ use crate::{ConfigError, FieldSpec, FieldType, Result, engine_specs, field_specs
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 
-/// Matches Python's PDF2ZH_ field names. Invalid environment values are ignored,
+/// BabelOxide names take priority; legacy PDF2ZH_ variables remain readable.
+/// Invalid environment values are ignored,
 /// as in ConfigManager.parse_env_vars; neither values nor parser errors escape.
 pub fn parse_env_vars(values: &BTreeMap<String, String>) -> Value {
     let normalized: BTreeMap<_, _> = values
@@ -12,7 +13,13 @@ pub fn parse_env_vars(values: &BTreeMap<String, String>) -> Value {
         .collect();
     let mut result = json!({});
     for spec in field_specs() {
-        if let Some(value) = normalized.get(&spec.env)
+        let legacy = spec
+            .env
+            .strip_prefix("BABELOXIDE_")
+            .map(|suffix| format!("PDF2ZH_{suffix}"));
+        if let Some(value) = normalized
+            .get(&spec.env)
+            .or_else(|| legacy.as_ref().and_then(|key| normalized.get(key)))
             && let Ok(value) = coerce(spec, &Value::String((*value).clone()), true)
         {
             put(&mut result, &spec.path, value);

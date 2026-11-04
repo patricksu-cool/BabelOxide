@@ -2,11 +2,11 @@
 //! it never aborts a task future or waits for native shutdown while rendering.
 
 use anyhow::{Context, Result};
-use babeldoc_bridge::WorkerOptions;
-use pdf2zh_config::{ConfigStore, Settings};
-use pdf2zh_core::{CacheBackend, CacheStore};
-use pdf2zh_pdf_preview::PreviewRenderer;
-use pdf2zh_tasks::{TaskHandle, TaskManager, task_from_settings};
+use babeloxide_bridge::WorkerOptions;
+use babeloxide_config::{ConfigStore, Settings};
+use babeloxide_core::{CacheBackend, CacheStore};
+use babeloxide_pdf_preview::PreviewRenderer;
+use babeloxide_tasks::{TaskHandle, TaskManager, task_from_settings};
 use std::{
     path::PathBuf,
     sync::{
@@ -41,6 +41,7 @@ pub(crate) enum Event {
     Submitted {
         handle: TaskHandle,
         inputs: Vec<PathBuf>,
+        outputs: Vec<PathBuf>,
     },
     Saved(Settings),
     Reloaded(Settings),
@@ -148,7 +149,7 @@ impl Background {
             shutdown: shutdown.clone(),
         };
         let join = std::thread::Builder::new()
-            .name("pdf2zh-application".into())
+            .name("babeloxide-application".into())
             .spawn(move || {
                 let runtime = tokio::runtime::Builder::new_multi_thread()
                     .enable_all()
@@ -336,11 +337,25 @@ async fn run(
                 if shutdown.requested.load(Ordering::Acquire) {
                     break;
                 }
+                let app_root = store.app_root().to_path_buf();
                 let prepared = match task_from_settings(&settings, worker.clone(), cache) {
                     Ok(mut spec) => tokio::task::spawn_blocking(move || -> Result<_> {
-                        let guards =
+                        crate::output_paths::apply_gui_default_output(
+                            &mut spec.jobs,
+                            &settings,
+                            &app_root,
+                        )?;
+                        let mut guards =
                             crate::output_paths::isolate_colliding_outputs(&mut spec.jobs)?;
-                        Ok((spec, guards))
+                        guards.extend(crate::output_paths::preserve_existing_outputs(
+                            &mut spec.jobs,
+                        )?);
+                        let outputs = spec
+                            .jobs
+                            .iter()
+                            .map(|job| job.output_dir.canonicalize())
+                            .collect::<std::io::Result<Vec<_>>>()?;
+                        Ok((spec, guards, outputs))
                     })
                     .await
                     .context("Cannot prepare batch output folders")
@@ -352,16 +367,16 @@ async fn run(
                 if shutdown.requested.load(Ordering::Acquire) {
                     break;
                 }
-                let submitted = prepared.and_then(|(spec, guards)| {
+                let submitted = prepared.and_then(|(spec, guards, outputs)| {
                     let handle = manager.submit(spec)?;
                     let isolated = !guards.is_empty();
                     for guard in guards {
                         let _ = guard.keep();
                     }
-                    Ok((handle, isolated))
+                    Ok((handle, isolated, outputs))
                 });
                 match submitted {
-                    Ok((handle, isolated)) => {
+                    Ok((handle, isolated, outputs)) => {
                         let mut updates = handle.subscribe();
                         let wake = shutdown.clone();
                         tokio::spawn(async move {
@@ -373,7 +388,16 @@ async fn run(
                                 }
                             }
                         });
-                        emit(&events, &shutdown, Event::Submitted { handle, inputs }).await;
+                        emit(
+                            &events,
+                            &shutdown,
+                            Event::Submitted {
+                                handle,
+                                inputs,
+                                outputs,
+                            },
+                        )
+                        .await;
                         if isolated {
                             emit(
                                 &events,
@@ -489,7 +513,11 @@ pub(crate) fn copy_result(source: &std::path::Path, destination: &std::path::Pat
 fn open_result(path: &std::path::Path) -> Result<()> {
     use std::os::windows::ffi::OsStrExt;
     use windows_sys::Win32::UI::{Shell::ShellExecuteW, WindowsAndMessaging::SW_SHOWNORMAL};
-    validate_result_path(path)?;
+    if path.is_dir() {
+        anyhow::ensure!(path.is_absolute(), "Choose an absolute output folder");
+    } else {
+        validate_result_path(path)?;
+    }
     let filename: Vec<u16> = path.as_os_str().encode_wide().chain(Some(0)).collect();
     let verb: Vec<u16> = "open".encode_utf16().chain(Some(0)).collect();
     // No command line or shell expansion: this opens one validated result path
@@ -507,7 +535,23 @@ fn open_result(path: &std::path::Path) -> Result<()> {
     anyhow::ensure!((result as isize) > 32, "Cannot open result");
     Ok(())
 }
-#[cfg(not(windows))]
+#[cfg(target_os = "macos")]
+fn open_result(path: &std::path::Path) -> Result<()> {
+    if path.is_dir() {
+        anyhow::ensure!(path.is_absolute(), "Choose an absolute output folder");
+    } else {
+        validate_result_path(path)?;
+    }
+    let status = std::process::Command::new("/usr/bin/open")
+        .arg("--")
+        .arg(path)
+        .status()
+        .context("Cannot open the result")?;
+    anyhow::ensure!(status.success(), "Cannot open the result");
+    Ok(())
+}
+
+#[cfg(not(any(windows, target_os = "macos")))]
 fn open_result(_path: &std::path::Path) -> Result<()> {
     anyhow::bail!("Opening results is currently available on Windows")
 }
@@ -660,7 +704,7 @@ mod tests {
                 .join("../..")
                 .canonicalize()
                 .unwrap();
-            let python = std::env::var_os("PDF2ZH_TEST_PYTHON")
+            let python = std::env::var_os("BABELOXIDE_TEST_PYTHON")
                 .map(PathBuf::from)
                 .unwrap_or_else(|| {
                     root.join(if cfg!(windows) {
@@ -671,7 +715,7 @@ mod tests {
                 });
             assert!(
                 python.is_file(),
-                "The transport fixture requires project Python or PDF2ZH_TEST_PYTHON"
+                "The transport fixture requires project Python or BABELOXIDE_TEST_PYTHON"
             );
             let script = directory.path().join("controlled_worker.py");
             std::fs::write(
@@ -764,13 +808,55 @@ mod tests {
         let snapshot = tokio::time::timeout(std::time::Duration::from_secs(10), handle.wait())
             .await
             .unwrap();
-        assert_eq!(snapshot.status, pdf2zh_tasks::TaskStatus::Succeeded);
+        assert_eq!(snapshot.status, babeloxide_tasks::TaskStatus::Succeeded);
         assert_eq!(snapshot.completed_files, 1);
         assert_eq!(fixture.server.requests().len(), 2);
         let result = PathBuf::from(snapshot.results[0]["mono_pdf_path"].as_str().unwrap());
         assert!(result.is_file());
         assert!(!fixture.directory.path().join("app/cache").exists());
         assert!(!fixture.directory.path().join("app/config.toml").exists());
+        background.control.close(None);
+        thread.finish();
+    }
+
+    #[tokio::test]
+    async fn submit_blank_output_uses_and_reports_application_storage() {
+        let mut fixture = WorkerFixture::new("finished_then_exit");
+        fixture
+            .settings
+            .set("translation.output", serde_json::Value::Null)
+            .unwrap();
+        let (mut background, thread) = fixture.background();
+        background
+            .send(Command::Translate(fixture.settings.clone()))
+            .unwrap();
+        let (handle, outputs) = tokio::time::timeout(std::time::Duration::from_secs(10), async {
+            loop {
+                match background.events.recv().await.unwrap() {
+                    Event::Submitted {
+                        handle, outputs, ..
+                    } => return (handle, outputs),
+                    Event::Warning(_) => {}
+                    _ => panic!("Expected controlled task submission"),
+                }
+            }
+        })
+        .await
+        .unwrap();
+        let expected = fixture
+            .directory
+            .path()
+            .join("app/outputs")
+            .canonicalize()
+            .unwrap();
+        assert_eq!(outputs.as_slice(), std::slice::from_ref(&expected));
+        let snapshot = tokio::time::timeout(std::time::Duration::from_secs(10), handle.wait())
+            .await
+            .unwrap();
+        assert_eq!(snapshot.status, babeloxide_tasks::TaskStatus::Succeeded);
+        let result = PathBuf::from(snapshot.results[0]["mono_pdf_path"].as_str().unwrap());
+        assert_eq!(result.parent(), Some(expected.as_path()));
+        assert!(result.is_file());
         background.control.close(None);
         thread.finish();
     }
@@ -805,7 +891,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             handle.snapshot().status,
-            pdf2zh_tasks::TaskStatus::Cancelled
+            babeloxide_tasks::TaskStatus::Cancelled
         );
         assert!(
             background

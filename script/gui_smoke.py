@@ -132,12 +132,12 @@ def main():
         USERPROFILE=str(home),
         TEMP=str(temporary),
         TMP=str(temporary),
-        PDF2ZH_APP_DIR=str(app),
+        BABELOXIDE_APP_DIR=str(app),
         NO_PROXY="127.0.0.1,localhost",
         no_proxy="127.0.0.1,localhost",
     )
     if args.portable_config:
-        environment.pop("PDF2ZH_APP_DIR", None)
+        environment.pop("BABELOXIDE_APP_DIR", None)
     args_first = [
         executable,
         "--openai",

@@ -1,5 +1,8 @@
 //! Rust-owned provider execution, HTTP transport, retry policies and accounting.
 
+pub const PRODUCT_NAME: &str = "BabelOxide";
+pub const PRODUCT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -173,7 +176,14 @@ impl TranslationService {
             _ => 30,
         };
         let mut http = HttpTransport::new(runtime.clone(), connect_timeout)
-            .with_redirect_limit(redirect_limit);
+            .with_redirect_limit(redirect_limit)
+            .with_diagnostics(
+                config
+                    .options
+                    .get("diagnostic_http")
+                    .and_then(Value::as_bool)
+                    == Some(true),
+            );
         if matches!(config.provider.as_str(), "anythingllm" | "dify") {
             http = http.with_request_scoped_cookies();
         } else if config.provider == "deepl" {
@@ -224,6 +234,25 @@ impl TranslationService {
     }
     pub fn name(&self) -> &str {
         &self.config.provider
+    }
+    /// Apply the same credential/URL redaction to diagnostics from the engine.
+    pub fn redact_diagnostic(&self, message: &str) -> String {
+        let request = TranslationRequest {
+            id: String::new(),
+            text: String::new(),
+            method: String::new(),
+            ignore_cache: true,
+            rate_limit_params: Value::Null,
+            translator: String::new(),
+        };
+        ProviderContext {
+            config: &self.config,
+            request: &request,
+            http: &self.http,
+            runtime: &self.runtime,
+            cancel: &CancellationToken::new(),
+        }
+        .sanitize(message)
     }
     pub fn is_llm(&self) -> bool {
         providers::is_llm(&self.config.provider)

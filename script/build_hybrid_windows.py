@@ -58,6 +58,10 @@ RUNTIME_PINS = {
     "python313._pth": (80, "35ddf94682ff9aa713a8d63557242ad00f3f28fdd39337f02c3bda4c0f791577"),
     "LICENSE.txt": (33861, "62bec384df47b0328307db41455ff6ea2559e5546b394ac69148561b21703120"),
 }
+
+
+def product_version() -> str:
+    return tomllib.loads((REPO / "Cargo.toml").read_text(encoding="utf-8"))["workspace"]["package"]["version"]
 # OS components only. VC redistributables are deliberately NOT in this list.
 OS_DLLS = frozenset(
     ("advapi32 avrt bcrypt bcryptprimitives cabinet cfgmgr32 comctl32 comdlg32 "
@@ -131,20 +135,84 @@ def read_json(path: Path):
     return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
-def plain_path(path: Path) -> Path:
-    """Refuse links/junctions in either existing inputs or output ancestors."""
-    path = Path(os.path.abspath(path))  # noqa: PTH100 -- inspect reparse points before resolving links
-    for component in (path, *path.parents):
-        try:
-            info = component.lstat()
-        except FileNotFoundError:
+def macos_system_path(path: Path) -> Path:
+    """Resolve only verified OS roots; never canonicalize user/asset subtrees."""
+    for name in ("var", "tmp"):
+        alias = Path("/") / name
+        if not path.is_relative_to(alias):
             continue
-        require(
-            not stat.S_ISLNK(info.st_mode)
-            and not getattr(info, "st_file_attributes", 0) & 0x400,
-            f"Links or reparse points are not allowed: {component}",
-        )
+        info = alias.lstat()
+        if not stat.S_ISLNK(info.st_mode):
+            return path
+        for root in (Path("/"), Path("/private")):
+            anchor = root.lstat()
+            require(stat.S_ISDIR(anchor.st_mode) and anchor.st_uid == 0 and not anchor.st_mode & 0o022,
+                    f"Untrusted build system root: {root}")
+        expected = Path("/private") / name
+        require(info.st_uid == 0 and alias.readlink() in (expected, Path("private") / name),
+                f"Untrusted build system alias: {alias}")
+        resolved = alias.resolve(strict=True)
+        target = expected.lstat()
+        require(resolved == expected and stat.S_ISDIR(target.st_mode) and target.st_uid == 0,
+                f"Unexpected build system alias target: {alias}")
+        return resolved / path.relative_to(alias)
     return path
+
+
+def windows_plain_path(path: Path) -> Path:
+    """Expand existing 8.3 names, retaining a missing output tail and its identity."""
+    ancestor = path
+    missing = []
+    while True:
+        try:
+            before = ancestor.lstat()
+            break
+        except FileNotFoundError:
+            require(ancestor != ancestor.parent, "Build path has no existing root")
+            missing.append(ancestor.name)
+            ancestor = ancestor.parent
+    # The caller checks every original ancestor before and after this operation.
+    # Comparing lstat to stat also rejects a reparse point introduced meanwhile.
+    resolved = ancestor.resolve(strict=True)
+    name = str(resolved)
+    if name.startswith("\\\\?\\UNC\\"):
+        resolved = Path("\\\\" + name[8:])
+    elif resolved.drive.startswith("\\\\?\\") and len(resolved.drive) == 6 and resolved.drive[4].isalpha() and resolved.drive[5] == ":":
+        resolved = Path(name[4:])
+    require(os.path.samestat(before, resolved.stat()), "Build path changed while normalizing its Windows name")
+    return resolved.joinpath(*reversed(missing))
+
+
+def plain_path(path: Path) -> Path:
+    """Refuse links before normalizing OS path aliases for subsequent I/O."""
+    # Inspect link/.. before lexical normalization can erase the link component.
+    path = path.absolute()
+    if sys.platform == "darwin":
+        path = macos_system_path(path)
+
+    def inspect(candidate: Path) -> None:
+        for component in (candidate, *candidate.parents):
+            try:
+                info = component.lstat()
+            except FileNotFoundError:
+                continue
+            require(
+                not stat.S_ISLNK(info.st_mode)
+                and not getattr(info, "st_file_attributes", 0) & 0x400,
+                f"Links or reparse points are not allowed: {component}",
+            )
+
+    inspect(path)
+    if os.name == "nt" and path.drive.startswith("\\\\?\\"):
+        # Verbatim names must not silently acquire Win32 trimming semantics,
+        # including in the missing suffix where no identity can be checked.
+        require(all(not part.endswith((".", " ")) for part in path.parts[1:]), "Ambiguous Windows verbatim path")
+    normalized = Path(os.path.abspath(path))  # noqa: PTH100 -- inspect ancestors before collapsing ..
+    if os.name == "nt":
+        normalized = windows_plain_path(normalized)
+        inspect(path)
+        inspect(normalized)
+    return normalized
 
 
 def relative_member(name: str) -> PurePosixPath:
@@ -165,7 +233,7 @@ def relative_member(name: str) -> PurePosixPath:
 
 
 def files_below(root: Path) -> list[Path]:
-    plain_path(root)
+    root = plain_path(root)
     require(root.is_dir(), f"Required directory is missing: {root}")
     files = []
     for directory, dirs, names in os.walk(root, followlinks=False):
@@ -179,7 +247,7 @@ def files_below(root: Path) -> list[Path]:
 
 
 def checked_copy(source: Path, destination: Path, expected: tuple[int, str] | None = None) -> None:
-    plain_path(source)
+    source = plain_path(source)
     require(source.is_file(), f"Required source file is missing: {source}")
     destination.parent.mkdir(parents=True, exist_ok=True)
     require(not destination.exists(), f"Refusing to replace a staged file: {destination}")
@@ -189,7 +257,7 @@ def checked_copy(source: Path, destination: Path, expected: tuple[int, str] | No
 
 
 def verify_file(path: Path, size: int, sha256: str) -> None:
-    plain_path(path)
+    path = plain_path(path)
     require(path.is_file() and path.stat().st_size == size, f"Size mismatch or missing file: {path}")
     require(digest(path) == sha256.lower(), f"SHA256 mismatch: {path}")
 
@@ -226,7 +294,7 @@ def select_wheels(inventory: dict, profile: dict, expected_count: int = ENGINE_C
     require(inventory["environment"]["python_full_version"] == PYTHON_VERSION, "Inventory Python version changed")
     engine = inventory["engine"]
     require(len(engine) == expected_count, "Engine distribution count changed; review the closure first")
-    require(engine["babeldoc"]["version"] == "0.6.3", "Unexpected BabelDOC version")
+    require(engine["babeldoc"]["version"] == "0.6.4", "Unexpected BabelDOC version")
     require(set(profile) == {"schema_version", "python", "platform", "wheels"} and profile["schema_version"] == 1, "Unsupported baseline wheel profile")
     require(profile["python"] == PYTHON_VERSION and profile["platform"] == "win_amd64", "Wrong baseline wheel platform")
     wheels = profile["wheels"]
@@ -276,7 +344,7 @@ def apply_wheel_overrides(wheels: list[dict], profile: dict) -> list[dict]:
 def lock_text(wheels: list[dict], inventory_sha256: str, baseline_sha256: str, overrides_sha256: str) -> str:
     lines = [
         "# Generated by script/build_hybrid_windows.py --write-lock; do not edit by hand.",
-        f"# Windows x64 / CPython {PYTHON_VERSION} / BabelDOC 0.6.3 / {len(wheels)} distributions.",
+        f"# Windows x64 / CPython {PYTHON_VERSION} / BabelDOC 0.6.4 / {len(wheels)} distributions.",
         "# Source text fingerprints below normalize CRLF to LF; release manifests hash actual bytes.",
         f"# dependencies-win64.json sha256: {inventory_sha256}",
         f"# baseline-wheels.json sha256: {baseline_sha256}",
@@ -310,6 +378,7 @@ def write_lock_file(path: Path, content: str) -> None:
 
 
 def runtime_files(source: Path, manifest: Path) -> list[dict]:
+    source = plain_path(source)
     records = read_json(manifest)
     require(isinstance(records, list), "Runtime manifest must be a file list")
     selected = []
@@ -336,7 +405,7 @@ def runtime_files(source: Path, manifest: Path) -> list[dict]:
 
 def asset_members(inventory: dict) -> dict[str, dict]:
     require(
-        inventory["babeldoc_version"] == "0.6.3" and inventory["asset_tag"] == ASSET_TAG
+        inventory["babeldoc_version"] == "0.6.4" and inventory["asset_tag"] == ASSET_TAG
         and inventory["archive_sha256"] == ASSET_SHA256 and inventory["archive_bytes"] == ASSET_BYTES,
         "Engine asset inventory provenance changed",
     )
@@ -353,7 +422,9 @@ def asset_members(inventory: dict) -> dict[str, dict]:
 
 
 def verify_zip(path: Path, expected: dict[str, dict]) -> None:
-    verify_file(path, ASSET_BYTES, ASSET_SHA256)
+    # ZIP timestamps/encoding are not asset identity. Fresh CI builds may
+    # recreate the archive; every member remains size- and SHA3-locked.
+    require(path.is_file() and path.stat().st_size <= sum(entry["bytes"] for entry in expected.values()) + 1024 * 1024, "Unexpected asset archive size")
     with zipfile.ZipFile(path) as archive:
         seen = set()
         for entry in archive.infolist():
@@ -362,11 +433,13 @@ def verify_zip(path: Path, expected: dict[str, dict]) -> None:
             seen.add(name)
             require(name in expected and entry.file_size == expected[name]["bytes"], "Unexpected asset ZIP entry or size")
             require(not entry.flag_bits & 1 and not stat.S_ISLNK(entry.external_attr >> 16), "Encrypted/link asset ZIP entry")
+            with archive.open(entry) as stream:
+                require(hashlib.file_digest(stream, "sha3_256").hexdigest() == expected[name]["sha3_256"], "Asset ZIP content checksum mismatch")
         require(seen == set(expected), "Asset ZIP does not match the effective engine manifest")
 
 
 def verify_restored(home: Path, expected: dict[str, dict]) -> None:
-    cache = home / ".cache/babeldoc"
+    cache = plain_path(home / ".cache/babeldoc")
     for name, entry in expected.items():
         path = plain_path(cache / name)
         require(path.is_file() and path.stat().st_size == entry["bytes"], f"Missing restored asset: {name}")
@@ -453,6 +526,7 @@ def pe_imports(path: Path) -> dict:
 
 
 def native_inventory(stage: Path) -> tuple[list[dict], list[dict]]:
+    stage = plain_path(stage)
     files = files_below(stage)
     dlls = collections.defaultdict(list)
     for path in files:
@@ -495,7 +569,7 @@ def sanitized_environment(work: Path, *, stage: Path | None = None) -> dict[str,
         "UV_NO_PROGRESS": "1", "NO_COLOR": "1",
     }
     if stage is not None:
-        result["PDF2ZH_APP_DIR"] = str(stage)
+        result["BABELOXIDE_APP_DIR"] = str(stage)
     return result
 
 
@@ -513,7 +587,11 @@ def run_step(label: str, command: list[str], work: Path, environment: dict[str, 
 
 
 def is_notice(path: PurePosixPath) -> bool:
-    return any(part.lower().startswith(("license", "licence", "copying", "notice", "copyright", "authors")) for part in path.parts)
+    return any(
+        part.lower().startswith(("license", "licence", "copying", "notice", "copyright", "authors"))
+        or re.sub(r"[-_ ]", "", part.lower()).startswith(("thirdpartynotice", "3rdpartynotice"))
+        for part in path.parts
+    )
 
 
 def verified_notice_bytes(source: Path, expected_sha256: str) -> bytes:
@@ -526,8 +604,9 @@ def verified_notice_bytes(source: Path, expected_sha256: str) -> bytes:
     return data
 
 
-def python_inventory(stage: Path, wheels: list[dict], engine: dict) -> tuple[list[dict], list[str]]:
-    site = stage / "runtime/python/site-packages"
+def python_inventory(stage: Path, wheels: list[dict], engine: dict, *, site: Path | None = None) -> tuple[list[dict], list[str]]:
+    stage = plain_path(stage)
+    site = plain_path(site or stage / "runtime/python/site-packages")
     expected = {wheel["name"]: wheel for wheel in wheels}
     installed = {}
     issues = []
@@ -548,7 +627,7 @@ def python_inventory(stage: Path, wheels: list[dict], engine: dict) -> tuple[lis
                     checked_copy(source, destination)
                 record["license_files"].append(destination.relative_to(stage).as_posix())
         installed[name] = record
-    require(set(installed) == set(expected), "Installed distribution closure differs from the 85-package lock")
+    require(set(installed) == set(expected), "Installed distribution closure differs from the platform lock")
     supplement = REPO / "resources/licenses/python/ADDITIONAL_LICENSES.json"
     for notice in read_json(supplement):
         for package in notice["packages"]:
@@ -597,6 +676,7 @@ def exclude_generated_launcher(path: Path, python: Path, entry_value: str) -> bo
 
 
 def generated_entrypoints(stage: Path) -> list[dict]:
+    stage = plain_path(stage)
     site = stage / "runtime/python/site-packages"
     records = []
     for distribution in importlib.metadata.distributions(path=[str(site)]):
@@ -620,6 +700,7 @@ def generated_entrypoints(stage: Path) -> list[dict]:
 
 def rust_archive_notices(stage: Path, archive_path: Path, package: dict, record: dict) -> None:
     """Read notices from a checksum-verified .crate without extracting source."""
+    stage = plain_path(stage)
     with plain_path(archive_path).open("rb") as source:
         require(hashlib.file_digest(source, "sha256").hexdigest() == package["checksum"], "Cargo archive checksum mismatch")
         source.seek(0)
@@ -652,10 +733,11 @@ def rust_archive_notices(stage: Path, archive_path: Path, package: dict, record:
 
 def rust_inventory(stage: Path, registry: Path | None) -> tuple[list[dict], list[str]]:
     """Keep Cargo.lock checksums and cached license texts; do not invoke Cargo."""
+    stage = plain_path(stage)
     packages = tomllib.loads((stage / "provenance/Cargo.lock").read_text(encoding="utf-8"))["package"]
     records = []
     if registry is not None:
-        plain_path(registry)
+        registry = plain_path(registry)
         require(registry.is_dir(), "Explicit Cargo registry source directory is missing")
     for package in sorted(packages, key=lambda p: (p["name"], p["version"])):
         record = {key: package[key] for key in ("name", "version", "source", "checksum") if key in package}
@@ -665,10 +747,14 @@ def rust_inventory(stage: Path, registry: Path | None) -> tuple[list[dict], list
             record["license"] = "See licenses/project/LICENSE and workspace manifests"
         elif source.startswith("registry+") and registry is not None:
             require(re.fullmatch(r"[a-zA-Z0-9_-]+", package["name"]) is not None and re.fullmatch(r"[a-zA-Z0-9.+_-]+", package["version"]) is not None, "Unsafe Cargo package name")
-            matches = list(registry.glob(f"*/{package['name']}-{package['version']}"))
-            if len(matches) == 1:
+            stem = f"{package['name']}-{package['version']}"
+            archives = list((registry.parent / "cache").glob(f"*/{stem}.crate"))
+            matches = list(registry.glob(f"*/{stem}"))
+            if len(archives) == 1:
+                rust_archive_notices(stage, archives[0], package, record)
+            elif len(matches) == 1:
                 root = plain_path(matches[0])
-                archive_path = registry.parent / "cache" / root.parent.name / f"{package['name']}-{package['version']}.crate"
+                archive_path = registry.parent / "cache" / root.parent.name / f"{stem}.crate"
                 if archive_path.is_file():
                     rust_archive_notices(stage, archive_path, package, record)
                 elif (root / ".cargo-checksum.json").is_file():
@@ -693,31 +779,37 @@ def rust_inventory(stage: Path, registry: Path | None) -> tuple[list[dict], list
 
 
 def supplement_rust_notices(stage: Path, records: list[dict]) -> None:
-    """Retain reviewed upstream workspace licenses missing from crate archives."""
+    """Retain reviewed notices and distinguish templates from upstream files."""
     root = REPO / "resources/licenses/rust"
     manifest = root / "SUPPLEMENTAL_NOTICES.json"
     if not manifest.exists():
         return
     checked_copy(manifest, stage / "provenance/SUPPLEMENTAL_RUST_NOTICES.json")
     by_identity = {(item["name"], item["version"]): item for item in records}
+    missing = {key for key, value in by_identity.items() if not value["license_files"]}
     for notice in read_json(manifest):
-        component = by_identity.get((notice["name"], notice["version"]))
-        if component is None or component["license_files"]:
+        identity = (notice["name"], notice["version"])
+        if identity not in missing:
             continue
+        component = by_identity[identity]
         source = root / relative_member(notice["file"])
         data = verified_notice_bytes(source, notice["sha256"])
-        destination = stage / "licenses/rust" / f"{component['name']}-{component['version']}" / ("upstream-" + source.name)
+        prefix = "supplemental-" if notice.get("document_origin") in {"standard-license-template", "project-provenance-notice"} else "upstream-"
+        destination = stage / "licenses/rust" / f"{component['name']}-{component['version']}" / (prefix + source.name)
         plain_path(destination)
         destination.parent.mkdir(parents=True, exist_ok=True)
         with destination.open("xb") as stream:
             stream.write(data)
         component["license_files"].append(destination.relative_to(stage).as_posix())
-        component["supplemental_notice_source"] = {key: value for key, value in notice.items() if key not in {"name", "version", "file"}}
+        metadata = {key: value for key, value in notice.items() if key not in {"name", "version", "file"}}
+        component.setdefault("supplemental_notice_source", metadata)
+        component.setdefault("supplemental_notice_sources", []).append(metadata)
 
 
 def validate_output(output: Path, inputs: list[Path]) -> Path:
     output = plain_path(output)
-    require(output.is_relative_to(REPO) and output != REPO, "Output must be a new directory below the repository")
+    repo = plain_path(REPO)
+    require(output.is_relative_to(repo) and output != repo, "Output must be a new directory below the repository")
     require(not output.exists(), f"Output already exists; it will not be replaced: {output}")
     forbidden = [REPO / name for name in (".git", ".venv", ".cargo", "crates", "python-worker", "script", "docs", "target", "build-inputs", "pdf2zh_next", "dist/release")]
     for root in forbidden + inputs:
@@ -740,7 +832,7 @@ def preflight(args: argparse.Namespace, wheels: list[dict], expected_lock: str) 
     inputs = input_paths(args)
     output = validate_output(args.output, inputs)
     records = runtime_files(runtime, runtime_manifest)
-    for name in ("pdf2zh.exe", "pdf2zh-gui.exe"):
+    for name in ("BabelOxide.exe", "BabelOxide-gui.exe"):
         require((bins / name).is_file(), f"Build the Rust release executable first: {name}")
         pe_imports(plain_path(bins / name))
     verify_file(pdfium / "bin/pdfium.dll", PDFIUM_BYTES, PDFIUM_SHA256)
@@ -753,7 +845,7 @@ def preflight(args: argparse.Namespace, wheels: list[dict], expected_lock: str) 
     inventory = read_json(ASSET_INVENTORY)
     expected_assets = asset_members(inventory)
     verify_zip(assets, expected_assets)
-    uv = plain_path(args.uv or shutil.which("uv") or "")
+    uv = plain_path(args.uv or Path(shutil.which("uv") or ""))
     require(uv.is_file() and uv.name.lower().endswith(".exe"), "Existing uv.exe is required; pass --uv explicitly")
     if args.asset_notices:
         require(bool(files_below(plain_path(args.asset_notices))), "Explicit asset notice directory is empty")
@@ -808,7 +900,7 @@ def remove_empty_engine_cache(stage: Path) -> list[dict]:
     """Remove only the known empty DB created by the isolated import smoke."""
     stage = plain_path(stage)
     cache = plain_path(stage / "resources/worker-home/.cache/babeldoc")
-    require(cache.is_relative_to(stage) and stage.is_relative_to(REPO), "Engine cache cleanup escaped the generated stage")
+    require(cache.is_relative_to(stage) and stage.is_relative_to(plain_path(REPO)), "Engine cache cleanup escaped the generated stage")
     database = cache / "cache.v1.db"
     if not database.exists():
         return []
@@ -870,7 +962,7 @@ assert set(active) == set(expected), "Locked distributions differ from active Ba
 for name in ("babeldoc", "babeldoc.format.pdf.high_level", "pymupdf", "onnxruntime",
              "numpy", "scipy", "cv2", "rtree", "hyperscan", "uharfbuzz", "freetype", "cryptography"):
     importlib.import_module(name)
-assert importlib.metadata.version("babeldoc") == "0.6.3"
+assert importlib.metadata.version("babeldoc") == "0.6.4"
 assert not {"gradio", "pdf2zh-next"} & {d.metadata["Name"].lower() for d in importlib.metadata.distributions()}
 print(json.dumps({"python": sys.version.split()[0], "pillow": installed["pillow"].version, "distributions": len(installed), "isolated": True, "metadata_constraints_and_closure": "passed", "native_imports": "passed"}))
 '''
@@ -914,7 +1006,7 @@ def build(args: argparse.Namespace, plan: dict) -> Path:
             checked_copy(args.runtime_source / record["name"], runtime / record["name"], (record["bytes"], record["sha256"]))
         # Only this verified copy is changed. The original runtime is never written.
         (runtime / "python313._pth").write_text(PTH_CONTENT, encoding="ascii", newline="\n")
-        for name in ("pdf2zh.exe", "pdf2zh-gui.exe"):
+        for name in ("BabelOxide.exe", "BabelOxide-gui.exe"):
             origin = args.bin_dir / name
             checked_copy(origin, stage / name, (origin.stat().st_size, digest(origin)))
         checked_copy(REPO / "python-worker/worker.py", stage / "babeldoc/worker.py")
@@ -924,15 +1016,16 @@ def build(args: argparse.Namespace, plan: dict) -> Path:
         for origin in [args.pdfium_source / "LICENSE", args.pdfium_source / "VERSION", args.pdfium_source / "args.gn", *files_below(args.pdfium_source / "licenses")]:
             checked_copy(origin, stage / "licenses/pdfium" / origin.relative_to(args.pdfium_source))
         checked_copy(REPO / "LICENSE", stage / "licenses/project/LICENSE")
+        checked_copy(REPO / "THIRD_PARTY_NOTICES.md", stage / "licenses/project/THIRD_PARTY_NOTICES.md")
         checked_copy(args.runtime_source / "LICENSE.txt", stage / "licenses/python-runtime/LICENSE.txt", RUNTIME_PINS["LICENSE.txt"])
         provenance = stage / "provenance"
-        for origin in (REQUIREMENTS, WHEEL_OVERRIDES, BASELINE_WHEELS, INVENTORY, ASSET_INVENTORY, REPO / "Cargo.lock", REPO / "Cargo.toml", Path(__file__), REPO / "docs/DEVELOPMENT.md"):
+        for origin in (REQUIREMENTS, WHEEL_OVERRIDES, BASELINE_WHEELS, INVENTORY, ASSET_INVENTORY, REPO / "Cargo.lock", REPO / "Cargo.toml", Path(__file__), REPO / "script/build_portable.py", REPO / "script/build_support.py", REPO / "resources/build-inputs.lock.json", REPO / "docs/BUILD.md"):
             checked_copy(origin, provenance / origin.name, (origin.stat().st_size, digest(origin)))
         captured_inventory = staged_inputs(stage, plan["wheels"])
         write_json(provenance / "RUNTIME_SOURCE_FILES.json", plan["runtime"])
         write_json(provenance / "WHEELS.json", plan["wheels"])
         archive = stage / "engine-assets" / f"offline_assets_{ASSET_TAG}.zip"
-        checked_copy(args.assets_zip, archive, (ASSET_BYTES, ASSET_SHA256))
+        checked_copy(args.assets_zip, archive, (args.assets_zip.stat().st_size, digest(args.assets_zip)))
         if args.asset_notices:
             for origin in files_below(args.asset_notices):
                 checked_copy(origin, stage / "licenses/engine-assets" / origin.relative_to(args.asset_notices))
@@ -959,7 +1052,7 @@ def build(args: argparse.Namespace, plan: dict) -> Path:
         python = runtime / "python.exe"
         provenance = stage / "provenance"
         archive = stage / "engine-assets" / f"offline_assets_{ASSET_TAG}.zip"
-        environment["PDF2ZH_APP_DIR"] = str(stage)
+        environment["BABELOXIDE_APP_DIR"] = str(stage)
         natives, missing = native_inventory(stage)
         write_json(stage / "NATIVE_DEPENDENCIES.json", {"scope": "PE normal/delay imports; bundled-candidate does not prove loader resolution; dynamic LoadLibrary is not covered", "files": natives, "unresolved": missing})
         require(not missing or args.allow_unresolved_native, f"Unresolved native imports; see {stage / 'NATIVE_DEPENDENCIES.json'}. Do not copy System32 DLLs; obtain a licensed redistributable source or explicitly build a diagnostic candidate with --allow-unresolved-native")
@@ -967,12 +1060,14 @@ def build(args: argparse.Namespace, plan: dict) -> Path:
         home.mkdir(parents=True)
         # Exercise the shipped bridge/worker boundary and its default layout;
         # no provider service, API credentials or network warmup is requested.
-        run_step("restore-assets", [str(stage / "pdf2zh.exe"), "--restore-offline-assets", str(archive), "--worker-home", str(home), "--json"], work, environment, args.smoke_timeout)
+        run_step("restore-assets", [str(stage / "BabelOxide.exe"), "--restore-offline-assets", str(archive), "--worker-home", str(home), "--json"], work, environment, args.smoke_timeout)
         verify_restored(home, plan["assets"])
         probe_environment = {**environment, "HOME": str(home), "USERPROFILE": str(home)}
         run_step("embedded-import-smoke", [str(python), "-I", "-B", "-c", PROBE], work, probe_environment, args.smoke_timeout)
-        run_step("cli-version", [str(stage / "pdf2zh.exe"), "--version"], work, environment, 30)
-        run_step("gui-version", [str(stage / "pdf2zh-gui.exe"), "--version"], work, environment, 30)
+        run_step("cli-version", [str(stage / "BabelOxide.exe"), "--version"], work, environment, 30)
+        run_step("gui-version", [str(stage / "BabelOxide-gui.exe"), "--version"], work, environment, 30)
+        for label in ("cli-version", "gui-version"):
+            require((work / f"{label}.log").read_text(encoding="utf-8").strip() == f"BabelOxide {product_version()}", "Supplied executable product/version differs from the workspace")
         removed_bytecode = remove_generated_bytecode(stage)
         empty_engine_cache = remove_empty_engine_cache(stage)
         verify_restored(home, plan["assets"])
@@ -981,11 +1076,11 @@ def build(args: argparse.Namespace, plan: dict) -> Path:
         write_json(stage / "ARTIFACT_EXCLUSIONS.json", {"entrypoints": entrypoints, "empty_generated_engine_cache": empty_engine_cache, "removed_generated_bytecode_files": removed_bytecode, "scope": "Application entrypoints are the two Rust EXEs. Only verified generated wrappers, bytecode and the smoke's empty known cache are excluded; original wheel RECORD metadata is retained."})
         write_json(stage / "THIRD_PARTY_COMPONENTS.json", {"python": python_components, "rust_lock_all_targets": rust_components, "pdfium": {"version": PDFIUM_VERSION, "publisher_archive_url": PDFIUM_URL, "publisher_archive_sha256": PDFIUM_ARCHIVE_SHA256, "dll_sha256": PDFIUM_SHA256, "verification": "DLL digest, version/build flags, notices copied; archive/signature/ABI validation is external", "licenses": "licenses/pdfium"}, "python_runtime": {"version": PYTHON_VERSION, "source": "verified embedded-runtime build input; see provenance/RUNTIME_SOURCE_FILES.json", "license": "licenses/python-runtime/LICENSE.txt"}, "engine_assets": {"inventory": "provenance/engine-assets.lock.json", "license_texts_supplied": bool(args.asset_notices)}, "license_review_items": license_issues})
         build_info = {
-            "schema_version": 1, "artifact_kind": "hybrid-windows-x64-candidate", "release_ready": False,
+            "schema_version": 1, "product": "BabelOxide", "version": product_version(), "artifact_kind": "babeloxide-windows-x64", "release_ready": False,
             "rust_built_by_builder": False, "source_commit": args.source_commit,
-            "runtime_python": PYTHON_VERSION, "babeldoc": "0.6.3", "python_distribution_count": ENGINE_COUNT,
+            "runtime_python": PYTHON_VERSION, "babeldoc": "0.6.4", "python_distribution_count": ENGINE_COUNT,
             "pdfium": PDFIUM_VERSION, "pdfium_dll_sha256": PDFIUM_SHA256,
-            "assets_tag": ASSET_TAG, "assets_archive_sha256": ASSET_SHA256, "assets_verified_files": len(plan["assets"]),
+            "assets_tag": ASSET_TAG, "assets_archive_sha256": digest(archive), "assets_verified_files": len(plan["assets"]),
             "engine_seed_manifest_sha256": digest(seed_manifest),
             "offline_assets_restored_and_sha3_verified": True, "editable": False, "directml": False,
             "pth": PTH_CONTENT.splitlines(), "environment": "allowlisted; no user config/API credentials/proxy/index environment",
@@ -1195,11 +1290,11 @@ class BuilderTests(unittest.TestCase):
         self.assertEqual(next(w["version"] for w in effective if w["name"] == "pillow"), "13.0.0")
         self.assertEqual(next(w["version"] for w in baseline if w["name"] == "pillow"), "12.3.0")
 
-    def test_effective_wheels_match_v3_recorded_profile(self):
-        # Captured from v3 provenance/WHEELS.json, canonicalized as below.
+    def test_effective_wheels_match_reviewed_064_profile(self):
+        # Reviewed 0.6.4 profile with the existing Pillow security override.
         wheels = apply_wheel_overrides(select_wheels(read_json(INVENTORY), read_json(BASELINE_WHEELS)), read_json(WHEEL_OVERRIDES))
         canonical = json.dumps(wheels, sort_keys=True, separators=(",", ":")).encode()
-        self.assertEqual(hashlib.sha256(canonical).hexdigest(), "2afbc367ce4d3f0fbfd8f3b5f1da0e5d34ff9d3bb79aba761b83d045b64dca97")
+        self.assertEqual(hashlib.sha256(canonical).hexdigest(), "7258216c067d56278511b9a77e25e3e765fb2d3e413ad52ec61e87ab17ea498b")
 
     def test_baseline_profile_rejects_invalid_or_duplicate_wheels(self):
         inventory = read_json(INVENTORY)
@@ -1303,20 +1398,34 @@ class BuilderTests(unittest.TestCase):
         import io
         with tempfile.TemporaryDirectory(dir=REPO) as temporary:
             stage = Path(temporary)
-            archive = stage / "fixture.crate"
+            registry = stage / "registry/src"
+            registry.mkdir(parents=True)
+            archive = registry.parent / "cache/index/fixture-1.0.0.crate"
+            archive.parent.mkdir(parents=True)
             with tarfile.open(archive, "w:gz") as output:
                 for name, data in [("Cargo.toml", b'[package]\nname="fixture"\nversion="1.0.0"\nlicense="MIT"\n'), ("LICENSE", b"Synthetic license"), ("src/lib.rs", b"must not extract source")]:
                     member = tarfile.TarInfo("fixture-1.0.0/" + name)
                     member.size = len(data)
                     output.addfile(member, io.BytesIO(data))
-            package = {"name": "fixture", "version": "1.0.0", "checksum": digest(archive)}
-            record = {"license_files": []}
-            rust_archive_notices(stage, archive, package, record)
+            package = {"name": "fixture", "version": "1.0.0", "checksum": digest(archive), "source": "registry+https://github.com/rust-lang/crates.io-index"}
+            (stage / "provenance").mkdir()
+            (stage / "provenance/Cargo.lock").write_text(
+                "[[package]]\n" + "".join(f'{key} = "{value}"\n' for key, value in package.items()), encoding="utf-8",
+            )
+            records, issues = rust_inventory(stage, registry)
+            self.assertEqual(issues, [])
             self.assertEqual((stage / "licenses/rust/fixture-1.0.0/LICENSE").read_bytes(), b"Synthetic license")
-            self.assertFalse((stage / "fixture-1.0.0").exists())
-            self.assertEqual(record["license"], "MIT")
+            self.assertEqual(list(registry.iterdir()), [])
+            self.assertEqual(records[0]["license"], "MIT")
             with self.assertRaises(BuildError):
                 rust_archive_notices(stage, archive, {**package, "checksum": "0" * 64}, {"license_files": []})
+
+    def test_third_party_notices_are_collected_without_vendor_sources(self):
+        for name in ("onnxruntime/ThirdPartyNotices.txt", "THIRD-PARTY-NOTICES.md", "3rd_party_notices.txt"):
+            self.assertTrue(is_notice(PurePosixPath(name)), name)
+        self.assertTrue(is_notice(PurePosixPath("component/licenses/terms.txt")))
+        self.assertFalse(is_notice(PurePosixPath("third_party/src/library.c")))
+        self.assertFalse(is_notice(PurePosixPath("onnxruntime/capi/onnxruntime.dll")))
 
     def test_verified_notice_accepts_only_digest_proven_lf_or_crlf_text(self):
         expected = hashlib.sha256(b"Copyright holder\nLicense text\n").hexdigest()
@@ -1392,6 +1501,213 @@ class BuilderTests(unittest.TestCase):
                 write_lock_file(path, "must not be written")
             self.assertEqual(sentinel.read_bytes(), b"synthetic user file")
             self.assertFalse(path.exists())
+
+    def test_system_alias_mapping_requires_root_owned_anchors_and_exact_targets(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        for name in ("var", "tmp"):
+            alias = Path("/") / name
+            expected = Path("/private") / name
+
+            def trusted_stat(item):
+                mode = stat.S_IFLNK | 0o777 if item == alias else stat.S_IFDIR | 0o755
+                return SimpleNamespace(st_mode=mode, st_uid=0)
+
+            for link in (expected, Path("private") / name):
+                with self.subTest(name=name, link=link), patch.object(Path, "lstat", trusted_stat), \
+                        patch.object(Path, "readlink", return_value=link), \
+                        patch.object(Path, "resolve", return_value=expected):
+                    self.assertEqual(macos_system_path(alias / "cache/new/file"), expected / "cache/new/file")
+                    self.assertEqual(macos_system_path(expected / "cache/new/file"), expected / "cache/new/file")
+                    self.assertEqual(macos_system_path(Path("/") / (name + "-other/file")), Path("/") / (name + "-other/file"))
+
+    def test_link_before_parent_traversal_is_checked_before_normalization(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory(dir=REPO) as directory:
+            root = Path(directory)
+            sentinel = root / "requirements.txt"
+            sentinel.write_bytes(b"existing user file")
+            link = root / "linked"
+            original_lstat = Path.lstat
+
+            def inspected_stat(item):
+                if item == link:
+                    return SimpleNamespace(st_mode=stat.S_IFLNK | 0o777, st_file_attributes=0x400)
+                return original_lstat(item)
+
+            with patch.object(Path, "lstat", inspected_stat), self.assertRaises(BuildError):
+                write_lock_file(link / ".." / sentinel.name, "must not replace user file\n")
+            self.assertEqual(sentinel.read_bytes(), b"existing user file")
+            self.assertEqual(list(root.glob("*.tmp")), [])
+            (root / "ordinary").mkdir()
+            self.assertEqual(plain_path(root / "ordinary/../new"), root / "new")
+
+    def test_system_alias_rejects_untrusted_roots_and_redirected_or_linked_targets(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        alias, expected = Path("/var"), Path("/private/var")
+        cases = (
+            (alias, stat.S_IFLNK | 0o777, 501, expected, expected),
+            (Path("/"), stat.S_IFDIR | 0o755, 501, expected, expected),
+            (Path("/private"), stat.S_IFDIR | 0o777, 0, expected, expected),
+            (Path("/private"), stat.S_IFLNK | 0o755, 0, expected, expected),
+            (expected, stat.S_IFLNK | 0o755, 0, expected, expected),
+            (expected, stat.S_IFDIR | 0o755, 501, expected, expected),
+            (None, 0, 0, Path("/elsewhere"), expected),
+            (None, 0, 0, expected, Path("/elsewhere")),
+        )
+        for changed, mode, uid, link, resolved in cases:
+            def inspected_stat(item):
+                if item == changed:
+                    return SimpleNamespace(st_mode=mode, st_uid=uid)
+                return SimpleNamespace(st_mode=(stat.S_IFLNK | 0o777 if item == alias else stat.S_IFDIR | 0o755), st_uid=0)
+            with self.subTest(changed=changed, link=link, resolved=resolved), \
+                    patch.object(Path, "lstat", inspected_stat), \
+                    patch.object(Path, "readlink", return_value=link), \
+                    patch.object(Path, "resolve", return_value=resolved), self.assertRaises(BuildError):
+                macos_system_path(alias / "cache/new/file")
+
+    def test_plain_paths_and_asset_verification_use_consistent_system_roots(self):
+        bases = [None]
+        if sys.platform == "darwin":
+            bases += ["/var/tmp", "/tmp", "/private/tmp"]
+        for base in bases:
+            with self.subTest(base=base), tempfile.TemporaryDirectory(dir=base) as directory:
+                home = Path(directory)
+                self.assertEqual(plain_path(home), home.resolve(strict=True))
+                asset = home / ".cache/babeldoc/fonts/example.ttf"
+                asset.parent.mkdir(parents=True)
+                asset.write_bytes(b"fixed font fixture")
+                expected = {"fonts/example.ttf": {"bytes": asset.stat().st_size, "sha3_256": digest(asset, "sha3_256")}}
+                verify_restored(home, expected)
+                self.assertEqual(files_below(home), [asset.resolve(strict=True)])
+                lock = home / "new.lock"
+                write_lock_file(lock, "synthetic lock\n")
+                self.assertEqual(lock.read_text(), "synthetic lock\n")
+
+    def test_directory_aliases_cannot_hide_links_or_overwrite_user_files(self):
+        with tempfile.TemporaryDirectory(dir=REPO) as directory:
+            root = Path(directory)
+            outside, link = root / "outside", root / "linked"
+            outside.mkdir()
+            sentinel = outside / "sentinel.lock"
+            sentinel.write_bytes(b"synthetic user data")
+            if os.name == "nt":
+                powershell = Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"
+                subprocess.run(
+                    [powershell, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command",
+                     "$ErrorActionPreference='Stop'; New-Item -ItemType Junction -Path $env:TEST_LINK -Target $env:TEST_TARGET | Out-Null"],
+                    env={**os.environ, "TEST_LINK": str(link), "TEST_TARGET": str(outside)},
+                    capture_output=True, check=True,
+                )
+            else:
+                link.symlink_to(outside, target_is_directory=True)
+            try:
+                for spelling in (link, link / ".." / outside.name):
+                    with self.subTest(path=spelling), self.assertRaises(BuildError):
+                        write_lock_file(spelling / sentinel.name, "must not overwrite\n")
+                self.assertEqual(sentinel.read_bytes(), b"synthetic user data")
+                self.assertEqual(list(outside.iterdir()), [sentinel])
+            finally:
+                if os.name == "nt":
+                    link.rmdir()
+                else:
+                    link.unlink()
+
+    if os.name == "nt":
+        def test_windows_short_long_and_extended_paths_share_verified_roots(self):
+            import ctypes
+            from unittest.mock import patch
+
+            short_name = ctypes.WinDLL("kernel32", use_last_error=True).GetShortPathNameW
+            short_name.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32]
+            short_name.restype = ctypes.c_uint32
+            with tempfile.TemporaryDirectory(prefix="Long builder directory ", dir=REPO) as directory:
+                root = Path(directory).resolve(strict=True)
+                buffer = ctypes.create_unicode_buffer(32768)
+                length = short_name(str(root), buffer, len(buffer))
+                if not length:
+                    raise ctypes.WinError(ctypes.get_last_error())
+                self.assertLess(length, len(buffer))
+                short = Path(buffer.value)
+                extended = Path("\\\\?\\" + str(root))
+                self.assertTrue(short.samefile(root))
+                other = root / "Different physical directory"
+                other.mkdir()
+                self.assertFalse(other.samefile(root))
+                self.assertNotEqual(plain_path(other), plain_path(root))
+
+                asset = root / ".cache/babeldoc/fonts/example.ttf"
+                asset.parent.mkdir(parents=True)
+                asset.write_bytes(b"fixed font fixture")
+                expected = {"fonts/example.ttf": {"category": "fonts", "name": "example.ttf",
+                            "bytes": asset.stat().st_size, "sha3_256": digest(asset, "sha3_256")}}
+                runtime = root / "Runtime directory"
+                runtime.mkdir()
+                executable = runtime / "python.exe"
+                executable.write_bytes(b"synthetic runtime bytes")
+                pin = (executable.stat().st_size, digest(executable))
+                runtime_manifest = root / "runtime-files.json"
+                write_json(runtime_manifest, [{"path": "runtime/python.exe", "bytes": pin[0], "sha256": pin[1]}])
+                for spelling in (root, short, extended):
+                    with self.subTest(path=spelling):
+                        self.assertEqual(plain_path(spelling), root)
+                        self.assertTrue(plain_path(spelling).samefile(root))
+                        self.assertEqual(plain_path(spelling / "new tail/output"), root / "new tail/output")
+                        verify_restored(spelling, expected)
+                        self.assertEqual(files_below(spelling / ".cache"), [asset])
+                        self.assertEqual(engine_seed_manifest(spelling, expected)["files"][0]["sha256"], digest(asset))
+                        with patch.dict(RUNTIME_PINS, {"python.exe": pin}, clear=True):
+                            self.assertEqual(runtime_files(spelling / runtime.name, runtime_manifest)[0]["sha256"], pin[1])
+                        write_lock_file(spelling / "new.lock", "synthetic lock\n")
+                        self.assertEqual(validate_output(spelling / "new output", []), root / "new output")
+                        with self.assertRaises(BuildError):
+                            validate_output(spelling / "new output", [root / "new output/input"])
+                        with self.assertRaises(BuildError):
+                            validate_output(root / "new output", [spelling / "new output/input"])
+                        with self.assertRaises(BuildError):
+                            validate_output(spelling / ".cache/new", [root / ".cache"])
+                        with self.assertRaises(BuildError):
+                            validate_output(spelling / ".cache", [])
+                for suffix in ("absent directory.", "absent directory "):
+                    with self.assertRaisesRegex(BuildError, "Ambiguous"):
+                        plain_path(extended / suffix / "output")
+                with patch(__name__ + ".REPO", Path("\\\\?\\" + str(REPO))):
+                    self.assertEqual(validate_output(short / "new output", []), root / "new output")
+                self.assertEqual((root / "new.lock").read_text(), "synthetic lock\n")
+
+        def test_windows_normalization_rejects_changed_file_identity(self):
+            from unittest.mock import patch
+
+            with tempfile.TemporaryDirectory(dir=REPO) as directory:
+                root = Path(directory)
+                source, other = root / "original", root / "different"
+                source.mkdir()
+                other.mkdir()
+                sentinel = other / "sentinel"
+                sentinel.write_bytes(b"synthetic user data")
+                with patch.object(Path, "resolve", return_value=other), self.assertRaisesRegex(BuildError, "changed"):
+                    plain_path(source / "missing output")
+                self.assertEqual(sentinel.read_bytes(), b"synthetic user data")
+                self.assertFalse((source / "missing output").exists())
+
+        def test_windows_unc_namespace_requires_matching_filesystem_identity(self):
+            from unittest.mock import patch
+
+            ordinary = Path(r"\\server\share\Long directory")
+            extended = Path(r"\\?\UNC\server\share\Long directory")
+            identity = os.stat_result((stat.S_IFDIR | 0o700, 100, 1, 1, 0, 0, 0, 0, 0, 0))
+            different = os.stat_result((stat.S_IFDIR | 0o700, 101, 1, 1, 0, 0, 0, 0, 0, 0))
+            # No network share is contacted. Exercise the UNC namespace branch
+            # and its mandatory identity check independently of SMB availability.
+            with patch.object(Path, "lstat", return_value=identity), \
+                    patch.object(Path, "resolve", return_value=extended):
+                with patch.object(Path, "stat", return_value=identity):
+                    self.assertEqual(windows_plain_path(ordinary), ordinary)
+                    self.assertEqual(windows_plain_path(extended), ordinary)
+                with patch.object(Path, "stat", return_value=different), self.assertRaises(BuildError):
+                    windows_plain_path(extended)
 
     def test_unsafe_archive_and_manifest_paths_are_rejected(self):
         for name in ("../outside", "/absolute", "C:/outside", "a\\b", "a//b", "a/./b", "a/../b", "NUL.txt", "a/name.", "a/name ", "a/file:stream", "a/\x00b"):
@@ -1478,9 +1794,9 @@ class BuilderTests(unittest.TestCase):
     def test_final_manifest_has_every_file_and_no_self_hash(self):
         with tempfile.TemporaryDirectory(dir=REPO) as temporary:
             root = Path(temporary)
-            (root / "pdf2zh.exe").write_bytes(b"synthetic executable")
+            (root / "BabelOxide.exe").write_bytes(b"synthetic executable")
             records = final_manifest(root)
-            self.assertEqual(records, [{"path": "pdf2zh.exe", "bytes": 20, "sha256": hashlib.sha256(b"synthetic executable").hexdigest()}])
+            self.assertEqual(records, [{"path": "BabelOxide.exe", "bytes": 20, "sha256": hashlib.sha256(b"synthetic executable").hexdigest()}])
             self.assertEqual(read_json(root / "RELEASE_FILES.json"), records)
             nested = root / "metadata/RELEASE_FILES.json"
             nested.parent.mkdir()
@@ -1520,14 +1836,24 @@ class BuilderTests(unittest.TestCase):
             notices.mkdir(parents=True)
             body = b"Synthetic upstream MIT license fixture"
             (notices / "LICENSE").write_bytes(body)
-            write_json(notices / "SUPPLEMENTAL_NOTICES.json", [{"name": "fixture", "version": "1.0", "file": "LICENSE", "sha256": hashlib.sha256(body).hexdigest(), "source": "https://example.invalid/revision/LICENSE"}])
+            extra = b"Synthetic upstream attribution and platform conditions"
+            (notices / "NOTICE").write_bytes(extra)
+            write_json(notices / "SUPPLEMENTAL_NOTICES.json", [
+                {"name": "fixture", "version": "1.0", "file": "LICENSE", "sha256": hashlib.sha256(body).hexdigest(), "source": "https://example.invalid/template", "document_origin": "standard-license-template"},
+                {"name": "fixture", "version": "1.0", "file": "NOTICE", "sha256": hashlib.sha256(extra).hexdigest(), "source": "https://example.invalid/revision/NOTICE"},
+            ])
             stage = root / "stage"
             stage.mkdir()
             matching = {"name": "fixture", "version": "1.0", "license_files": []}
             different = {"name": "fixture", "version": "2.0", "license_files": []}
             with patch(__name__ + ".REPO", root):
                 supplement_rust_notices(stage, [matching, different])
-                self.assertEqual(len(matching["license_files"]), 1)
+                self.assertEqual(len(matching["license_files"]), 2)
+                self.assertEqual(len(matching["supplemental_notice_sources"]), 2)
+                self.assertTrue(matching["license_files"][0].endswith("/supplemental-LICENSE"))
+                self.assertTrue(matching["license_files"][1].endswith("/upstream-NOTICE"))
+                self.assertEqual(matching["supplemental_notice_sources"][0]["document_origin"], "standard-license-template")
+                self.assertEqual((stage / matching["license_files"][1]).read_bytes(), extra)
                 self.assertEqual(different["license_files"], [])
                 (notices / "LICENSE").write_bytes(b"tampered")
                 with self.assertRaisesRegex(BuildError, "SHA256 mismatch"):

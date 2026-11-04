@@ -59,7 +59,9 @@ impl ConfigStore {
         let home = supplied_env(env, "USERPROFILE")
             .or_else(|| supplied_env(env, "HOME"))
             .map(PathBuf::from);
-        let mut store = if let Some(root) = supplied_env(env, "PDF2ZH_APP_DIR") {
+        let mut store = if let Some(root) =
+            supplied_env(env, "BABELOXIDE_APP_DIR").or_else(|| supplied_env(env, "PDF2ZH_APP_DIR"))
+        {
             let root = if root == "~" {
                 home.clone()
                     .ok_or_else(|| ConfigError::new(ConfigErrorKind::InvalidPath))?
@@ -123,6 +125,7 @@ impl ConfigStore {
                     error.kind(),
                     io::ErrorKind::PermissionDenied | io::ErrorKind::ReadOnlyFilesystem
                 ) && self.default_executable_root
+                    && supplied_env(env, "BABELOXIDE_APP_DIR").is_none()
                     && supplied_env(env, "PDF2ZH_APP_DIR").is_none() => {}
             Err(error) => return Err(io_error(error)),
         }
@@ -138,7 +141,13 @@ impl ConfigStore {
                         .or_else(|| supplied_env(env, "HOME").filter(|value| !value.is_empty()))
                         .map(|home| PathBuf::from(home).join("AppData").join("Local"))
                 }
-                #[cfg(not(windows))]
+                #[cfg(target_os = "macos")]
+                {
+                    supplied_env(env, "HOME")
+                        .filter(|value| !value.is_empty())
+                        .map(|home| PathBuf::from(home).join("Library/Application Support"))
+                }
+                #[cfg(not(any(windows, target_os = "macos")))]
                 {
                     None
                 }
@@ -151,9 +160,20 @@ impl ConfigStore {
             .app_root
             .to_str()
             .ok_or_else(|| ConfigError::new(ConfigErrorKind::InvalidPath))?;
-        let root = local
-            .join("PDFMathTranslate")
-            .join(root_fingerprint(original));
+        let fingerprint = root_fingerprint(original);
+        let current = local.join("BabelOxide").join(&fingerprint);
+        let legacy = local.join("PDFMathTranslate").join(&fingerprint);
+        // Keep an existing legacy fallback in place, including SQLite WALs,
+        // model edits and cache handles. Copying a live database is unsafe.
+        // New installations use the BabelOxide directory; neither path is reset.
+        let root = if !current.exists()
+            && (legacy.join("config").join(CONFIG_FILENAME).exists()
+                || legacy.join("cache").exists())
+        {
+            legacy
+        } else {
+            current
+        };
         check(&root).map_err(io_error)?;
         let mut fallback = Self::new(root)?;
         fallback.legacy_home = self.legacy_home.clone();
@@ -246,6 +266,8 @@ impl ConfigStore {
             Err(error) => return Err(io_error(error)),
         }
         let bytes = fs::read(old).map_err(io_error)?;
+        let (value, _) = decode_bytes(&bytes)?;
+        Settings::from_value(value)?.validate()?;
         let temporary = prepare(&self.path, &bytes)?;
         match temporary.persist_noclobber(&self.path) {
             Ok(_) => {
@@ -386,6 +408,8 @@ fn copy_once(source: &Path, destination: &Path) -> Result<()> {
         Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(()),
         Err(error) => return Err(io_error(error)),
     };
+    let (value, _) = decode_bytes(&bytes)?;
+    Settings::from_value(value)?.validate()?;
     let temporary = prepare(destination, &bytes)?;
     match temporary.persist_noclobber(destination) {
         Ok(_) => sync_parent(destination),
@@ -400,12 +424,16 @@ fn read(path: &Path) -> Result<Option<(Value, toml::Value)>> {
         Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
         Err(error) => return Err(io_error(error)),
     };
+    decode_bytes(&bytes).map(Some)
+}
+
+fn decode_bytes(bytes: &[u8]) -> Result<(Value, toml::Value)> {
     let text =
-        std::str::from_utf8(&bytes).map_err(|_| ConfigError::new(ConfigErrorKind::InvalidToml))?;
+        std::str::from_utf8(bytes).map_err(|_| ConfigError::new(ConfigErrorKind::InvalidToml))?;
     let original: toml::Value =
         toml::from_str(text).map_err(|_| ConfigError::new(ConfigErrorKind::InvalidToml))?;
     let value = toml_to_json(&original);
-    Ok(Some((decode_toml_content(value), original)))
+    Ok((decode_toml_content(value), original))
 }
 
 /// The old format converts dictionary values only. A string "null" inside an
@@ -598,7 +626,7 @@ mod writable_tests {
         assert_eq!(fallback.legacy_home.as_deref(), Some(home.as_path()));
         assert_eq!(
             fallback.app_root().parent().unwrap(),
-            directory.path().join("local/PDFMathTranslate")
+            directory.path().join("local/BabelOxide")
         );
         let suffix = fallback.app_root().file_name().unwrap().to_str().unwrap();
         assert_eq!(suffix.len(), 16);
@@ -618,18 +646,58 @@ mod writable_tests {
     }
 
     #[test]
+    fn an_existing_legacy_fallback_keeps_config_cache_and_wal_in_place() {
+        let directory = tempfile::tempdir().unwrap();
+        let install = directory.path().join("portable");
+        let local = directory.path().join("local");
+        let legacy = local
+            .join("PDFMathTranslate")
+            .join(root_fingerprint(install.to_str().unwrap()));
+        fs::create_dir_all(legacy.join("config")).unwrap();
+        fs::create_dir_all(legacy.join("cache")).unwrap();
+        let original = b"[openai_detail]\nopenai_api_key='synthetic-migration-key'\n";
+        fs::write(legacy.join("config").join(CONFIG_FILENAME), original).unwrap();
+        fs::write(
+            legacy.join("cache/translations.v2.db-wal"),
+            b"untouched WAL",
+        )
+        .unwrap();
+        let store = default_store(install.clone());
+        let resolved = store
+            .resolve_writable_with(&local_env(&local), |path| {
+                if path.starts_with(&install) {
+                    Err(io::ErrorKind::PermissionDenied.into())
+                } else {
+                    probe_directory(path)
+                }
+            })
+            .unwrap();
+        assert_eq!(resolved.app_root(), legacy);
+        assert_eq!(
+            resolved.load().unwrap().get("openai_detail.openai_api_key"),
+            Some(&json!("synthetic-migration-key"))
+        );
+        assert_eq!(fs::read(resolved.path()).unwrap(), original);
+        assert_eq!(
+            fs::read(legacy.join("cache/translations.v2.db-wal")).unwrap(),
+            b"untouched WAL"
+        );
+        assert!(!local.join("BabelOxide").exists());
+    }
+
+    #[test]
     fn explicit_root_and_unrelated_errors_never_fall_back() {
         let directory = tempfile::tempdir().unwrap();
         let root = directory.path().join("portable");
         let store = default_store(root.clone());
         let mut env = local_env(&directory.path().join("local"));
-        env.insert("PDF2ZH_APP_DIR".into(), root.to_str().unwrap().into());
+        env.insert("BABELOXIDE_APP_DIR".into(), root.to_str().unwrap().into());
         let error = store
             .resolve_writable_with(&env, |_| Err(io::ErrorKind::PermissionDenied.into()))
             .unwrap_err();
         assert_eq!(error.kind, ConfigErrorKind::Io);
         assert!(!directory.path().join("local").exists());
-        env.remove("PDF2ZH_APP_DIR");
+        env.remove("BABELOXIDE_APP_DIR");
         let custom = ConfigStore::new(root.clone()).unwrap();
         let error = custom
             .resolve_writable_with(&env, |_| Err(io::ErrorKind::PermissionDenied.into()))
@@ -686,6 +754,31 @@ mod writable_tests {
         assert!(!fallback.app_root().exists());
     }
 
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn missing_localappdata_uses_macos_application_support() {
+        let directory = tempfile::tempdir().unwrap();
+        let root = directory.path().join("portable");
+        let home = directory.path().join("home");
+        let store = default_store(root.clone());
+        let env = BTreeMap::from([("HOME".into(), home.to_str().unwrap().into())]);
+        let fallback = store
+            .resolve_writable_with(&env, |path| {
+                if path.starts_with(&root) {
+                    Err(io::ErrorKind::PermissionDenied.into())
+                } else {
+                    probe_directory(path)
+                }
+            })
+            .unwrap();
+        assert!(
+            fallback
+                .app_root()
+                .starts_with(home.join("Library/Application Support/BabelOxide"))
+        );
+        assert!(!fallback.path().exists());
+    }
+
     #[cfg(windows)]
     #[test]
     fn missing_localappdata_uses_explicit_userprofile() {
@@ -706,7 +799,7 @@ mod writable_tests {
         assert!(
             fallback
                 .app_root()
-                .starts_with(home.join("AppData/Local/PDFMathTranslate"))
+                .starts_with(home.join("AppData/Local/BabelOxide"))
         );
     }
 }

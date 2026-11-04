@@ -2,6 +2,7 @@
 
 use std::{
     collections::BTreeMap,
+    error::Error,
     future::Future,
     pin::Pin,
     sync::{Arc, Mutex},
@@ -101,6 +102,7 @@ pub struct HttpTransport {
     prepared_initial_request: bool,
     executor: Option<Arc<dyn HttpExecutor>>,
     redirect_limit: usize,
+    diagnostics: bool,
 }
 
 impl HttpTransport {
@@ -120,6 +122,7 @@ impl HttpTransport {
             prepared_initial_request: false,
             executor: None,
             redirect_limit: 20,
+            diagnostics: false,
         }
     }
 
@@ -131,6 +134,11 @@ impl HttpTransport {
     /// Zero disables following redirects while preserving the received response.
     pub fn with_redirect_limit(mut self, limit: usize) -> Self {
         self.redirect_limit = limit;
+        self
+    }
+
+    pub fn with_diagnostics(mut self, enabled: bool) -> Self {
+        self.diagnostics = enabled;
         self
     }
 
@@ -285,6 +293,10 @@ impl HttpTransport {
                 }
             }
             let status = response.status().as_u16();
+            if self.diagnostics {
+                // Status only: never log a URL, body, Header or API key.
+                eprintln!("BabelOxide: translation HTTP status {status}");
+            }
             if self.redirect_limit > 0
                 && matches!(status, 301 | 302 | 303 | 307 | 308)
                 && let Some(location) = response.headers().get(reqwest::header::LOCATION)
@@ -422,7 +434,26 @@ fn classify_http_error(error: reqwest::Error) -> ProviderError {
     } else {
         "translation HTTP request failed"
     };
-    ProviderError::new(kind, message)
+    // Never format reqwest's URL, headers or arbitrary source messages. The
+    // typed I/O cause still distinguishes socket permissions, refusal and DNS.
+    let mut detail = format!("{message} ({kind:?}");
+    let mut source = error.source();
+    while let Some(cause) = source {
+        if let Some(io) = cause.downcast_ref::<std::io::Error>() {
+            detail.push_str(&format!(", {:?}", io.kind()));
+            if let Some(code) = io.raw_os_error() {
+                detail.push_str(&format!(", OS error {code}"));
+            }
+            break;
+        }
+        if cause.is::<rustls::Error>() {
+            detail.push_str(", TLS handshake/certificate verification failed");
+            break;
+        }
+        source = cause.source();
+    }
+    detail.push(')');
+    ProviderError::new(kind, detail)
 }
 
 #[cfg(test)]

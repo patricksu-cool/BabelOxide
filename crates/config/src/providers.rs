@@ -1,5 +1,5 @@
 use crate::{ConfigError, ConfigErrorKind, EngineSpec, Result, Settings, positive_u32};
-use pdf2zh_core::TranslatorConfig;
+use babeloxide_core::TranslatorConfig;
 use serde_json::{Map, Value, json};
 
 pub(crate) fn build(
@@ -42,6 +42,9 @@ pub(crate) fn build(
     options.insert("qps".into(), json!(qps));
     options.insert("ignore_cache".into(), json!(t.ignore_cache));
     options.insert("lang_in".into(), json!(t.lang_in));
+    if settings.basic()?.debug {
+        options.insert("diagnostic_http".into(), json!(true));
+    }
     let mut result = TranslatorConfig {
         provider: String::new(),
         endpoint: String::new(),

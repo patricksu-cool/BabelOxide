@@ -57,7 +57,7 @@ impl Fixture {
             })
             .collect::<Result<Vec<_>>>()?;
         let output = directory.path().join("output");
-        let python = std::env::var_os("PDF2ZH_TEST_PYTHON")
+        let python = std::env::var_os("BABELOXIDE_TEST_PYTHON")
             .map(PathBuf::from)
             .unwrap_or_else(|| {
                 root.join(if cfg!(windows) {
@@ -77,11 +77,11 @@ impl Fixture {
     }
 
     fn command(&self) -> Command {
-        let mut command = Command::new(env!("CARGO_BIN_EXE_pdf2zh"));
+        let mut command = Command::new(env!("CARGO_BIN_EXE_BabelOxide"));
         command
             .env_clear()
             .current_dir(self.directory.path())
-            .env("PDF2ZH_APP_DIR", &self.app)
+            .env("BABELOXIDE_APP_DIR", &self.app)
             .env("HOME", self.directory.path().join("home"))
             .env("USERPROFILE", self.directory.path().join("home"))
             .env("TEMP", self.directory.path().join("tmp"))

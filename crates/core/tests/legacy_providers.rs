@@ -2,7 +2,7 @@
 //! controlled native subprocesses. These tests never load application settings,
 //! user API keys or a real Claude installation.
 
-use pdf2zh_core::{
+use babeloxide_core::{
     Clock, ErrorKind, HttpBody, HttpExecutor, HttpRequest, HttpResponse, HttpTransport,
     ProviderContext, ProviderError, ProviderOutput, ProviderResult, RandomSource, RetryRuntime,
     TranslationRequest, TranslatorConfig, providers::legacy,
@@ -268,10 +268,13 @@ impl Harness {
         legacy::dispatch(&self.context()).await
     }
     async fn run_service(&self) -> ProviderResult<ProviderOutput> {
-        pdf2zh_core::TranslationService::new_with_runtime(self.config.clone(), self.runtime.clone())
-            .unwrap()
-            .translate_typed(&self.request, &self.cancel)
-            .await
+        babeloxide_core::TranslationService::new_with_runtime(
+            self.config.clone(),
+            self.runtime.clone(),
+        )
+        .unwrap()
+        .translate_typed(&self.request, &self.cancel)
+        .await
     }
     fn requests(&self) -> Vec<HttpRequest> {
         self.script.as_ref().unwrap().requests()
@@ -718,7 +721,7 @@ async fn app_provider_cookies_stay_within_one_redirect_chain() {
         ])
         .await;
         let harness = Harness::loopback(provider, &format!("{}/start", server.endpoint));
-        let service = pdf2zh_core::TranslationService::new_with_runtime(
+        let service = babeloxide_core::TranslationService::new_with_runtime(
             harness.config.clone(),
             harness.runtime.clone(),
         )
@@ -755,7 +758,7 @@ async fn deepl_prepared_requests_omit_session_cookies_until_redirect() {
     ])
     .await;
     let harness = Harness::loopback("deepl", &server.endpoint);
-    let service = pdf2zh_core::TranslationService::new_with_runtime(
+    let service = babeloxide_core::TranslationService::new_with_runtime(
         harness.config.clone(),
         harness.runtime.clone(),
     )
@@ -1715,12 +1718,12 @@ async fn cli_real_process_timeout_retries_three_times_and_reaps() {
     let harness = Arc::new(harness);
     let task_harness = harness.clone();
     let task = tokio::spawn(async move { task_harness.run().await });
-    #[cfg(windows)]
+    #[cfg(any(windows, unix))]
     let mut observed = Vec::new();
-    #[cfg(windows)]
+    #[cfg(any(windows, unix))]
     for attempt in 1..=3 {
         eventually(|| fixture.calls().len() >= attempt).await;
-        let child = windows_process::ObservedProcess::from_pid(fixture.calls()[attempt - 1].0);
+        let child = process_observer::ObservedProcess::from_pid(fixture.calls()[attempt - 1].0);
         assert!(child.running());
         observed.push(child);
     }
@@ -1731,7 +1734,7 @@ async fn cli_real_process_timeout_retries_three_times_and_reaps() {
     ));
     assert_eq!(fixture.calls().len(), 3);
     assert_eq!(harness.clock.seconds(), vec![2.0, 4.0]);
-    #[cfg(windows)]
+    #[cfg(any(windows, unix))]
     for child in observed {
         assert!(!child.running(), "timed out child remains alive");
     }
@@ -1741,7 +1744,7 @@ async fn cli_real_process_timeout_retries_three_times_and_reaps() {
 async fn claude_real_process_stream_json_contract_and_startup_is_cached() {
     let fixture = NativeFixture::new();
     let harness = fixture.claude("claude-success");
-    let service = pdf2zh_core::TranslationService::new_with_runtime(
+    let service = babeloxide_core::TranslationService::new_with_runtime(
         harness.config.clone(),
         harness.runtime.clone(),
     )
@@ -1808,8 +1811,8 @@ async fn claude_real_process_timeout_converts_to_value_without_retry_and_reaps()
     let task_harness = harness.clone();
     let task = tokio::spawn(async move { task_harness.run().await });
     eventually(|| fixture.pid("child.pid").is_some()).await;
-    #[cfg(windows)]
-    let child = windows_process::ObservedProcess::from_pid(fixture.pid("child.pid").unwrap());
+    #[cfg(any(windows, unix))]
+    let child = process_observer::ObservedProcess::from_pid(fixture.pid("child.pid").unwrap());
     tokio::time::pause();
     tokio::time::advance(Duration::from_secs(121)).await;
     tokio::time::resume();
@@ -1818,7 +1821,7 @@ async fn claude_real_process_timeout_converts_to_value_without_retry_and_reaps()
     assert!(error.message.contains("timed out"));
     assert_eq!(fixture.calls().len(), 1);
     assert!(harness.clock.seconds().is_empty());
-    #[cfg(windows)]
+    #[cfg(any(windows, unix))]
     assert!(!child.running());
 }
 
@@ -1834,8 +1837,8 @@ async fn cli_and_claude_real_process_cancel_reaps_before_return() {
         let task_harness = harness.clone();
         let task = tokio::spawn(async move { task_harness.run().await });
         eventually(|| fixture.pid("child.pid").is_some()).await;
-        #[cfg(windows)]
-        let child = windows_process::ObservedProcess::from_pid(fixture.pid("child.pid").unwrap());
+        #[cfg(any(windows, unix))]
+        let child = process_observer::ObservedProcess::from_pid(fixture.pid("child.pid").unwrap());
         harness.cancel.cancel();
         assert_eq!(
             task.await.unwrap().err().unwrap().kind,
@@ -1843,8 +1846,31 @@ async fn cli_and_claude_real_process_cancel_reaps_before_return() {
         );
         assert_eq!(fixture.calls().len(), 1);
         assert!(harness.clock.seconds().is_empty());
-        #[cfg(windows)]
+        #[cfg(any(windows, unix))]
         assert!(!child.running());
+    }
+}
+
+#[cfg(windows)]
+use windows_process as process_observer;
+
+#[cfg(unix)]
+mod process_observer {
+    mod snapshot {
+        include!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../test-support/unix_process.rs"
+        ));
+    }
+
+    pub struct ObservedProcess(snapshot::Process);
+    impl ObservedProcess {
+        pub fn from_pid(pid: u32) -> Self {
+            Self(snapshot::Process::observe(pid).unwrap())
+        }
+        pub fn running(&self) -> bool {
+            self.0.running().unwrap()
+        }
     }
 }
 
@@ -1881,18 +1907,18 @@ mod windows_process {
     }
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, unix))]
 #[tokio::test]
-async fn windows_job_cancellation_reaps_child_and_descendant_with_inherited_pipes() {
+async fn contained_process_cancellation_reaps_child_and_descendant_with_inherited_pipes() {
     let fixture = NativeFixture::new();
     let harness = Arc::new(fixture.cli("tree"));
     let task_harness = harness.clone();
     let task = tokio::spawn(async move { task_harness.run().await });
     eventually(|| fixture.pid("child.pid").is_some() && fixture.pid("descendant.pid").is_some())
         .await;
-    let child = windows_process::ObservedProcess::from_pid(fixture.pid("child.pid").unwrap());
+    let child = process_observer::ObservedProcess::from_pid(fixture.pid("child.pid").unwrap());
     let descendant =
-        windows_process::ObservedProcess::from_pid(fixture.pid("descendant.pid").unwrap());
+        process_observer::ObservedProcess::from_pid(fixture.pid("descendant.pid").unwrap());
     assert!(child.running());
     assert!(descendant.running());
     harness.cancel.cancel();

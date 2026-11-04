@@ -28,17 +28,17 @@ jobs:
       MACOSX_DEPLOYMENT_TARGET: '14.0'
       CARGO_TERM_COLOR: always
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
           clean: false
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13.16'
       - name: Product metadata
         id: metadata
         run: python script/ci.py --platform ${{ matrix.platform }} --metadata
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry
@@ -53,10 +53,19 @@ jobs:
       - name: Complete runtime bundle and local IPC/native smoke
         run: python script/ci.py --platform ${{ matrix.platform }} --build
       - name: Upload complete bundle
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: BabelOxide-v${{ steps.metadata.outputs.version }}-${{ matrix.platform }}
           path: dist/BabelOxide-v${{ steps.metadata.outputs.version }}-${{ matrix.platform }}.zip
           retention-days: 7
           if-no-files-found: error
           compression-level: 0
+      - name: Upload CI logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: BabelOxide-ci-logs-${{ matrix.platform }}-${{ github.run_attempt }}
+          path: .test-output/ci/
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: warn

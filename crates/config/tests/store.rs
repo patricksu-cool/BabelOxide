@@ -1,4 +1,4 @@
-use pdf2zh_config::{
+use babeloxide_config::{
     ConfigErrorKind, ConfigStore, Settings, decode_toml_content, encode_toml_content,
 };
 use serde_json::{Value, json};
@@ -44,13 +44,13 @@ fn application_path_is_independent_of_cwd_and_no_default_is_written_on_load() {
     .unwrap();
     let output = Command::new(std::env::current_exe().unwrap())
         .args(["--exact", "isolated_cwd_helper", "--nocapture"])
-        .env("PDF2ZH_CONFIG_FIXTURE_ROOT", store.app_root())
+        .env("BABELOXIDE_CONFIG_FIXTURE_ROOT", store.app_root())
         .current_dir(cwd)
         .output()
         .unwrap();
     assert!(output.status.success(), "isolated test helper failed");
     let env = BTreeMap::from([(
-        "PDF2ZH_APP_DIR".into(),
+        "BABELOXIDE_APP_DIR".into(),
         store.app_root().to_str().unwrap().into(),
     )]);
     assert_eq!(
@@ -61,7 +61,7 @@ fn application_path_is_independent_of_cwd_and_no_default_is_written_on_load() {
 
 #[test]
 fn isolated_cwd_helper() {
-    let Some(root) = std::env::var_os("PDF2ZH_CONFIG_FIXTURE_ROOT") else {
+    let Some(root) = std::env::var_os("BABELOXIDE_CONFIG_FIXTURE_ROOT") else {
         return;
     };
     let store = ConfigStore::new(PathBuf::from(root)).unwrap();
@@ -89,6 +89,19 @@ fn legacy_config_is_copied_once_byte_for_byte_and_never_replaces_local_settings(
         "synthetic-key"
     );
     assert_eq!(fs::read(configured.path()).unwrap(), bytes);
+}
+
+#[test]
+fn invalid_legacy_document_is_never_published_as_a_new_configuration() {
+    let (directory, store) = fixture();
+    let home = directory.path().join("legacy-home");
+    let old = home.join(".config/pdf2zh/config.v3.toml");
+    fs::create_dir_all(old.parent().unwrap()).unwrap();
+    let bytes = b"[broken legacy document";
+    fs::write(&old, bytes).unwrap();
+    assert!(store.migrate_legacy_once(&home).is_err());
+    assert!(!store.path().exists());
+    assert_eq!(fs::read(old).unwrap(), bytes);
 }
 
 #[test]
@@ -137,11 +150,11 @@ fn explicit_cli_environment_and_file_precedence_never_saves_runtime_secrets() {
     fs::write(&explicit, higher).unwrap();
     let env = BTreeMap::from([
         (
-            "PDF2ZH_CONFIG_FILE".into(),
+            "BABELOXIDE_CONFIG_FILE".into(),
             explicit.to_str().unwrap().into(),
         ),
-        ("PDF2ZH_QPS".into(), "8".into()),
-        ("PDF2ZH_OPENAI_API_KEY".into(), "synthetic-env".into()),
+        ("BABELOXIDE_QPS".into(), "8".into()),
+        ("BABELOXIDE_OPENAI_API_KEY".into(), "synthetic-env".into()),
     ]);
     let settings = store
         .load_with_overrides(
@@ -475,5 +488,32 @@ fn windows_replace_failure_preserves_old_file_and_cleans_its_private_tempfile() 
     assert_eq!(
         store.load().unwrap().get("future.generation"),
         Some(&json!(2))
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn atomic_replacement_preserves_an_open_readers_snapshot() {
+    use std::io::Read;
+    let (_directory, store) = fixture();
+    let mut settings = Settings::default();
+    settings.set("future.generation", json!(1)).unwrap();
+    store.save(&settings).unwrap();
+    let old = fs::read(store.path()).unwrap();
+    let mut reader = fs::File::open(store.path()).unwrap();
+    settings.set("future.generation", json!(2)).unwrap();
+    store.save(&settings).unwrap();
+    let mut snapshot = Vec::new();
+    reader.read_to_end(&mut snapshot).unwrap();
+    assert_eq!(snapshot, old);
+    assert_eq!(
+        store.load().unwrap().get("future.generation"),
+        Some(&json!(2))
+    );
+    assert_eq!(
+        fs::read_dir(store.path().parent().unwrap())
+            .unwrap()
+            .count(),
+        1
     );
 }

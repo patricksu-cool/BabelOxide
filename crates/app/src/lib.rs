@@ -7,6 +7,7 @@ mod dialogs;
 mod languages;
 mod model;
 mod output_paths;
+mod presets;
 mod settings_ui;
 mod strings;
 mod transfers;
@@ -14,9 +15,9 @@ mod transfers;
 mod windows_launch;
 
 use anyhow::{Context, Result, ensure};
-use babeldoc_bridge::WorkerOptions;
-use pdf2zh_cli::Invocation;
-use pdf2zh_config::{ConfigStore, Settings};
+use babeloxide_bridge::WorkerOptions;
+use babeloxide_cli::Invocation;
+use babeloxide_config::{ConfigStore, Settings};
 use std::{collections::BTreeMap, path::PathBuf};
 
 /// Explicit dependencies for embedders and isolated tests. Construction does
@@ -28,7 +29,7 @@ pub struct LaunchOptions {
     pub worker: WorkerOptions,
     pub cache_file: Option<PathBuf>,
     /// Directory containing the executable and its trusted native/ subtree.
-    /// This is independent of a writable PDF2ZH_APP_DIR configuration override.
+    /// This is independent of a writable BABELOXIDE_APP_DIR configuration override.
     pub bundle_root: PathBuf,
 }
 
@@ -44,10 +45,12 @@ pub fn launch(invocation: Invocation, environment: BTreeMap<String, String>) -> 
         store.save_user_defaults(&settings)?;
     }
     let executable = std::env::current_exe().context("Cannot locate the application executable")?;
-    let bundle_root = executable
-        .parent()
-        .context("Cannot locate the application folder")?
-        .to_path_buf();
+    let bundle_root = invocation.runtime_dir.clone().unwrap_or(
+        executable
+            .parent()
+            .context("Cannot locate the application folder")?
+            .to_path_buf(),
+    );
     let worker = invocation.worker_for_store(&store);
     launch_with_settings(LaunchOptions {
         store,
@@ -72,14 +75,24 @@ pub fn launch_with_settings(options: LaunchOptions) -> Result<()> {
     let control = background.control.clone();
     let native_options = eframe::NativeOptions {
         viewport: eframe::egui::ViewportBuilder::default()
-            .with_title("PDFMathTranslate")
+            .with_title(format!(
+                "{} v{}",
+                babeloxide_core::PRODUCT_NAME,
+                babeloxide_core::PRODUCT_VERSION
+            ))
+            .with_icon(
+                eframe::icon_data::from_png_bytes(include_bytes!(
+                    "../../../resources/babeloxide.png"
+                ))
+                .expect("Bundled BabelOxide icon"),
+            )
             .with_inner_size([1180.0, 820.0])
-            .with_min_inner_size([900.0, 620.0]),
+            .with_min_inner_size([640.0, 520.0]),
         renderer: eframe::Renderer::Glow,
         ..Default::default()
     };
     let result = eframe::run_native(
-        "PDFMathTranslate",
+        babeloxide_core::PRODUCT_NAME,
         native_options,
         Box::new(move |context| Ok(Box::new(app::NativeApp::new(context, options, background)))),
     );

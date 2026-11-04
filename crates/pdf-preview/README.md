@@ -1,13 +1,13 @@
 # Native PDF preview
 
-`pdf2zh-pdf-preview` renders one PDF page on a dedicated Rust thread. The GUI
+`babeloxide-pdf-preview` renders one PDF page on a dedicated Rust thread. The GUI
 receives owned RGBA bytes and metadata; it never receives PDFium objects, bitmap
 pointers, or file readers. Preview does not use Python, BabelDOC, or a browser.
 
 The fixed wrapper is `pdfium-render = 0.9.4`, without default/image features,
 with `thread_safe` and `pdfium_7881`. The parent build owns acquisition, hashes,
-licenses, and ABI validation of the bundled PDFium 8125 DLL. An AMD64 PE header
-check here is not a substitute for that package verification.
+licenses, and ABI validation of the bundled PDFium 8125 library (Windows x64 DLL
+or macOS arm64 dylib). Header checks here do not replace package verification.
 
 ## GUI contract
 
@@ -50,9 +50,11 @@ that total preview memory is10MB.
 
 ## Loader and lifetime
 
-Only `app_root/native/pdfium/pdfium.dll` is accepted. Paths are absolute and
-canonicalized within the trusted application root, and the file must have an
-AMD64 PE32+ DLL header. There is no `Pdfium::default()`, system-library, PATH, or
+Only `app_root/native/pdfium/pdfium.dll` on Windows, or
+`app_root/native/pdfium/libpdfium.dylib` on macOS, is accepted. Paths are absolute
+and canonicalized within the trusted application root. Windows requires an
+AMD64 PE32+ DLL header; macOS requires a thin arm64 Mach-O dylib header. The Mac
+builder separately checks its dependencies and rpaths. There is no `Pdfium::default()`, system-library, PATH, or
 CWD fallback. PDF paths are kept as `PathBuf`; wrapper file loading uses Rust's
 File reader, including Unicode Windows paths.
 
@@ -90,7 +92,7 @@ The ordinary unit tests use controlled fake backends and TempDir data:
 
 - Portrait/landscape sizes, panel/zoom caps, invalid inputs and page clamping.
 - RGBA byte length, dimensions, alpha, and invalid-frame rejection.
-- Fixed bundle path and missing/invalid/wrong-architecture PE handling.
+- Fixed bundle path and missing/invalid/wrong-architecture PE/Mach-O handling.
 - Latest queued replacement, an old in-flight generation, unread-result
   replacement, and requests during a pending initializer.
 - Nonblocking Busy without consuming a ticket, initialization-error delivery,
@@ -102,11 +104,11 @@ The real ABI smoke test is **ignored by default**, not silently passed when its
 inputs are absent. The parent runner supplies explicit, verified inputs:
 
 ```powershell
-$env:PDF2ZH_PREVIEW_NATIVE_APP_ROOT = 'ABSOLUTE_VERIFIED_APP_ROOT'
-$env:PDF2ZH_PREVIEW_NATIVE_PDF = 'ABSOLUTE_AUTHORIZED_PDF_PATH'
-$env:PDF2ZH_PREVIEW_ARTIFACT_DIR = 'ABSOLUTE_OPTIONAL_ARTIFACT_DIRECTORY'
-cargo test -p pdf2zh-pdf-preview --lib --locked
-cargo test -p pdf2zh-pdf-preview --test native_smoke --locked -- --ignored --nocapture
+$env:BABELOXIDE_PREVIEW_NATIVE_APP_ROOT = 'ABSOLUTE_VERIFIED_APP_ROOT'
+$env:BABELOXIDE_PREVIEW_NATIVE_PDF = 'ABSOLUTE_AUTHORIZED_PDF_PATH'
+$env:BABELOXIDE_PREVIEW_ARTIFACT_DIR = 'ABSOLUTE_OPTIONAL_ARTIFACT_DIRECTORY'
+cargo test -p babeloxide-pdf-preview --lib --locked
+cargo test -p babeloxide-pdf-preview --test native_smoke --locked -- --ignored --nocapture
 ```
 
 One smoke process initializes one renderer, creates four synthetic PDF pages to
@@ -120,5 +122,5 @@ It finally checks the explicit reinitialization restriction.
 
 Native calls cannot be interrupted by the test's polling timeout either; the
 parent runner must apply a process timeout to detect/terminate a hung ABI test.
-No native/DLL/clean-machine success is claimed merely because unit tests or the
-crate compile. The parent records the actual fixed-DLL render results separately.
+The CI runner records native-library results separately from unit tests. See
+[platform limitations](../../docs/LIMITATIONS.md).

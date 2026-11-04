@@ -4,13 +4,17 @@ from __future__ import annotations
 
 import asyncio
 import concurrent.futures
+import contextlib
+import functools
 import importlib.metadata
 import json
 import logging
 import os
+import re
 import secrets
 import sys
 import threading
+import traceback
 from pathlib import Path
 
 VERSION = 1
@@ -51,6 +55,129 @@ ENGINE_OPTIONS = frozenset(
 
 class ProtocolError(Exception):
     pass
+
+
+class BatchTranslationError(RuntimeError):
+    """A transient batch service failure BabelDOC may recover per paragraph."""
+
+
+class IncompleteTranslationError(RuntimeError):
+    pass
+
+
+class ParagraphCompletion:
+    """Audit the pinned engine's actual paragraph application, without text.
+
+    A batch exception is recoverable only if every required paragraph later
+    finishes post-processing. Tracker.output alone is insufficient: BabelDOC
+    sets it before parsing/applying a translation, which can still fail.
+    """
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.local = threading.local()
+        self.paragraphs = {}  # Keep references: tracker IDs must not be reused.
+        self.completed = set()
+        self.batch_errors = 0
+
+    def require(self, tracker):
+        with self.lock:
+            self.paragraphs[id(tracker)] = tracker
+            self.completed.discard(id(tracker))
+
+    def complete(self, tracker):
+        with self.lock:
+            if id(tracker) not in self.paragraphs:
+                raise ProtocolError("Engine applied an untracked paragraph")
+            self.completed.add(id(tracker))
+
+    def in_batch(self):
+        return bool(getattr(self.local, "batch", False))
+
+    def recovered_callback(self):
+        with self.lock:
+            self.batch_errors += 1
+
+    def verify(self):
+        with self.lock:
+            required, completed = len(self.paragraphs), len(self.completed)
+            batch_errors = self.batch_errors
+        if required != completed or (batch_errors and not required):
+            raise IncompleteTranslationError(
+                f"PDF is incomplete: {required - completed} of {required} required "
+                "paragraphs were not applied after BabelDOC fallback"
+            )
+        return {
+            "required_paragraphs": required,
+            "completed_paragraphs": completed,
+            "batch_errors": batch_errors,
+        }
+
+    @contextlib.contextmanager
+    def watch(self, paragraph_type=None, batch_type=None):
+        # One private process owns one engine job. Restore hooks after all its
+        # engine threads have joined; never modify the installed engine files.
+        if paragraph_type is None:
+            from babeldoc.format.pdf.document_il.midend.il_translator import ILTranslator
+            from babeldoc.format.pdf.document_il.midend.il_translator_llm_only import ILTranslatorLLMOnly
+
+            paragraph_type, batch_type = ILTranslator, ILTranslatorLLMOnly
+        original_pre = paragraph_type.pre_translate_paragraph
+        original_post = paragraph_type.post_translate_paragraph
+        original_batch = batch_type.translate_paragraph
+
+        @functools.wraps(original_pre)
+        def pre(owner, paragraph, tracker, *args, **kwargs):
+            try:
+                value = original_pre(owner, paragraph, tracker, *args, **kwargs)
+            except BaseException:
+                self.require(tracker)
+                raise
+            if value[0] is not None:
+                self.require(tracker)
+            return value
+
+        @functools.wraps(original_post)
+        def post(owner, paragraph, tracker, *args, **kwargs):
+            value = original_post(owner, paragraph, tracker, *args, **kwargs)
+            self.complete(tracker)
+            return value
+
+        @functools.wraps(original_batch)
+        def batch(owner, *args, **kwargs):
+            previous = self.in_batch()
+            self.local.batch = True
+            try:
+                return original_batch(owner, *args, **kwargs)
+            finally:
+                self.local.batch = previous
+
+        paragraph_type.pre_translate_paragraph = pre
+        paragraph_type.post_translate_paragraph = post
+        batch_type.translate_paragraph = batch
+        try:
+            yield self
+        finally:
+            paragraph_type.pre_translate_paragraph = original_pre
+            paragraph_type.post_translate_paragraph = original_post
+            batch_type.translate_paragraph = original_batch
+
+
+def engine_diagnostic(exc):
+    """Keep exception chains/frames, without locals, URLs or credentials."""
+    if isinstance(exc, (SystemExit, KeyboardInterrupt, concurrent.futures.CancelledError)):
+        return type(exc).__name__
+    # Put the immediate exception before the bounded traceback so a long stack
+    # cannot hide the actionable reason in the GUI's bounded failure message.
+    detail = f"{type(exc).__name__}: {exc}\n" + "".join(traceback.format_exception(exc))
+    detail = re.sub(r"https?://[^\s\"'<>]+", "[URL REDACTED]", detail)
+    detail = re.sub(r"(?i)\bBearer\s+[^\s\"'<>]+", "Bearer [REDACTED]", detail)
+    detail = re.sub(
+        r"(?i)((?:api[-_ ]?key|token|secret|password|authorization)\s*[:=]\s*)[^\s,;]+",
+        r"\1[REDACTED]", detail,
+    )
+    detail = re.sub(r"\bsk-[A-Za-z0-9_-]+", "[REDACTED]", detail)
+    return detail[:8192]
 
 
 def read_frame(stream):
@@ -142,8 +269,12 @@ class EngineBoundary:
         self.started = False
         self.terminal = False
         self.capacity = MAX_OUTSTANDING
+        self.stage = "Worker startup"
+        self.completion = None
 
     def send(self, kind, **fields):
+        if kind == "progress" and isinstance(fields.get("event", {}).get("stage"), str):
+            self.stage = fields["event"]["stage"]
         message = {"v": VERSION, "type": kind, "session": self.session, **fields}
         if self.started:
             message["task_id"] = "job-1"
@@ -197,8 +328,16 @@ class EngineBoundary:
                 ignore_cache=ignore_cache,
                 rate_limit_params=rate_limit_params,
                 translator=translator,
+                batch_fallback=bool(self.completion and self.completion.in_batch()),
             )
             return future.result(timeout=1800)
+        except BatchTranslationError:
+            if self.completion and self.completion.in_batch():
+                self.completion.recovered_callback()
+            else:
+                self.failed.set()
+                self.cancel()
+            raise
         except BaseException:
             if not self.cancelled.is_set():
                 self.failed.set()
@@ -217,8 +356,12 @@ class EngineBoundary:
                     return  # A response already in flight when cancellation won.
                 raise ProtocolError("Unknown or duplicate response ID")
             if "error" in message:
-                self.failed.set()
-                future.set_exception(RuntimeError("Rust translation failed"))
+                error = message["error"]
+                if error.get("code") == "batch_translation_failed":
+                    future.set_exception(BatchTranslationError(error.get("message", "Rust batch translation failed")))
+                else:
+                    self.failed.set()
+                    future.set_exception(RuntimeError("Rust translation failed"))
             elif isinstance(message.get("text"), str):
                 future.set_result(message["text"])
             else:
@@ -303,65 +446,71 @@ class EngineBoundary:
             self.config.cleanup_temp_files()
             raise concurrent.futures.CancelledError()
         result = None
+        self.completion = ParagraphCompletion()
         stream = async_translate(self.config)
-        try:
-            async for event in stream:
-                if self.cancelled.is_set():
-                    self.config.cancel_translation()
-                    raise concurrent.futures.CancelledError()
-                kind = event.get("type")
-                if kind == "finish":
-                    value = event["translate_result"]
-                    result = {
-                        key: str(getattr(value, key))
-                        if getattr(value, key, None)
-                        else None
+        with self.completion.watch():
+            try:
+                async for event in stream:
+                    if self.cancelled.is_set():
+                        self.config.cancel_translation()
+                        raise concurrent.futures.CancelledError()
+                    kind = event.get("type")
+                    if kind == "finish":
+                        value = event["translate_result"]
+                        result = {
+                            key: str(getattr(value, key))
+                            if getattr(value, key, None)
+                            else None
+                            for key in (
+                                "original_pdf_path",
+                                "mono_pdf_path",
+                                "dual_pdf_path",
+                                "no_watermark_mono_pdf_path",
+                                "no_watermark_dual_pdf_path",
+                                "auto_extracted_glossary_path",
+                            )
+                        }
                         for key in (
-                            "original_pdf_path",
-                            "mono_pdf_path",
-                            "dual_pdf_path",
-                            "no_watermark_mono_pdf_path",
-                            "no_watermark_dual_pdf_path",
-                            "auto_extracted_glossary_path",
-                        )
-                    }
-                    for key in (
-                        "total_seconds",
-                        "peak_memory_usage",
-                        "total_valid_character_count",
-                        "total_valid_text_token_count",
-                    ):
-                        metric = getattr(value, key, None)
-                        if isinstance(metric, (int, float)):
-                            result[key] = metric
-                    break
-                if kind == "error":
-                    raise RuntimeError("BabelDOC processing failed")
-                if kind in {"progress_start", "progress_update", "progress_end"}:
-                    # Avoid exception objects, arbitrary engine metadata and document text.
-                    progress = {
-                        key: event[key]
-                        for key in (
-                            "type",
-                            "stage",
-                            "overall_progress",
-                            "part_index",
-                            "total_parts",
-                            "stage_current",
-                            "stage_total",
-                        )
-                        if key in event
-                        and isinstance(event[key], (str, int, float, bool))
-                    }
-                    self.send("progress", event=progress)
-        finally:
-            await stream.aclose()
+                            "total_seconds",
+                            "peak_memory_usage",
+                            "total_valid_character_count",
+                            "total_valid_text_token_count",
+                        ):
+                            metric = getattr(value, key, None)
+                            if isinstance(metric, (int, float)):
+                                result[key] = metric
+                        break
+                    if kind == "error":
+                        error = event.get("error")
+                        if isinstance(error, BaseException):
+                            raise error
+                        raise RuntimeError(str(error or "BabelDOC processing failed"))
+                    if kind in {"progress_start", "progress_update", "progress_end"}:
+                        # Avoid exception objects, arbitrary engine metadata and document text.
+                        progress = {
+                            key: event[key]
+                            for key in (
+                                "type",
+                                "stage",
+                                "overall_progress",
+                                "part_index",
+                                "total_parts",
+                                "stage_current",
+                                "stage_total",
+                            )
+                            if key in event
+                            and isinstance(event[key], (str, int, float, bool))
+                        }
+                        self.send("progress", event=progress)
+            finally:
+                await stream.aclose()
         if self.failed.is_set():
             raise RuntimeError("Rust translation failed; PDF is incomplete")
         if self.cancelled.is_set():
             raise concurrent.futures.CancelledError()
         if result is None:
             raise RuntimeError("Engine ended without a result")
+        result["translation_audit"] = self.completion.verify()
         return result
 
     def run_assets(self, operation, path):
@@ -446,11 +595,14 @@ class EngineBoundary:
                 self.send("finished", result=result)
             except BaseException as exc:
                 code = (
+                    "incomplete_translation" if isinstance(exc, IncompleteTranslationError) else
                     "translation_failed"
                     if self.failed.is_set()
                     else ("cancelled" if self.cancelled.is_set() else "engine_failed")
                 )
-                self.send("error", code=code, message=f"BabelDOC: {type(exc).__name__}")
+                diagnostic = engine_diagnostic(exc)
+                logging.error("%s: %s", self.stage, diagnostic)
+                self.send("error", code=code, stage=self.stage, message=diagnostic)
             finally:
                 faulthandler.cancel_dump_traceback_later()
                 self.terminal = True
@@ -545,12 +697,13 @@ def main():
     status = 0
     try:
         version = importlib.metadata.version("babeldoc")
-        if version != "0.6.3":
-            raise ProtocolError("Worker requires locked BabelDOC 0.6.3")
+        if version != "0.6.4":
+            raise ProtocolError("Worker requires locked BabelDOC 0.6.4")
         configure_native_runtime()
         boundary.send(
             "ready", babeldoc_version=version,
             operations=["pdf", "warmup", "generate_offline_assets", "restore_offline_assets"],
+            paragraph_completion_audit=1,
         )
         while True:
             message = read_frame(protocol_input)
@@ -559,7 +712,7 @@ def main():
     except (Exception, KeyboardInterrupt) as exc:
         status = 1
         try:
-            boundary.send("error", code="protocol_failed", message=type(exc).__name__)
+            boundary.send("error", code="protocol_failed", stage=boundary.stage, message=engine_diagnostic(exc))
         except (OSError, ProtocolError):
             pass
     finally:

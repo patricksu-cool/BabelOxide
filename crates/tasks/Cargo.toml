@@ -1,5 +1,5 @@
 [package]
-name = "pdf2zh-tasks"
+name = "babeloxide-tasks"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -7,9 +7,9 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
-babeldoc-bridge = { path = "../babeldoc-bridge" }
-pdf2zh-core = { path = "../core" }
-pdf2zh-config = { path = "../config" }
+babeloxide-bridge = { path = "../babeldoc-bridge" }
+babeloxide-core = { path = "../core" }
+babeloxide-config = { path = "../config" }
 serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true

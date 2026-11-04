@@ -1,10 +1,37 @@
-use pdf2zh_config::{
+use babeloxide_config::{
     ConfigErrorKind, FieldType, Settings, engine_specs, field_specs, parse_cli_overrides,
     parse_env_vars,
 };
 use serde_json::{Value, json};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
+
+#[test]
+fn branded_environment_takes_priority_and_legacy_variables_still_load() {
+    let mut values = BTreeMap::from([
+        ("PDF2ZH_LANG_OUT".into(), "ja".into()),
+        (
+            "PDF2ZH_OPENAI_API_KEY".into(),
+            "synthetic-migration-key".into(),
+        ),
+        ("BABELOXIDE_LANG_OUT".into(), "zh-TW".into()),
+    ]);
+    let settings = Settings::from_value(parse_env_vars(&values)).unwrap();
+    assert_eq!(settings.translation().unwrap().lang_out, "zh-TW");
+    assert_eq!(
+        settings.get("openai_detail.openai_api_key"),
+        Some(&json!("synthetic-migration-key"))
+    );
+    values.remove("BABELOXIDE_LANG_OUT");
+    assert_eq!(
+        Settings::from_value(parse_env_vars(&values))
+            .unwrap()
+            .translation()
+            .unwrap()
+            .lang_out,
+        "ja"
+    );
+}
 
 fn chosen(name: &str, detail: Value) -> Settings {
     let engine = engine_specs()
@@ -81,18 +108,21 @@ fn one_schema_exposes_legacy_cli_env_types_defaults_and_sensitive_fields() {
 #[test]
 fn environment_conversion_preserves_python_boolean_and_literal_set_behavior() {
     let env = BTreeMap::from([
-        ("PDF2ZH_QPS".into(), "8".into()),
-        ("PDF2ZH_REPORT_INTERVAL".into(), "0.2".into()),
-        ("PDF2ZH_DEBUG".into(), "yes".into()),
-        ("PDF2ZH_TRANSLATE_TABLE_TEXT".into(), "not truthy".into()),
+        ("BABELOXIDE_QPS".into(), "8".into()),
+        ("BABELOXIDE_REPORT_INTERVAL".into(), "0.2".into()),
+        ("BABELOXIDE_DEBUG".into(), "yes".into()),
         (
-            "PDF2ZH_INPUT_FILES".into(),
+            "BABELOXIDE_TRANSLATE_TABLE_TEXT".into(),
+            "not truthy".into(),
+        ),
+        (
+            "BABELOXIDE_INPUT_FILES".into(),
             r#"{'two.pdf', 'one.pdf', 'two.pdf', 'line\nname.pdf',}"#.into(),
         ),
-        ("PDF2ZH_OPENAI".into(), "1".into()),
-        ("PDF2ZH_OPENAI_API_KEY".into(), "null".into()),
+        ("BABELOXIDE_OPENAI".into(), "1".into()),
+        ("BABELOXIDE_OPENAI_API_KEY".into(), "null".into()),
         (
-            "PDF2ZH_SERVER_PORT".into(),
+            "BABELOXIDE_SERVER_PORT".into(),
             "invalid synthetic private text".into(),
         ),
         ("UNRELATED_SECRET".into(), "never imported".into()),
@@ -110,8 +140,8 @@ fn environment_conversion_preserves_python_boolean_and_literal_set_behavior() {
     assert!(parsed.get("gui_settings").is_none());
     assert!(parsed.get("UNRELATED_SECRET").is_none());
     let t = parse_env_vars(&BTreeMap::from([
-        ("PDF2ZH_DEBUG".into(), "t".into()),
-        ("PDF2ZH_INPUT_FILES".into(), "None".into()),
+        ("BABELOXIDE_DEBUG".into(), "t".into()),
+        ("BABELOXIDE_INPUT_FILES".into(), "None".into()),
     ]));
     assert_eq!(t["basic"]["debug"], false);
     assert_eq!(t["basic"]["input_files"], json!([]));
@@ -121,8 +151,8 @@ fn environment_conversion_preserves_python_boolean_and_literal_set_behavior() {
 fn highest_priority_engine_and_term_selection_do_not_follow_a_lower_true_flag() {
     let cli=parse_cli_overrides(&json!({"bing":true,"qps":3,"input_files":["cli.pdf"],"term_openai":true,"term_openai_api_key":"synthetic term"})).unwrap();
     let env = parse_env_vars(&BTreeMap::from([
-        ("PDF2ZH_GOOGLE".into(), "true".into()),
-        ("PDF2ZH_QPS".into(), "8".into()),
+        ("BABELOXIDE_GOOGLE".into(), "true".into()),
+        ("BABELOXIDE_QPS".into(), "8".into()),
     ]));
     let file = json!({"siliconflowfree":true,"translation":{"qps":12},"basic":{"input_files":["file.pdf"]},"future":{"keep":[1]}});
     let settings = Settings::from_layers(&[cli, env, file]).unwrap();

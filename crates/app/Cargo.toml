@@ -1,12 +1,12 @@
 [package]
-name = "pdf2zh-app"
+name = "babeloxide-app"
 version.workspace = true
 edition.workspace = true
 rust-version = "1.95"
 license.workspace = true
 
 [[bin]]
-name = "pdf2zh-gui"
+name = "BabelOxide-gui"
 path = "src/main.rs"
 
 [dependencies]
@@ -18,14 +18,16 @@ reqwest.workspace = true
 rustls.workspace = true
 tokio-util.workspace = true
 zip = { version = "=9.2.0", default-features = false }
-pdf2zh-cli = { path = "../cli" }
-pdf2zh-config = { path = "../config" }
-pdf2zh-core = { path = "../core" }
-pdf2zh-tasks = { path = "../tasks" }
-babeldoc-bridge = { path = "../babeldoc-bridge" }
-pdf2zh-pdf-preview = { path = "../pdf-preview" }
+babeloxide-cli = { path = "../cli" }
+babeloxide-config = { path = "../config" }
+babeloxide-core = { path = "../core" }
+babeloxide-tasks = { path = "../tasks" }
+babeloxide-bridge = { path = "../babeldoc-bridge" }
+babeloxide-pdf-preview = { path = "../pdf-preview" }
 eframe = { version = "=0.37.0", default-features = false, features = ["glow", "default_fonts", "system_fonts", "clipboard"] }
 
-[target.'cfg(windows)'.dependencies]
+[target.'cfg(any(windows, target_os = "macos"))'.dependencies]
 rfd = { version = "=0.17.2", default-features = false }
+
+[target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }

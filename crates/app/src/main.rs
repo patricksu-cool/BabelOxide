@@ -3,12 +3,12 @@
 use std::{collections::BTreeMap, process::ExitCode};
 
 fn main() -> ExitCode {
-    let invocation = match pdf2zh_cli::parse(std::env::args_os()) {
+    let invocation = match babeloxide_cli::parse(std::env::args_os()) {
         Ok(invocation) => invocation,
         Err(error) => {
             if error.use_stderr() {
-                pdf2zh_app::report_startup_error(
-                    "Cannot read the launch options. Run pdf2zh --help to see supported options.",
+                babeloxide_app::report_startup_error(
+                    "Cannot read the launch options. Run BabelOxide --help to see supported options.",
                 );
                 return ExitCode::from(2);
             }
@@ -17,10 +17,10 @@ fn main() -> ExitCode {
         }
     };
     let environment: BTreeMap<String, String> = std::env::vars().collect();
-    match pdf2zh_app::launch(invocation, environment) {
+    match babeloxide_app::launch(invocation, environment) {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
-            pdf2zh_app::report_startup_error(&error.to_string());
+            babeloxide_app::report_startup_error(&error.to_string());
             ExitCode::FAILURE
         }
     }

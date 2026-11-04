@@ -30,8 +30,8 @@ wheels = [
 ]
 
 [[package]]
-name = "pdf2zh-hybrid-dev"
-version = "2.9.0"
+name = "babeloxide-dev"
+version = "1.0.0"
 source = { virtual = "." }
 
 [package.dev-dependencies]

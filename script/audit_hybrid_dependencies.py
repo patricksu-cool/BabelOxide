@@ -22,7 +22,7 @@ def request(endpoint: str, payload: dict | None = None):
     request = urllib.request.Request(  # noqa: S310 -- fixed HTTPS OSV origin; no user URL
         API + endpoint,
         data=data,
-        headers={"Content-Type": "application/json", "User-Agent": "pdf2zh-build-audit"},
+        headers={"Content-Type": "application/json", "User-Agent": "BabelOxide-build-audit"},
     )
     for attempt in range(3):
         try:

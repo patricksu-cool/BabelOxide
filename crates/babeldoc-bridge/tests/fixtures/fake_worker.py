@@ -6,6 +6,7 @@ inherit stdout deliberately, reproducing a process which exits before pipe EOF.
 
 from __future__ import annotations
 
+import atexit
 import json
 import os
 import subprocess
@@ -74,6 +75,26 @@ def finish(job, scenario, **metrics):
     send("finished", result=result)
 
 
+def shutdown(scenario):
+    if scenario == "shutdown_ignored":
+        hang()
+    message = json.loads(sys.stdin.buffer.readline())
+    if message != {"v": 1, "type": "shutdown", "session": SESSION, "task_id": "job-1"}:
+        raise RuntimeError("Fixture expected a valid shutdown frame")
+    (ROOT / "shutdown-received").write_text("shutdown", encoding="ascii")
+    send("shutdown_ack")
+    if scenario == "shutdown_ack_then_hang":
+        hang()
+    if scenario == "shutdown_delayed":
+        # A terminal IPC frame and even its ACK precede interpreter finalization.
+        # Model finite cleanup longer than the former test-only 250 ms grace.
+        def finalize():
+            time.sleep(0.5)
+            (ROOT / "cleanup-complete").write_text("complete", encoding="ascii")
+
+        atexit.register(finalize)
+
+
 def finish_assets(start, scenario):
     if "job" in start or "translator" in start:
         raise RuntimeError("Maintenance must not receive PDF or translator options")
@@ -117,8 +138,11 @@ def main():
         os._exit(23)
     if scenario == "startup_hang":
         hang()
+    if scenario == "startup_error":
+        send("error", code="protocol_failed", stage="Worker startup", message="ModuleNotFoundError: babeldoc")
+        hang()
 
-    send("ready", babeldoc_version="0.6.3", operations=[
+    send("ready", babeldoc_version="0.6.4", paragraph_completion_audit=1 if scenario.startswith("batch_fallback_") else 0, operations=[
         "pdf", "warmup", "generate_offline_assets", "restore_offline_assets"
     ])
     start = json.loads(sys.stdin.buffer.readline())
@@ -134,6 +158,41 @@ def main():
             "no_user_site": sys.flags.no_user_site,
             "dont_write_bytecode": sys.flags.dont_write_bytecode,
         })
+        shutdown(scenario)
+        return 0
+    if scenario in {"shutdown_delayed", "shutdown_ack_then_hang", "shutdown_ignored"}:
+        if scenario != "shutdown_delayed":
+            spawn_descendant()
+        send("progress", event={"stage": "shutdown_ready"})
+        wait_for_file(ROOT / "release-worker")
+        finish(start["job"], scenario)
+        shutdown(scenario)
+        return 0
+    if scenario == "engine_error":
+        send("error", code="engine_failed", stage="Parse PDF", message="ValueError: invalid PDF; synthetic-unused-fixture-key https://invalid/?key=hidden")
+        hang()
+    if scenario.startswith("batch_fallback_"):
+        send("translate", id="w-batch", method="llm_translate", text="fixture-failed-batch",
+             ignore_cache=True, rate_limit_params={"request_json_mode": True}, translator="main", batch_fallback=True)
+        reply = json.loads(sys.stdin.buffer.readline())
+        if reply.get("error", {}).get("code") != "batch_translation_failed":
+            raise RuntimeError("Fixture expected recoverable batch failure")
+        (ROOT / "batch-error.json").write_text(json.dumps(reply), encoding="utf-8")
+        send("translate", id="w-paragraph", method="llm_translate", text="fixture-paragraph",
+             ignore_cache=True, rate_limit_params=None, translator="main", batch_fallback=False)
+        reply = json.loads(sys.stdin.buffer.readline())
+        if reply.get("text") != "translated paragraph":
+            raise RuntimeError("Fixture expected successful paragraph fallback")
+        if scenario == "batch_fallback_error":
+            send("error", code="incomplete_translation", stage="Translate Paragraphs",
+                 message="1 of 2 required paragraphs were not applied")
+        else:
+            audit = {} if scenario == "batch_fallback_missing" else {"translation_audit": {
+                "required_paragraphs": 2,
+                "completed_paragraphs": 1 if scenario == "batch_fallback_incomplete" else 2,
+                "batch_errors": 1,
+            }}
+            finish(start["job"], scenario, **audit)
         return 0
     if scenario == "progress_flood":
         for number in range(2000):

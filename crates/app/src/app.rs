@@ -1,11 +1,11 @@
 use std::{path::PathBuf, sync::Arc, time::Duration};
 
-use eframe::egui::{self, Align, Color32, Layout, RichText, Vec2};
-use pdf2zh_config::{EngineSpec, FieldSpec, engine_specs, field_specs};
-use pdf2zh_pdf_preview::{
+use babeloxide_config::{EngineSpec, FieldSpec, engine_specs, field_specs};
+use babeloxide_pdf_preview::{
     PreviewErrorKind, PreviewRenderer, PreviewRequest, PreviewResult, PreviewTicket,
 };
-use pdf2zh_tasks::{TaskHandle, TaskSnapshot, TaskStatus};
+use babeloxide_tasks::{TaskHandle, TaskSnapshot, TaskStatus};
+use eframe::egui::{self, Align, Color32, Layout, RichText, Vec2};
 use serde_json::{Value, json};
 
 use crate::{
@@ -15,10 +15,15 @@ use crate::{
     model::{DocumentKind, Editor, progress_fraction, result_path},
 };
 
+mod about;
+mod workflow;
+
 struct Batch {
     handle: TaskHandle,
     inputs: Vec<PathBuf>,
+    outputs: Vec<PathBuf>,
     snapshot: TaskSnapshot,
+    settings: babeloxide_config::Settings,
 }
 
 pub(crate) struct NativeApp {
@@ -51,6 +56,14 @@ pub(crate) struct NativeApp {
     page_count: u32,
     zoom: f32,
     fit_to_page: bool,
+    show_settings: bool,
+    settings_section: usize,
+    compact_preview: bool,
+    preset_name: String,
+    selected_preset: String,
+    pending_settings: Option<babeloxide_config::Settings>,
+    show_about: bool,
+    about_section: usize,
 }
 
 impl NativeApp {
@@ -75,11 +88,24 @@ impl NativeApp {
             .ok()
             .and_then(|gui| gui.ui_lang)
             .is_none_or(|language| !language.starts_with("en"));
-        context.egui_ctx.set_visuals(egui::Visuals::light());
-        let mut style = (*context.egui_ctx.style_of(egui::Theme::Light)).clone();
-        style.spacing.item_spacing = Vec2::new(9.0, 8.0);
-        style.spacing.button_padding = Vec2::new(12.0, 7.0);
-        context.egui_ctx.set_style_of(egui::Theme::Light, style);
+        for theme in [egui::Theme::Light, egui::Theme::Dark] {
+            let mut style = (*context.egui_ctx.style_of(theme)).clone();
+            style.spacing.item_spacing = Vec2::new(8.0, 8.0);
+            style.spacing.button_padding = Vec2::new(12.0, 8.0);
+            style
+                .text_styles
+                .insert(egui::TextStyle::Body, egui::FontId::proportional(16.0));
+            style
+                .text_styles
+                .insert(egui::TextStyle::Button, egui::FontId::proportional(16.0));
+            style
+                .text_styles
+                .insert(egui::TextStyle::Heading, egui::FontId::proportional(24.0));
+            style
+                .text_styles
+                .insert(egui::TextStyle::Small, egui::FontId::proportional(12.0));
+            context.egui_ctx.set_style_of(theme, style);
+        }
         let data_notice = options.store.fallback_from().map(|_| {
             format!(
                 "Application folder is read-only; settings and cache: {}",
@@ -97,7 +123,7 @@ impl NativeApp {
         app
     }
     fn with_renderer(
-        settings: pdf2zh_config::Settings,
+        settings: babeloxide_config::Settings,
         background: Background,
         chinese: bool,
         preview: Option<PreviewRenderer>,
@@ -106,6 +132,14 @@ impl NativeApp {
         let preview_unavailable = preview.is_none();
         Self {
             editor: Editor::new(settings),
+            show_settings: false,
+            settings_section: 0,
+            compact_preview: false,
+            preset_name: String::new(),
+            selected_preset: "自訂".into(),
+            pending_settings: None,
+            show_about: false,
+            about_section: 0,
             background,
             batches: Vec::new(),
             selected_batch: None,
@@ -168,7 +202,11 @@ impl NativeApp {
     fn poll(&mut self, context: &egui::Context) {
         while let Ok(event) = self.background.events.try_recv() {
             match event {
-                Event::Submitted { handle, inputs } => {
+                Event::Submitted {
+                    handle,
+                    inputs,
+                    outputs,
+                } => {
                     self.submitting = false;
                     self.error = None;
                     self.kind = DocumentKind::Original;
@@ -178,6 +216,11 @@ impl NativeApp {
                         snapshot: handle.snapshot(),
                         handle,
                         inputs,
+                        outputs,
+                        settings: self
+                            .pending_settings
+                            .take()
+                            .unwrap_or_else(|| self.editor.settings.clone()),
                     });
                 }
                 Event::Saved(settings) => {
@@ -207,6 +250,7 @@ impl NativeApp {
                     self.fail("Cannot save settings; check that the application settings folder is writable");
                 }
                 Event::SubmissionFailed(error) => {
+                    self.pending_settings = None;
                     self.submitting = false;
                     self.fail(error);
                 }
@@ -316,10 +360,13 @@ impl NativeApp {
     fn submit(&mut self) {
         match self.editor.snapshot(true) {
             Ok(settings) => {
+                self.pending_settings = Some(settings.clone());
                 if self.command(Command::Translate(settings)) {
                     self.submitting = true;
                     self.notice = None;
                     self.error = None;
+                } else {
+                    self.pending_settings = None;
                 }
             }
             Err(error) => self.fail(error),
@@ -367,10 +414,10 @@ impl NativeApp {
     fn heading(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
-                ui.heading("PDFMathTranslate");
+                ui.heading("BabelOxide");
                 ui.label(
                     RichText::new(self.text("Translate PDFs, keep the layout"))
-                        .color(Color32::from_gray(95)),
+                        .color(ui.visuals().weak_text_color()),
                 );
             });
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
@@ -401,31 +448,14 @@ impl NativeApp {
                 {
                     self.reload();
                 }
-                let can_submit = !self.submitting
-                    && !self.saving
-                    && self.download_cancel.is_none()
-                    && !self.editor.files.is_empty()
-                    && self
-                        .editor
-                        .engine_enabled(self.editor.settings.main_engine());
-                if ui
-                    .add_enabled(
-                        can_submit,
-                        egui::Button::new(
-                            RichText::new(self.text("Translate")).color(Color32::WHITE),
-                        )
-                        .fill(Color32::from_rgb(33, 102, 183))
-                        .stroke(egui::Stroke::NONE),
-                    )
-                    .clicked()
-                {
-                    self.submit();
+                if ui.small_button(self.text("About BabelOxide")).clicked() {
+                    self.show_about = true;
                 }
                 if self.editor.dirty {
                     ui.label(
                         RichText::new(self.text("Unsaved changes"))
                             .small()
-                            .color(Color32::from_gray(100)),
+                            .color(ui.visuals().weak_text_color()),
                     );
                 }
             });
@@ -434,11 +464,11 @@ impl NativeApp {
     fn notices(&mut self, ui: &mut egui::Ui) {
         if let Some(message) = self.error.clone() {
             egui::Frame::new()
-                .fill(Color32::from_rgb(255, 237, 235))
+                .fill(ui.visuals().faint_bg_color)
                 .inner_margin(10.0)
                 .show(ui, |ui| {
                     ui.horizontal_wrapped(|ui| {
-                        ui.colored_label(Color32::from_rgb(160, 38, 38), message);
+                        ui.colored_label(ui.visuals().error_fg_color, message);
                         if ui.small_button(self.text("Dismiss")).clicked() {
                             self.error = None;
                         }
@@ -467,9 +497,14 @@ impl NativeApp {
         });
         if self.editor.files.is_empty() {
             egui::Frame::new()
-                .stroke(egui::Stroke::new(1.0, Color32::from_gray(200)))
+                .fill(ui.visuals().faint_bg_color)
+                .stroke(egui::Stroke::new(
+                    1.0,
+                    ui.visuals().widgets.noninteractive.bg_stroke.color,
+                ))
                 .inner_margin(16.0)
                 .show(ui, |ui| {
+                    ui.set_min_size(Vec2::new((ui.available_width() - 4.0).max(100.0), 24.0));
                     ui.label(self.text("Drop PDFs here, or choose Add"));
                 });
         }
@@ -580,6 +615,17 @@ impl NativeApp {
             .iter()
             .filter(|spec| spec.path.starts_with(&prefix))
             .collect();
+        if !self.show_settings {
+            for spec in specs.iter().filter(|spec| {
+                spec.path
+                    .rsplit('.')
+                    .next()
+                    .is_some_and(|leaf| leaf == "model" || leaf.ends_with("_model"))
+            }) {
+                self.field(ui, frame, spec, None);
+            }
+            return;
+        }
         let mut advanced = Vec::new();
         for spec in specs {
             let leaf = spec.path.rsplit('.').next().unwrap_or_default();
@@ -633,9 +679,6 @@ impl NativeApp {
         }
     }
     fn settings_panel(&mut self, ui: &mut egui::Ui, frame: &eframe::Frame) {
-        self.files(ui, frame);
-        self.url_input(ui);
-        ui.separator();
         ui.strong(self.text("Translation service"));
         self.engine(ui, frame, false);
         egui::CollapsingHeader::new(self.text("Manage services"))
@@ -850,6 +893,7 @@ impl NativeApp {
             egui::ComboBox::from_id_salt("language")
                 .selected_text(crate::languages::display(&current, self.chinese))
                 .width(ui.available_width())
+                .truncate()
                 .show_ui(ui, |ui| {
                     for language in crate::languages::CATALOG.iter().filter(|language| {
                         crate::languages::supported(&engine, language.code, source) != Some(false)
@@ -864,23 +908,25 @@ impl NativeApp {
             if selected != current {
                 self.edit(path, json!(selected));
             }
-            egui::CollapsingHeader::new(self.text("Custom language code"))
-                .id_salt("custom-language")
-                .show(ui, |ui| {
-                    let spec = field_specs()
-                        .iter()
-                        .find(|spec| spec.path == path)
-                        .expect("language field");
-                    let changed = ui
-                        .add(
-                            egui::TextEdit::singleline(self.editor.draft(spec))
-                                .desired_width(f32::INFINITY),
-                        )
-                        .changed();
-                    if changed {
-                        self.editor.mark_dirty();
-                    }
-                });
+            if self.show_settings {
+                egui::CollapsingHeader::new(self.text("Custom language code"))
+                    .id_salt("custom-language")
+                    .show(ui, |ui| {
+                        let spec = field_specs()
+                            .iter()
+                            .find(|spec| spec.path == path)
+                            .expect("language field");
+                        let changed = ui
+                            .add(
+                                egui::TextEdit::singleline(self.editor.draft(spec))
+                                    .desired_width(f32::INFINITY),
+                            )
+                            .changed();
+                        if changed {
+                            self.editor.mark_dirty();
+                        }
+                    });
+            }
             if crate::languages::supported(&engine, &current, source) == Some(false) {
                 ui.colored_label(
                     Color32::from_rgb(160, 38, 38),
@@ -990,6 +1036,16 @@ impl NativeApp {
         };
         let snapshot = batch.snapshot.clone();
         let inputs = batch.inputs.clone();
+        if let Some(output) = batch
+            .outputs
+            .get(self.selected_file.min(inputs.len().saturating_sub(1)))
+        {
+            ui.small(format!(
+                "{}: {}",
+                self.text("Output folder"),
+                output.display()
+            ));
+        }
         ui.horizontal(|ui| {
             ui.strong(self.status_text(snapshot.status));
             ui.label(format!(
@@ -1008,6 +1064,19 @@ impl NativeApp {
             }
         });
         self.export_batch(ui, frame, &snapshot);
+        if snapshot.status.is_terminal() && snapshot.completed_files < snapshot.total_files {
+            ui.small(self.text("Unprocessed PDFs can be retried with the original settings"));
+            if ui
+                .add_enabled(
+                    !self.submitting,
+                    egui::Button::new(self.text("Retry unfinished PDFs")),
+                )
+                .clicked()
+                && let Some(index) = self.selected_batch
+            {
+                self.retry_unfinished(index);
+            }
+        }
         if let Some(fraction) = progress_fraction(&snapshot) {
             ui.add(
                 egui::ProgressBar::new(fraction)
@@ -1134,6 +1203,13 @@ impl NativeApp {
                 self.command(Command::Open(path));
             }
             if ui
+                .add_enabled(path.is_some(), egui::Button::new(self.text("Open folder")))
+                .clicked()
+                && let Some(parent) = path.as_ref().and_then(|path| path.parent())
+            {
+                self.command(Command::Open(parent.to_path_buf()));
+            }
+            if ui
                 .add_enabled(path.is_some(), egui::Button::new(self.text("Save as…")))
                 .clicked()
                 && let Some(source) = path
@@ -1167,7 +1243,7 @@ impl NativeApp {
             }
         });
         let mut rerender = false;
-        ui.horizontal(|ui| {
+        ui.horizontal_wrapped(|ui| {
             if ui
                 .add_enabled(self.page > 1, egui::Button::new("‹"))
                 .clicked()
@@ -1261,7 +1337,7 @@ impl NativeApp {
             }
         }
         let available = ui.available_size().max(Vec2::new(100.0, 100.0));
-        egui::Frame::new().fill(Color32::from_gray(231)).inner_margin(12.0).show(ui,|ui| {
+        egui::Frame::new().fill(ui.visuals().extreme_bg_color).inner_margin(12.0).show(ui,|ui| {
             ui.set_min_size(available-Vec2::splat(24.0));
             egui::ScrollArea::both().id_salt("pdf-preview-scroll").auto_shrink([false,false]).show(ui,|ui| {
                 if let Some(texture)=&self.texture {
@@ -1295,6 +1371,27 @@ impl eframe::App for NativeApp {
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         let closing = self.background.control.is_closing();
         if !closing && !self.saving {
+            if ui
+                .ctx()
+                .input_mut(|input| input.consume_key(egui::Modifiers::COMMAND, egui::Key::S))
+            {
+                self.save();
+            }
+            if ui
+                .ctx()
+                .input_mut(|input| input.consume_key(egui::Modifiers::COMMAND, egui::Key::O))
+                && let Some(paths) = dialogs::pdfs(frame)
+                && let Err(error) = self.editor.add_files(paths)
+            {
+                self.fail(error);
+            }
+            if self.can_submit()
+                && ui.ctx().input_mut(|input| {
+                    input.consume_key(egui::Modifiers::COMMAND, egui::Key::Enter)
+                })
+            {
+                self.submit();
+            }
             let dropped = ui.ctx().input(|input| {
                 input
                     .raw
@@ -1312,9 +1409,40 @@ impl eframe::App for NativeApp {
         egui::Frame::central_panel(ui.style())
             .inner_margin(18.0)
             .show(ui, |ui| {
+                ui.set_min_size(ui.available_size());
                 ui.add_enabled_ui(!closing && !self.saving, |ui| self.heading(ui));
                 self.notices(ui);
                 ui.separator();
+                let compact = ui.available_width() < 900.0;
+                ui.horizontal_wrapped(|ui| {
+                    if ui
+                        .selectable_label(
+                            !self.show_settings && (!compact || !self.compact_preview),
+                            self.text("Translate workspace"),
+                        )
+                        .clicked()
+                    {
+                        self.show_settings = false;
+                        self.compact_preview = false;
+                    }
+                    if ui
+                        .selectable_label(self.show_settings, self.text("Settings"))
+                        .clicked()
+                    {
+                        self.show_settings = true;
+                    }
+                    if compact
+                        && ui
+                            .selectable_label(
+                                !self.show_settings && self.compact_preview,
+                                self.text("Preview and results"),
+                            )
+                            .clicked()
+                    {
+                        self.show_settings = false;
+                        self.compact_preview = true;
+                    }
+                });
                 if closing {
                     ui.horizontal(|ui| {
                         ui.spinner();
@@ -1323,6 +1451,31 @@ impl eframe::App for NativeApp {
                 }
                 let height = ui.available_height();
                 let width = (ui.available_width() * 0.34).clamp(310.0, 420.0);
+                if compact {
+                    ui.add_enabled_ui(!closing && !self.saving, |ui| {
+                        if self.compact_preview && !self.show_settings {
+                            self.preview_panel(ui, frame);
+                        } else {
+                            egui::ScrollArea::vertical()
+                                .id_salt("compact-workspace")
+                                .max_height(
+                                    (height - if self.show_settings { 0.0 } else { 86.0 })
+                                        .max(80.0),
+                                )
+                                .show(ui, |ui| {
+                                    if self.show_settings {
+                                        self.settings_view(ui, frame);
+                                    } else {
+                                        self.workflow_panel(ui, frame);
+                                    }
+                                });
+                            if !self.show_settings {
+                                self.start_action(ui);
+                            }
+                        }
+                    });
+                    return;
+                }
                 ui.horizontal_top(|ui| {
                     ui.allocate_ui_with_layout(
                         Vec2::new(width, height),
@@ -1332,8 +1485,21 @@ impl eframe::App for NativeApp {
                             ui.add_enabled_ui(!closing && !self.saving, |ui| {
                                 egui::ScrollArea::vertical()
                                     .id_salt("settings-scroll")
+                                    .max_height(
+                                        (height - if self.show_settings { 0.0 } else { 86.0 })
+                                            .max(80.0),
+                                    )
                                     .auto_shrink([false, false])
-                                    .show(ui, |ui| self.settings_panel(ui, frame));
+                                    .show(ui, |ui| {
+                                        if self.show_settings {
+                                            self.settings_view(ui, frame);
+                                        } else {
+                                            self.workflow_panel(ui, frame);
+                                        }
+                                    });
+                                if !self.show_settings {
+                                    self.start_action(ui);
+                                }
                             });
                         },
                     );
@@ -1347,6 +1513,7 @@ impl eframe::App for NativeApp {
                     );
                 });
             });
+        self.about_window(ui.ctx());
     }
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
         self.begin_close();
@@ -1362,8 +1529,8 @@ impl Drop for NativeApp {
 mod tests {
     use super::*;
     use crate::background::BackgroundThread;
+    use babeloxide_config::{ConfigStore, Settings};
     use eframe::App;
-    use pdf2zh_config::{ConfigStore, Settings};
     struct Harness {
         app: NativeApp,
         _thread: BackgroundThread,
@@ -1373,7 +1540,7 @@ mod tests {
         fn new(settings: Settings) -> Self {
             let directory = tempfile::tempdir().unwrap();
             let store = ConfigStore::new(directory.path().into()).unwrap();
-            let worker = babeldoc_bridge::WorkerOptions {
+            let worker = babeloxide_bridge::WorkerOptions {
                 python: directory.path().join("not-a-worker.exe"),
                 script: directory.path().join("not-a-script.py"),
                 ..Default::default()

@@ -1,5 +1,5 @@
 [package]
-name = "pdf2zh-pdf-preview"
+name = "babeloxide-pdf-preview"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
