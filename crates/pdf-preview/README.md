@@ -122,6 +122,5 @@ It finally checks the explicit reinitialization restriction.
 
 Native calls cannot be interrupted by the test's polling timeout either; the
 parent runner must apply a process timeout to detect/terminate a hung ABI test.
-No native/DLL/clean-machine success is claimed merely because unit tests or the
-crate compile. The parent records the actual native-library results separately;
-see [STATUS](../../docs/STATUS.md) for platform execution and unverified Mac work.
+The CI runner records native-library results separately from unit tests. See
+[platform limitations](../../docs/LIMITATIONS.md).

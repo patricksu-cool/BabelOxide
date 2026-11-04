@@ -747,10 +747,14 @@ def rust_inventory(stage: Path, registry: Path | None) -> tuple[list[dict], list
             record["license"] = "See licenses/project/LICENSE and workspace manifests"
         elif source.startswith("registry+") and registry is not None:
             require(re.fullmatch(r"[a-zA-Z0-9_-]+", package["name"]) is not None and re.fullmatch(r"[a-zA-Z0-9.+_-]+", package["version"]) is not None, "Unsafe Cargo package name")
-            matches = list(registry.glob(f"*/{package['name']}-{package['version']}"))
-            if len(matches) == 1:
+            stem = f"{package['name']}-{package['version']}"
+            archives = list((registry.parent / "cache").glob(f"*/{stem}.crate"))
+            matches = list(registry.glob(f"*/{stem}"))
+            if len(archives) == 1:
+                rust_archive_notices(stage, archives[0], package, record)
+            elif len(matches) == 1:
                 root = plain_path(matches[0])
-                archive_path = registry.parent / "cache" / root.parent.name / f"{package['name']}-{package['version']}.crate"
+                archive_path = registry.parent / "cache" / root.parent.name / f"{stem}.crate"
                 if archive_path.is_file():
                     rust_archive_notices(stage, archive_path, package, record)
                 elif (root / ".cargo-checksum.json").is_file():
@@ -841,7 +845,7 @@ def preflight(args: argparse.Namespace, wheels: list[dict], expected_lock: str) 
     inventory = read_json(ASSET_INVENTORY)
     expected_assets = asset_members(inventory)
     verify_zip(assets, expected_assets)
-    uv = plain_path(args.uv or shutil.which("uv") or "")
+    uv = plain_path(args.uv or Path(shutil.which("uv") or ""))
     require(uv.is_file() and uv.name.lower().endswith(".exe"), "Existing uv.exe is required; pass --uv explicitly")
     if args.asset_notices:
         require(bool(files_below(plain_path(args.asset_notices))), "Explicit asset notice directory is empty")
@@ -1394,18 +1398,25 @@ class BuilderTests(unittest.TestCase):
         import io
         with tempfile.TemporaryDirectory(dir=REPO) as temporary:
             stage = Path(temporary)
-            archive = stage / "fixture.crate"
+            registry = stage / "registry/src"
+            registry.mkdir(parents=True)
+            archive = registry.parent / "cache/index/fixture-1.0.0.crate"
+            archive.parent.mkdir(parents=True)
             with tarfile.open(archive, "w:gz") as output:
                 for name, data in [("Cargo.toml", b'[package]\nname="fixture"\nversion="1.0.0"\nlicense="MIT"\n'), ("LICENSE", b"Synthetic license"), ("src/lib.rs", b"must not extract source")]:
                     member = tarfile.TarInfo("fixture-1.0.0/" + name)
                     member.size = len(data)
                     output.addfile(member, io.BytesIO(data))
-            package = {"name": "fixture", "version": "1.0.0", "checksum": digest(archive)}
-            record = {"license_files": []}
-            rust_archive_notices(stage, archive, package, record)
+            package = {"name": "fixture", "version": "1.0.0", "checksum": digest(archive), "source": "registry+https://github.com/rust-lang/crates.io-index"}
+            (stage / "provenance").mkdir()
+            (stage / "provenance/Cargo.lock").write_text(
+                "[[package]]\n" + "".join(f'{key} = "{value}"\n' for key, value in package.items()), encoding="utf-8",
+            )
+            records, issues = rust_inventory(stage, registry)
+            self.assertEqual(issues, [])
             self.assertEqual((stage / "licenses/rust/fixture-1.0.0/LICENSE").read_bytes(), b"Synthetic license")
-            self.assertFalse((stage / "fixture-1.0.0").exists())
-            self.assertEqual(record["license"], "MIT")
+            self.assertEqual(list(registry.iterdir()), [])
+            self.assertEqual(records[0]["license"], "MIT")
             with self.assertRaises(BuildError):
                 rust_archive_notices(stage, archive, {**package, "checksum": "0" * 64}, {"license_files": []})
 

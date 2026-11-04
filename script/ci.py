@@ -96,6 +96,8 @@ def build(name: str, uv: Path, work: Path, env: dict[str, str]) -> None:
     run_id = uuid.uuid4().hex[:8]
     work = work / ("build-" + run_id)
     work.mkdir()
+    # License inventory covers the entire lockfile, including other targets.
+    run(["cargo", "fetch", "--manifest-path", ROOT / "Cargo.toml", "--locked"], work, env, label="fetch-locked-crates")
     run(["cargo", "build", "--manifest-path", ROOT / "Cargo.toml", "--release", "--workspace", "--locked"], work, env, label="release-build")
     output = ROOT / "dist" / f"BabelOxide-v{product_version()}-{name}"
     registry = Path(env.get("CARGO_HOME", str(Path.home() / ".cargo"))) / "registry/src"
@@ -115,6 +117,8 @@ def build(name: str, uv: Path, work: Path, env: dict[str, str]) -> None:
     native = json.loads((bundle / "NATIVE_DEPENDENCIES.json").read_bytes())
     vc_runtime = {"msvcp140.dll", "msvcp140_1.dll", "msvcp140_2.dll", "vcruntime140.dll", "vcruntime140_1.dll", "concrt140.dll"}
     require(all(row.get("dll", "").lower() in vc_runtime for row in native["unresolved"]), "Unresolved non-system native dependencies")
+    components = json.loads((bundle / "THIRD_PARTY_COMPONENTS.json").read_bytes())
+    require(not components["license_review_items"], "Missing bundled license notices: " + "; ".join(components["license_review_items"]))
     isolated = dict(env)
     home = work / "runtime-test-home"
     home.mkdir()

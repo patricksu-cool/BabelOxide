@@ -4,4 +4,4 @@
 
 Current Rust retry/provider contracts consume `crates/core/tests/fixtures/legacy_retry_contract_v1.json`; compression fixtures remain beside that file. The historical Tencent xfail does not describe the current Rust implementation.
 
-Automated PDF tests create synthetic documents in temporary directories. Manual real-document regressions accept explicitly supplied PDFs; generated PDFs, logs, screenshots and translation outputs are disposable and are not fixtures. See [BUILD](../../docs/BUILD.md) for commands and [STATUS](../../docs/STATUS.md) for validation limits.
+Automated PDF tests create synthetic documents in temporary directories. Manual regressions accept explicitly supplied PDFs. See [BUILD](../../docs/BUILD.md) for commands and [LIMITATIONS](../../docs/LIMITATIONS.md) for validation scope.

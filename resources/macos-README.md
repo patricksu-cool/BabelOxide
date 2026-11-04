@@ -1,4 +1,4 @@
-# BabelOxide — macOS arm64
+# BabelOxide v1.0.0 — macOS ARM64
 
 需要 Apple Silicon 與 macOS 14 或以上。請保留完整 `BabelOxide.app`，在 Finder 開啟；CLI 位於 `BabelOxide.app/Contents/MacOS/`。不需要另裝 Python、Rust 或 BabelDOC。
 

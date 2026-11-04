@@ -1,8 +1,8 @@
 # BabelOxide v1.0.0
 
-原生 PDF 翻譯工具，保留公式、圖表與版面，支援單語及雙語輸出。Rust 負責 egui GUI、CLI、服務、設定、快取、重試與任務；最小 Python Worker 僅橋接 **BabelDOC 0.6.4**，沒有 Gradio。
+原生 PDF 翻譯工具，保留公式、圖表與版面，支援單語及雙語輸出。Rust 負責 egui GUI、CLI、服務、設定、快取、重試與任務。Python Worker 橋接 **BabelDOC 0.6.4**。
 
-Windows x64 與 macOS ARM64 的 Actions 完整包已由使用者確認可翻譯及預覽 PDF。原始碼另需準備 Runtime，開發啟動方式見下方；本機驗證以 Windows 為主，macOS 開發入口仍待原生驗收。1.0.0 保留為工作分支版本，尚未建立正式版本標籤。歷次結果見 [STATUS](docs/STATUS.md)。
+支援 Windows x64 與 macOS 14+ Apple Silicon。兩平台的 GitHub Actions 完整包已由使用者確認可翻譯及預覽 PDF。從原始碼啟動時，請依下方步驟準備 Runtime。
 
 ## 使用
 
@@ -53,10 +53,10 @@ python-worker/   最小 Worker、測試、兩平台固定依賴
 resources/       圖示、空範本、資產與下載 pins、授權
 script/          完整包建置、CI、完整性及本機回歸
 tests/baseline/  上游行為與 PDF 基準資料
-docs/           建置、架構、設計、限制與驗證狀態
+docs/            建置、架構與限制
 ```
 
-參閱 [BUILD](docs/BUILD.md)、[ARCHITECTURE](docs/ARCHITECTURE.md)、[DESIGN](docs/DESIGN.md)、[LIMITATIONS](docs/LIMITATIONS.md) 與 [STATUS](docs/STATUS.md)。Actions **僅允許使用者手動觸發** Build／Test／上傳完整 Artifacts，保留 7 天，不自動發布 Release。首次使用須讓 Workflow 存在於 GitHub 預設分支，詳見建置說明。
+Actions 只接受手動觸發，建置包與 CI 日誌保留 7 天。參閱 [建置](docs/BUILD.md)、[架構](docs/ARCHITECTURE.md)與[已知限制](docs/LIMITATIONS.md)。
 
 ## 授權
 

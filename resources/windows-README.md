@@ -6,6 +6,6 @@
 
 設定為 `config/config.v3.toml`，按保存才寫入；快取為 `cache/`。舊格式及必要的 `PDF2ZH_*` 變數可沿用，新變數使用 `BABELOXIDE_*`。資料夾不可寫時程式會顯示備援位置。執行包沒有私人 Key、PDF 或翻譯成果。
 
-BabelDOC 引擎獨立鎖定 0.6.4，產品版本為 1.0.0。`BUILD_INFO.json` 記錄建置驗證範圍，不代表通過乾淨 Windows VM／全部真實服務驗收；詳細限制見原始碼 docs/STATUS.md。
+BabelDOC 引擎鎖定 0.6.4。`BUILD_INFO.json` 記錄來源提交與建置驗證範圍。平台與服務限制見原始碼的 `docs/LIMITATIONS.md`。
 
 本程式為 AGPL-3.0-only 自由軟體，不提供擔保。請查看 `licenses/project/LICENSE`、`licenses/project/THIRD_PARTY_NOTICES.md`、其他 `licenses/` 及 `THIRD_PARTY_COMPONENTS.json`。GUI 的「關於 BabelOxide」保留來源與授權入口。

@@ -1,6 +1,6 @@
 # BabelOxide 架構
 
-Rust 負責應用程式；最小 Python Worker 只橋接 **BabelDOC 0.6.4**。沒有 Gradio、Python GUI／CLI、provider HTTP client、應用重試或第二套排程器。開發／封裝 Python 腳本不屬於使用者執行流程。
+Rust 負責應用程式與翻譯服務。Python Worker 橋接 **BabelDOC 0.6.4**。開發與封裝腳本獨立於使用者執行流程。
 
 | Crate | 職責 |
 | --- | --- |
@@ -32,6 +32,8 @@ flowchart LR
 
 TaskManager 保持一批次執行，多份 PDF 依序處理。主／術語服務由共用 factory 初始化，保留健康檢查、推薦參數及服務共享規則；健康檢查可能呼叫 API。批次保存提交時的設定快照；手動重試只提交未完成文件，不重播已完成文件。GUI 同名輸入及已有成果使用獨立輸出子目錄，另存／ZIP 使用原子發布。
 
+GUI 將常用設定放在工作區，進階欄位集中在設定頁。視窗小於 900 pt 時切換成工作區、設定與預覽頁籤，狀態同時提供文字提示。輸出位置留白時，GUI 使用可寫應用程式目錄下的 `outputs`，CLI 使用目前目錄。
+
 設定優先序：CLI → 環境變數 → 明確設定檔 → portable 設定 → 預設。新 `BABELOXIDE_*` 優先於同名舊 `PDF2ZH_*`。保存保留未知欄位、清空本次 input_files；無效草稿不部分套用。自訂組合只保存白名單值，以 `babeloxide.presets_json` 字串放在既有 TOML，不含 Key、網址、檔案路徑或執行限制。
 
 相對於 EXE 的預設布局（Mac 位於 `.app/Contents/MacOS/`）：
@@ -61,13 +63,15 @@ Python reader／engine thread 分離，以 pending Future 配對翻譯；Rust re
 
 取消為獨立控制事件，停止新 admission／重試並等待 cooperative cache／程序清理。cancel_ack 不表示清理完成。成功須合法 finished、無 pending、mono／dual 路徑位於核准 output 內、要求的檔案存在且 Worker 正常退出；exit 0 或 EOF 單獨不足。
 
-預設 startup 180 秒；PDF activity idle 1800 秒；Worker RPC 等待另有 1800 秒護欄；shutdown 10 秒。資產維護則使用 start 後絕對期限，進度不續命。它們與 provider connect／read timeout、重試預算不同。Windows Job Object 在 child resume 前完成指派，逾時終止、確認整棵程序樹退出並 wait。Mac 目前沒有同等 process-group 保證，詳見 [限制](LIMITATIONS.md)。
+預設啟動 180 秒，PDF 閒置與 Worker RPC 等待各有 1800 秒期限，關閉期限為 10 秒。資產維護使用 start 後的固定期限。Windows 在子程序恢復前將其指派至 Job Object。macOS 為子程序建立獨立 process group，清理時終止並檢查群組成員，再回收直接子程序。
 
 ## 重試、限流與快取
 
 每次 logical translation：計數／取消檢查 → 可用時讀 cache → provider preflight → concurrency permit → 一次 QPS admission → provider 及各層重試 → 寫入成功文字。Cache hit 不消耗 QPS／HTTP／usage；SDK 與應用層不能合併成一個通用重試。取消不能被 provider retry predicate 捕捉。
 
 `tests/baseline/` 與 `crates/core/tests/fixtures/legacy_retry_contract_v1.json` 保留獨立 Python oracle：22 個 policy、R23–R34、T01–T05 及 SDK 常數。原始 Python／歷史稽核可從 `codex/baseline-final-integration-20261031` 回復到另一路 checkout；凍結檔的歷史來源路徑不改寫。此次品牌／UI 不改 retry、backoff、QPS、concurrency 或 cache identity 演算法。
+
+引擎批次呼叫遇到 HTTP 5xx 或傳輸錯誤時，Rust 耗盡既有重試後將錯誤交回 BabelDOC，讓引擎執行逐段回復。逐段、術語、驗證與預檢錯誤會使任務失敗。Worker 確認必要段落已套用後才回報完成。
 
 SQLite 新表 `rust_translation_cache_v2` 使用版本化 namespace digest，區分 provider、endpoint、model、語言、方法、角色與影響輸出的參數；排除明確 Key 與 QPS／concurrency／timeout 等操作值。舊 `pdf2zh-rust-cache-v2` identity 字串刻意保留。輸入及譯文按既有行為明文保存，沒有 TTL、淘汰或 singleflight。
 
@@ -77,4 +81,4 @@ Cache read／write 的普通錯誤計入 metrics，仍可返回有效 provider �
 
 BabelDOC 處理 PDF 解析、版面、公式、引擎 prompt、字型與生成；Worker 不重做演算法。Windows 85／Mac 84 個固定 wheel（差異 colorama）與 182 項資產由 builder 查核；OpenAI、Peewee、Tenacity 等屬引擎宣告閉包，不能因名稱像舊 App 就移除。PDFium 使用固定包內絕對路徑，Windows 驗 PE，Mac 驗 arm64 Mach-O；不從 PATH 猜測版本。
 
-來源與建置 pins 見 [BUILD](BUILD.md)；SDK 差異、平台與安全邊界見 [LIMITATIONS](LIMITATIONS.md)。測試與真正執行結果只記錄於 [STATUS](STATUS.md)，靜態 graph 或假 Worker 不能證明 PDF 品質與跨平台實際行為。
+來源與建置 pins 見 [建置](BUILD.md)。SDK 差異、平台與安全邊界見 [已知限制](LIMITATIONS.md)。

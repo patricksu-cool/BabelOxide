@@ -4,13 +4,13 @@
 
 ## GitHub Actions
 
-[build.yml](../.github/workflows/build.yml) **僅接受 `workflow_dispatch` 手動觸發**；push、PR、排程、Release 或其他 Workflow 都不觸發建置。`windows-latest` 建 Windows x64，`macos-latest` 先確認為原生 arm64 才建 Mac。僅需 `contents: read`；不使用 Secrets、不 Push、不簽章、不建立 Release。官方 checkout v6、setup-python v6、cache v5、upload-artifact v6 的 `action.yml` 已核對 `using: node24`。
+[build.yml](../.github/workflows/build.yml) 只接受 `workflow_dispatch`，分別使用 `windows-latest` 與 `macos-latest` 建置 Windows x64、macOS ARM64。Workflow 使用 `contents: read`。
 
-[GitHub 要求手動 Workflow 存在於預設分支](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)。目前本機 main 沒有此 Workflow，也沒有 remote 可核對 GitHub 預設分支；若只 Push feature branch，Actions 可能尚不顯示 Run workflow。請使用者自行經審查將手動版 Workflow 放入實際預設分支，再到 Actions → BabelOxide build and test → Run workflow，選擇 `feature/babeloxide-v1`。不必為測試由工具擅自合併 main；本次沒有 Push 或觸發遠端工作。
+Workflow 存在於 GitHub 預設分支後，從 Actions → BabelOxide build and test → Run workflow 選擇要驗證的分支。詳見 [GitHub 手動執行說明](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)。
 
-兩平台執行 fmt、嚴格 Clippy、Rust／Worker／Builder 測試、Release build、原生 import 與 PDFium、CLI／IPC 本機 Mock、套件閉包與 manifest 檢查；Windows 另執行 CMD 原始碼封裝測試。GUI `--version` 僅是版本 smoke，Actions 沒有宣稱通過桌面互動。
+兩平台執行 fmt、嚴格 Clippy、Rust／Worker／Builder 測試、Release build、原生 import、PDFium、CLI／IPC 本機 Mock、原始碼封裝及發行包完整性檢查。GUI 以 `--version` 驗證啟動與版本。
 
-輸出完整 ZIP：`BabelOxide-v<workspace-version>-windows-x64`／`BabelOxide-v<workspace-version>-macos-arm64`，Artifacts 保留 **7 天**。只有所有步驟成功才上傳；缺失 wheel、錯誤架構或不可攜的 dylib/rpath 都會使 job 失敗，不使用 continue-on-error。
+完整 ZIP 名為 `BabelOxide-v1.0.0-windows-x64.zip` 或 `BabelOxide-v1.0.0-macos-arm64.zip`。建置包與 CI 日誌保留 **7 天**，失敗時也上傳日誌。CI 依 `Cargo.lock` 下載所有目標的套件，並在上傳前檢查授權清單是否有缺項。
 
 ## 本機
 
@@ -31,11 +31,15 @@ cargo build --release --workspace --locked
 
 CI 建包從 Git checkout 記錄實際 HEAD；未提交修改會標記 `-dirty`。來源審查 ZIP 不含 `.git`，從該 ZIP 重建時可先執行 Cargo build，再使用下列 `build_portable.py` 直接入口，明確提供已知的 `--source-commit` 識別；不為此重新初始化原專案。
 
-完整包 builder（先編譯 Rust，輸出目錄須不存在）：
+手動打包前先執行 `cargo fetch --locked` 與 `cargo build --release --workspace --locked`。用 `--cargo-registry-src` 指向 Cargo registry 的 `src` 目錄，讓 Builder 讀取鎖定 crate 的授權。輸出目錄須為新目錄。
 
-```text
-uv run python script/build_portable.py --platform windows-x64 --output dist/BabelOxide-windows-test --allow-unresolved-native --zip
-uv run python script/build_portable.py --platform macos-arm64 --output dist/BabelOxide-macos-test --zip
+```powershell
+$cargoHome = if ($env:CARGO_HOME) { $env:CARGO_HOME } else { Join-Path $HOME '.cargo' }
+uv run python script/build_portable.py --platform windows-x64 --output dist/BabelOxide-v1.0.0-windows-x64 --cargo-registry-src (Join-Path $cargoHome 'registry/src') --allow-unresolved-native --zip
+```
+
+```bash
+uv run python script/build_portable.py --platform macos-arm64 --output dist/BabelOxide-v1.0.0-macos-arm64 --cargo-registry-src "${CARGO_HOME:-$HOME/.cargo}/registry/src" --zip
 ```
 
 Windows 的旗標明示需要官方 VC++ x64 Runtime；CI 只容許已知 VC++ Runtime DLL，其他未解析 import 一律失敗。不從 System32 複製檔案。
@@ -47,8 +51,6 @@ Windows 的旗標明示需要官方 VC++ x64 Runtime；CI 只容許已知 VC++ R
 - Windows 保留 PE imports、原生 probes、完整 licenses／provenance／RELEASE_FILES。Mac `.app` 保留內部相對 runtime symlink，查核 Mach-O arm64、dylib 與 rpath，移動完整包後再執行 native／CLI smoke；不修改全域 Library 搜尋路徑。
 - 只散布固定執行期、模型／字型種子、空 Key 範本與程式；不帶入個人 config、cache、測試 PDF 或翻譯結果。Manifest 同時檢查檔案集合、雜湊與 symlink 目標。
 - Mac 未簽章／未公證，Gatekeeper 可能阻擋；不移除 quarantine 或停用系統保護。沒有 Intel、CUDA、DirectML 或必然 CoreML 加速的承諾。
-
-兩平台實際驗證狀態與尚存限制以 [STATUS](STATUS.md) 為準；本機 Windows 成功不代表 Mac 已原生通過。
 
 ## 開發驗證
 
@@ -87,7 +89,7 @@ CLI 使用同一套 Runtime：
 
 預設路徑相對 EXE，`--runtime-dir` 的相對路徑按呼叫者工作目錄解析為絕對路徑；PDFium 只從該根目錄的 `native/pdfium` 載入，不搜尋 CWD／系統 Python／系統 PDFium。兩平台原則一致，Python 在固定 Runtime 的隔離模式執行，套件由其 `site-packages` 載入。設定與可變翻譯／引擎快取仍屬於原始碼 EXE 的應用程式儲存區，Runtime 檢查使用獨立暫存設定，不搬移或覆寫私人設定。完整發行包仍使用原有相鄰資源佈局，無需這些開發腳本。
 
-開發啟動產生的資料夾用於支援目前 checkout；需交付可獨立執行的成品時，使用上節完整包 Builder／Actions。HTTP 500 等翻譯服務錯誤另見 [翻譯診斷與實測](TRANSLATION_DIAGNOSIS.md)。
+開發啟動產生的資料夾供目前 checkout 使用。需交付可獨立執行的成品時，使用上節完整包 Builder 或 Actions。
 
 GUI 的輸出位置空白時，使用應用程式可寫儲存區下的 `outputs`，並在任務區顯示實際資料夾；Finder 的 `/` 啟動目錄不再決定輸出及引擎暫存位置。使用者明確指定的位置（包括 `.`）不變；CLI 的預設輸出仍是目前目錄。
 
@@ -113,7 +115,7 @@ Rust 測試使用 `tempfile`，Worker 使用 pytest 的 `tmp_path`；CI 會以�
 
 手動驗證的產物集中放在已忽略版控的 `.test-output/`；腳本會自行建立輸出路徑，驗證後可以清除合成 PDF、Log、截圖及大型中間資料。`target/`、`.venv/`、Cargo／uv 套件快取允許保留，以加速後續測試；不需要每輪清理。實際使用的 config、API Key、翻譯 cache 與自訂模型必須保留。
 
-本機保留一份 `dist/BabelOxide-v1.0.0-windows-x64/`、開發 `.venv/` 與 `build-inputs/windows-x64/`。建置輸入含目前 85 個固定套件的 uv 快取、pristine CPython、PDFium、完整資產 ZIP 及雜湊清單，已確認可離線安裝；舊 BabelDOC 0.6.3 實體快取已移除。資產 ZIP 分別供建置與執行包使用，兩者不可因檔名相同就任意刪除。macOS 的鎖檔、下載 pins、圖示與 builder 保留；Windows 的離線快取不能作為 Mac 原生驗證。
+`build-inputs/<platform>/` 保留該平台的 Python、PDFium、資產 ZIP、雜湊清單與 uv 快取，供離線重建。`dist/` 放可執行的發行包。資產 ZIP 在建置輸入與發行包各有用途。
 
 `pdf_regression_metrics.py` 可擷取單份文件的 Poppler 指標；`compare_rust_pdf.py` 比較兩組 mono／dual 的結構與像素。`audit_hybrid_dependencies.py` 是明確提供 Cargo metadata 與 Worker WHEELS 清單的 Windows OSV 查詢工具，需網路；它們是維護入口，並非應用程式執行期。
 
@@ -131,6 +133,4 @@ Windows 雙擊根目錄 `打包原始碼.cmd`；macOS 從 Git checkout 雙擊 `�
 
 Mac 對應測試為 `/bin/bash tests/source-review/test_packaging_macos.sh`；手動 Actions 的 Mac job 會執行。它使用英文、中文／空格、括號及標點路徑、合成秘密與可控損壞 ZIP，檢查實際解壓、重跑、大小上限、二進位 pins、連結拒絕與失敗保舊包。另驗證 ZIP64、重複項目、路徑穿越、連結屬性、Unicode 欄位、截斷目錄及本地／中央標頭不一致。原生 macOS 必須執行兩項連結拒絕測試，建立連結失敗即失敗；Windows Git Bash 不具備原生連結能力時仍會明示未驗證。
 
-macOS 打包器不再以 `unzip -Z -1` 的顯示文字驗證原始檔名。[Apple 的 `fnprint()`](https://github.com/apple-oss-distributions/zip/blob/main/unzip/unzip60/list.c) 仍會呼叫 [顯示用 `fnfilter()`](https://github.com/apple-oss-distributions/zip/blob/main/unzip/unzip60/extract.c)，可能取代非列印位元組。有效 ZIP 因而可能在項目比對時得到退出碼 4；原始失敗 Runner 未保留 `run.log`，無法還原該次 stderr，但 Windows 已重現「顯示轉換後項目不符 → 退出碼 4」的相同機制。現在按 [ZIP 格式](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT) 讀取有邊界檢查的中央目錄，逐項對照快照清單，支援原始 UTF-8、CRC 綁定的 Unicode 路徑額外欄位及 ZIP64；標頭不一致、重複、缺項、越界、分割／加密或連結項目均停止。CRC32 使用系統 Perl 隨附的 `Compress::Raw::Zlib`，不需安裝套件。ZIP 建立、CRC 檢查及解壓仍使用原有系統工具，逐檔 SHA256、敏感資訊掃描及原子發布保持。
-
-打包命令失敗會顯示階段、腳本行及原始退出碼，保留工具 stderr，不輸出 shell trace、環境變數或憑證內容。封裝與測試會清除繼承的 ZIP／UnZip 選項，保持工具參數固定。測試為每次打包保留獨立日誌、工具版本及摘要於 `.test-output/ci/source-packaging-macos/run.*/`，可用 `SOURCE_REVIEW_TEST_LOG_DIR` 指定測試日誌父目錄；故障會在 Console 顯示末 100 行與失敗摘要。測試產生的合成憑證在持久日誌中遮蔽，但原始測試輸出仍用於檢查是否洩漏。既有 CI 的失敗 Console 摘要與 `always()` 日誌 Artifact 已涵蓋此位置，無須修改 Workflow。Windows Git Bash 的通過結果不等於原生 Bash 3.2／Finder 通過，尚缺的平台驗證見 [STATUS](STATUS.md)。
+macOS 打包器讀取 ZIP 中央目錄以驗證 Unicode 與 ZIP64 路徑，再以系統工具解壓並核對 SHA256。測試日誌在 `.test-output/ci/source-packaging-macos/`，可用 `SOURCE_REVIEW_TEST_LOG_DIR` 指定父目錄。
